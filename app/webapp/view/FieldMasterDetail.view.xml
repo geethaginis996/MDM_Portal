@@ -1,0 +1,326 @@
+<mvc:View xmlns:mvc="sap.ui.core.mvc"
+          xmlns="sap.m"
+          xmlns:core="sap.ui.core"
+          xmlns:layout="sap.ui.layout"
+          controllerName="mdm.portal.controller.FieldMasterDetail"
+          displayBlock="true">
+
+    <Page id="detailPage" showNavButton="true" navButtonPress=".onNavBack">
+
+        <customHeader>
+            <Bar>
+                <contentLeft>
+                    <Button icon="sap-icon://nav-back" type="Transparent" press=".onNavBack"/>
+                    <Title id="pageTitle" text="Field Detail" level="H4"/>
+                </contentLeft>
+            </Bar>
+        </customHeader>
+
+        <content>
+
+            <!-- Header strip -->
+            <VBox class="sapUiMediumMarginBeginEnd sapUiSmallMarginBottom">
+                <HBox wrap="Wrap" class="sapUiSmallMarginTop" alignItems="Center">
+                    <ObjectAttribute id="attrStatus"   title="Status"        text=""/>
+                    <ObjectAttribute id="attrCreated"  title="Created By"    text="" class="sapUiSmallMarginBegin"/>
+                    <ObjectAttribute id="attrDate"     title="Created On"    text="" class="sapUiSmallMarginBegin"/>
+                    <ObjectAttribute id="attrModified" title="Last Modified" text="" class="sapUiSmallMarginBegin"/>
+                </HBox>
+            </VBox>
+
+            <!-- Tab bar -->
+            <IconTabBar id="detailTabs" select=".onTabSelect" expanded="true"
+                        class="sapUiResponsiveContentPadding">
+                <items>
+
+                    <!-- ── TAB 1 · General ── -->
+                    <IconTabFilter text="General" key="general" icon="sap-icon://hint">
+                        <VBox class="sapUiMediumMarginBeginEnd">
+
+                            <Title text="General Information" level="H4"
+                                   class="sapUiSmallMarginTop sapUiSmallMarginBottom"/>
+                            <layout:Grid defaultSpan="L6 M6 S12" hSpacing="2">
+                                <layout:content>
+                                    <VBox>
+                                        <Label text="Field ID" required="true"/>
+                                        <Input id="inFieldId"
+                                               value="{field_id}"
+                                               placeholder="e.g. BUKRS"
+                                               liveChange=".onFieldChange"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Description" required="true"/>
+                                        <Input id="inDescription"
+                                               value="{description}"
+                                               liveChange=".onFieldChange"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Active"/>
+                                        <Switch id="swActive"
+                                                state="{active}"
+                                                customTextOn="Yes"
+                                                customTextOff="No"
+                                                change=".onFieldChange"/>
+                                    </VBox>
+                                </layout:content>
+                            </layout:Grid>
+
+                            <Title text="Technical Attributes" level="H4"
+                                   class="sapUiMediumMarginTop sapUiSmallMarginBottom"/>
+                            <layout:Grid defaultSpan="L6 M6 S12" hSpacing="2">
+                                <layout:content>
+                                    <VBox>
+                                        <Label text="Data Type" required="true"/>
+                                        <Select id="selDataType"
+                                                selectedKey="{data_type}"
+                                                width="100%"
+                                                change=".onFieldChange"
+                                                items="{path: 'lookups>/dataTypes'}">
+                                            <core:Item key="{lookups>key}" text="{lookups>text}"/>
+                                        </Select>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Length" required="true"/>
+                                        <Input id="inLength"
+                                               value="{length}"
+                                               type="Number"
+                                               placeholder="e.g. 10"
+                                               liveChange=".onFieldChange"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Decimals"/>
+                                        <Input id="inDecimals"
+                                               value="{decimals}"
+                                               type="Number"
+                                               placeholder="— only for DEC"
+                                               liveChange=".onFieldChange"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Source Table"/>
+                                        <Input id="inSourceTable"
+                                               value="{source_table}"
+                                               placeholder="e.g. T001"
+                                               liveChange=".onFieldChange"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Source Field"/>
+                                        <Input id="inSourceField"
+                                               value="{source_field}"
+                                               placeholder="e.g. BUKRS"
+                                               liveChange=".onFieldChange"/>
+                                    </VBox>
+                                </layout:content>
+                            </layout:Grid>
+                        </VBox>
+                    </IconTabFilter>
+
+                    <!-- ── TAB 2 · Grouping ── -->
+                    <IconTabFilter text="Grouping" key="grouping" icon="sap-icon://group">
+                        <VBox class="sapUiMediumMarginBeginEnd">
+                            <Title text="Group Hierarchy" level="H4"
+                                   class="sapUiSmallMarginTop sapUiSmallMarginBottom"/>
+                            <layout:Grid defaultSpan="L6 M6 S12" hSpacing="2">
+                                <layout:content>
+                                    <VBox>
+                                        <Label text="Main Group" required="true"/>
+                                        <Select id="selMainGroup"
+                                                selectedKey="{main_group_group_id}"
+                                                change=".onMainGroupChange"
+                                                width="100%"
+                                                items="{path: 'lookups>/mainGroups'}">
+                                            <core:Item key="{lookups>key}" text="{lookups>text}"/>
+                                        </Select>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Sub Group" required="true"/>
+                                        <Select id="selSubGroup"
+                                                selectedKey="{sub_group_group_id}"
+                                                width="100%"
+                                                change=".onFieldChange">
+                                            <core:Item key="" text="— Select Main Group first —"/>
+                                        </Select>
+                                    </VBox>
+                                </layout:content>
+                            </layout:Grid>
+                        </VBox>
+                    </IconTabFilter>
+
+                    <!-- ── TAB 3 · Value Help ── -->
+                    <IconTabFilter text="Value Help" key="valuehelp" icon="sap-icon://value-help">
+                        <VBox class="sapUiMediumMarginBeginEnd">
+                            <Title text="Value Help &amp; Display" level="H4"
+                                   class="sapUiSmallMarginTop sapUiSmallMarginBottom"/>
+                            <layout:Grid defaultSpan="L6 M6 S12" hSpacing="2">
+                                <layout:content>
+                                    <VBox>
+                                        <Label text="Display Type" required="true"/>
+                                        <Select id="selDisplayType"
+                                                selectedKey="{display_type}"
+                                                width="100%"
+                                                change=".onFieldChange"
+                                                items="{path: 'lookups>/displayTypes'}">
+                                            <core:Item key="{lookups>key}" text="{lookups>text}"/>
+                                        </Select>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Value Table"/>
+                                        <Select id="selValueTable"
+                                                selectedKey="{value_table_value_table_id}"
+                                                change=".onValueTableChange"
+                                                forceSelection="false"
+                                                width="100%"
+                                                items="{path: 'lookups>/valueTables'}">
+                                            <core:Item key="{lookups>key}" text="{lookups>text}"/>
+                                        </Select>
+                                    </VBox>
+                                </layout:content>
+                            </layout:Grid>
+
+                            <!-- Value table preview panel -->
+                            <Panel headerText="Value Table Preview" expandable="true" expanded="false"
+                                   class="sapUiSmallMarginTop">
+                                <content>
+                                    <VBox class="sapUiSmallMargin">
+                                        <ObjectAttribute id="vtSource"     title="Backend Table" text="—"/>
+                                        <ObjectAttribute id="vtOutputKey"  title="Output Key"    text="—"/>
+                                        <ObjectAttribute id="vtOutputDesc" title="Output Desc"   text="—"/>
+                                    </VBox>
+                                </content>
+                            </Panel>
+                        </VBox>
+                    </IconTabFilter>
+
+                    <!-- ── TAB 4 · Validation ── -->
+                    <IconTabFilter text="Validation" key="validation" icon="sap-icon://validate">
+                        <VBox class="sapUiMediumMarginBeginEnd">
+                            <Title text="Validation Rule" level="H4"
+                                   class="sapUiSmallMarginTop sapUiSmallMarginBottom"/>
+                            <layout:Grid defaultSpan="L6 M6 S12" hSpacing="2">
+                                <layout:content>
+                                    <VBox>
+                                        <Label text="Validation Rule"/>
+                                        <Select id="selValidation"
+                                                selectedKey="{validation_validation_id}"
+                                                change=".onValidationChange"
+                                                forceSelection="false"
+                                                width="100%"
+                                                items="{path: 'lookups>/validationRules'}">
+                                            <core:Item key="{lookups>key}" text="{lookups>text}"/>
+                                        </Select>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Trigger"/>
+                                        <Select id="selTrigger" width="100%"
+                                                change=".onFieldChange">
+                                            <core:Item key="CHANGE" text="On Field Change"/>
+                                            <core:Item key="SAVE"   text="On Save"/>
+                                            <core:Item key="BOTH"   text="Both"/>
+                                        </Select>
+                                    </VBox>
+                                </layout:content>
+                            </layout:Grid>
+
+                            <!-- Validation rule detail panel -->
+                            <Panel id="validationPreview" headerText="Rule Details"
+                                   expandable="false" class="sapUiSmallMarginTop">
+                                <content>
+                                    <VBox class="sapUiSmallMargin">
+                                        <ObjectAttribute id="valFnName" title="Function"      text="—"/>
+                                        <ObjectAttribute id="valDesc"   title="Description"   text="—"/>
+                                        <ObjectAttribute id="valParam1" title="Parameter 1"   text="—"/>
+                                        <ObjectAttribute id="valParam2" title="Parameter 2"   text="—"/>
+                                        <ObjectAttribute id="valParam3" title="Parameter 3"   text="—"/>
+                                        <ObjectAttribute id="valErrMsg" title="Error Message" text="—"/>
+                                    </VBox>
+                                </content>
+                            </Panel>
+                        </VBox>
+                    </IconTabFilter>
+
+                    <!-- ── TAB 5 · Usage ── -->
+                    <IconTabFilter text="Usage" key="usage" icon="sap-icon://connected">
+                        <Toolbar class="sapUiSmallMarginTop">
+                            <Title text="Used in BP Roles" level="H4"/>
+                            <ToolbarSpacer/>
+                            <Text id="usageCount" text=""/>
+                        </Toolbar>
+                        <Table id="usageTable"
+                               noDataText="This field is not assigned to any BP role yet"
+                               items="{
+                                   path: '/BPRoleFields',
+                                   parameters: {
+                                       $expand: 'role($select=role_id,description)',
+                                       $select: 'role_role_id,field_field_id,field_status,sequence,default_value,read_only'
+                                   }
+                               }">
+                            <columns>
+                                <Column width="120px"><Text text="Role ID"/></Column>
+                                <Column><Text text="Description"/></Column>
+                                <Column width="120px"><Text text="Field Status"/></Column>
+                                <Column width="80px"><Text text="Sequence"/></Column>
+                                <Column width="80px"><Text text="Read Only"/></Column>
+                            </columns>
+                            <items>
+                                <ColumnListItem type="Navigation" press=".onUsageRowPress">
+                                    <cells>
+                                        <ObjectIdentifier title="{role/role_id}"/>
+                                        <Text text="{role/description}"/>
+                                        <ObjectStatus
+                                            text="{field_status}"
+                                            state="{= ${field_status} === 'REQUIRED' ? 'Warning' :
+                                                   ${field_status} === 'SUPPRESS' ? 'Error' : 'Information'}"/>
+                                        <Text text="{sequence}"/>
+                                        <CheckBox selected="{read_only}" enabled="false"/>
+                                    </cells>
+                                </ColumnListItem>
+                            </items>
+                        </Table>
+                    </IconTabFilter>
+
+                    <!-- ── TAB 6 · Change Log ── -->
+                    <IconTabFilter text="Change Log" key="changelog" icon="sap-icon://history">
+                        <Toolbar class="sapUiSmallMarginTop">
+                            <Title text="Audit History" level="H4"/>
+                        </Toolbar>
+                        <Table id="logTable"
+                               noDataText="No changes recorded yet"
+                               items="{path: '/AuditLogs', suspended: true}">
+                            <columns>
+                                <Column width="180px"><Text text="Timestamp"/></Column>
+                                <Column width="130px"><Text text="User"/></Column>
+                                <Column width="100px"><Text text="Action"/></Column>
+                                <Column><Text text="Before"/></Column>
+                                <Column><Text text="After"/></Column>
+                            </columns>
+                            <items>
+                                <ColumnListItem>
+                                    <cells>
+                                        <Text text="{acted_at}"/>
+                                        <Text text="{actor}"/>
+                                        <ObjectStatus
+                                            text="{action}"
+                                            state="{= ${action} === 'CREATE' ? 'Success' :
+                                                   ${action} === 'DELETE' ? 'Error' : 'None'}"/>
+                                        <Text text="{before_value}" maxLines="2"/>
+                                        <Text text="{after_value}"  maxLines="2"/>
+                                    </cells>
+                                </ColumnListItem>
+                            </items>
+                        </Table>
+                    </IconTabFilter>
+
+                </items>
+            </IconTabBar>
+        </content>
+
+        <footer>
+            <OverflowToolbar>
+                <ToolbarSpacer/>
+                <Button text="Copy"   icon="sap-icon://copy" type="Transparent" press=".onCopy"/>
+                <Button text="Cancel" type="Default"         press=".onCancel"/>
+                <Button text="Save"   type="Emphasized"      press=".onSave"/>
+            </OverflowToolbar>
+        </footer>
+
+    </Page>
+</mvc:View>

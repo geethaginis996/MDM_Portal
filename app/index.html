@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MDM Portal</title>
+    <script
+        id="sap-ui-bootstrap"
+        src="https://ui5.sap.com/1.120/resources/sap-ui-core.js"
+        data-sap-ui-theme="sap_horizon"
+        data-sap-ui-libs="sap.m,sap.ui.core,sap.f,sap.ui.layout,sap.tnt"
+        data-sap-ui-compatVersion="edge"
+        data-sap-ui-async="true"
+        data-sap-ui-resourceroots='{"mdm.portal": "./webapp/"}'
+        data-sap-ui-oninit="module:sap/ui/core/ComponentSupport">
+    </script>
+    <!--
+        DO NOT add any extra <link rel="stylesheet"> here.
+        The theme is loaded via manifest.json → sap.ui5.resources.css
+        which points to webapp/css/sidebar.css.
+        Adding a second link causes duplicate + conflicting rules.
+    -->
+</head>
+<body class="sapUiBody">
+    <div data-sap-ui-component
+         data-name="mdm.portal"
+         data-settings='{"id":"mdmportal"}'
+         style="height:100%">
+    </div>
+</body>
+</html>

@@ -1,0 +1,15 @@
+group_id,description,icon,sequence,active,master_data_type_master_data_type_id,parent_group_id_group_id
+GD,General Data,sap-icon://general,1,true,BUSINESS PARTNER,
+GD_ID,Identification,sap-icon://key,1,true,MATERIAL,GD
+GD_NAME,Name Data,sap-icon://edit,2,true,BUSINESS PARTNER,GD
+AD,Address Data,sap-icon://location,2,true,BUSINESS PARTNER,
+AD_LOC,Location Information,sap-icon://map,1,true,BUSINESS PARTNER,AD
+AD_CONTACT,Contact Details,sap-icon://phone,2,true,BUSINESS PARTNER,AD
+FIN,Financial Data,sap-icon://money,3,true,BUSINESS PARTNER,
+FIN_PAY,Payment Terms,sap-icon://calculate,1,true,BUSINESS PARTNER,FIN
+FIN_BANK,Bank Details,sap-icon://building,2,true,BUSINESS PARTNER,FIN
+TAX,Tax Data,sap-icon://documents,4,true,BUSINESS PARTNER,
+TAX_ID,Tax Identification,sap-icon://id,1,true,BUSINESS PARTNER,TAX
+COMM,Communication,sap-icon://email,5,true,BUSINESS PARTNER,
+COMM_PHONE,Telephone,sap-icon://phone,1,true,BUSINESS PARTNER,COMM
+COMM_EMAIL,Email,sap-icon://email,2,true,MATERIAL,COMM

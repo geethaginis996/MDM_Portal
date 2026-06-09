@@ -1,0 +1,633 @@
+/* ================================================================
+   MDM Portal — sidebar.css
+   ================================================================ */
+
+
+/* ----------------------------------------------------------------
+   1. DESIGN TOKENS
+   ---------------------------------------------------------------- */
+:root {
+    --mdm-blue:        #0a6ed1;
+    --mdm-blue-dark:   #084ea6;
+    --mdm-blue-light:  #e8f1fb;
+    --mdm-blue-hover:  #deeafa;
+    --mdm-ink:         #1d2d3e;
+    --mdm-ink-muted:   #556068;
+    --mdm-ink-faint:   #8c9196;
+    --mdm-border:      #d9d9d9;
+    --mdm-bg:          #f5f6f7;
+    --mdm-surface:     #ffffff;
+    --mdm-surface-alt: #f7f8fa;
+    --mdm-success:     #107e3e;
+    --mdm-danger:      #bb0000;
+
+    --mdm-fs-xs:    0.8125rem;
+    --mdm-fs-sm:    0.9375rem;
+    --mdm-fs-base:  1rem;
+    --mdm-fs-md:    1.125rem;
+    --mdm-fs-lg:    1.375rem;
+    --mdm-fs-xl:    1.5rem;
+    --mdm-fs-xxl:   1.75rem;
+
+    /* Table cell font — kept as px so it never scales with rem base */
+    --mdm-tbl-fs:   13px;
+    --mdm-tbl-row-h: 36px;
+
+    --mdm-sp-xs: 0.25rem;
+    --mdm-sp-sm: 0.5rem;
+    --mdm-sp-md: 1rem;
+    --mdm-sp-lg: 1.5rem;
+    --mdm-r-sm: 0.25rem;
+    --mdm-r:    0.5rem;
+    --mdm-r-lg: 0.75rem;
+}
+
+
+/* ----------------------------------------------------------------
+   2. BASE
+   ---------------------------------------------------------------- */
+body, .sapUiBody {
+    background-color: var(--mdm-bg) !important;
+    font-family: "72", "72full", Arial, sans-serif !important;
+    font-size: var(--mdm-fs-base) !important;
+    color: var(--mdm-ink) !important;
+    -webkit-font-smoothing: antialiased;
+}
+
+.sapTntToolPage { height: 100%; }
+.sapTntToolPageContentWrapper .sapFDynamicPage {
+    width: 100% !important;
+}
+
+
+/* ----------------------------------------------------------------
+   3. SHELL BAR
+   ---------------------------------------------------------------- */
+.sapFShellBar .sapFShellBarTitle,
+.sapFShellBar .sapFShellBarTitleControl,
+.sapFShellBar .sapFShellBarHeading,
+.sapFShellBar [class*="ShellBarTitle"],
+.sapFioriShellBarTitle {
+    font-size:   var(--mdm-fs-xxl) !important;
+    font-weight: 800 !important;
+    color:       #fff !important;
+    letter-spacing: 0.01em;
+    line-height: 1.2 !important;
+}
+.sapFShellBar .sapMTitle,
+.sapFShellBar .sapMTitleStyle {
+    font-size:   var(--mdm-fs-xxl) !important;
+    font-weight: 800 !important;
+    color:       #050404 !important;
+}
+.sapFShellBar .sapFShellBarSubtitle {
+    opacity: 0.85;
+    font-size: var(--mdm-fs-sm) !important;
+    color: #fff !important;
+}
+.sapFShellBar .sapFShellBarSubtitle,
+.sapFShellBar [class*="SecondTitle"],
+.sapFShellBar [class*="Subtitle"] {
+    font-size: 0.75rem !important;
+    opacity:   0.80;
+    color:     #131212 !important;
+}
+
+
+/* ----------------------------------------------------------------
+   4. LEFT NAVIGATION
+   ---------------------------------------------------------------- */
+.sapTntNavLIItem .sapTntNavLIItemText {
+    font-size: var(--mdm-fs-base) !important;
+}
+.sapTntNavLIGroupItem .sapTntNavLIItemText {
+    font-size:      var(--mdm-fs-xs) !important;
+    font-weight:    700 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color:          var(--mdm-ink-muted) !important;
+}
+.sapTntNavLIItemSelected .sapTntNavLIItemText {
+    font-size:   var(--mdm-fs-base) !important;
+    font-weight: 700 !important;
+    color:       var(--mdm-blue) !important;
+}
+.sapTntNavLIItemSelected {
+    background-color: var(--mdm-blue-light) !important;
+    border-left:      3px solid var(--mdm-blue) !important;
+}
+.sapTntNavLIItem:hover .sapTntNavLIItemText {
+    color: var(--mdm-blue) !important;
+}
+
+
+/* ----------------------------------------------------------------
+   5. DYNAMIC PAGE TITLE
+   ---------------------------------------------------------------- */
+.sapFDynamicPageTitle .sapFDynamicPageTitleMainHeading .sapMTitle,
+.sapFDynamicPageTitle .sapFDynamicPageTitleMainHeading .sapMTitleStyle,
+.sapFDynamicPageTitleMainHeading .sapMTitle {
+    font-size:      var(--mdm-fs-xl) !important;
+    font-weight:    700 !important;
+    color:          var(--mdm-ink) !important;
+    letter-spacing: -0.01em;
+    white-space:    nowrap !important;
+    line-height:    1.25 !important;
+}
+.sapFDynamicPageTitle .sapFDynamicPageTitleSnappedHeading .sapMTitle {
+    font-size:   var(--mdm-fs-lg) !important;
+    font-weight: 700 !important;
+    color:       var(--mdm-ink) !important;
+}
+.sapFDynamicPageTitleMain {
+    display:         flex !important;
+    flex-direction:  row !important;
+    align-items:     center !important;
+    justify-content: space-between !important;
+    flex-wrap:       nowrap !important;
+    width:           100% !important;
+    gap:             1rem !important;
+}
+.sapFDynamicPageTitleMainHeading {
+    flex:      1 1 auto !important;
+    min-width: 0 !important;
+    text-align: left !important;
+}
+.sapFDynamicPageTitleMainActions,
+.sapFDynamicPageTitleActions {
+    display:         flex !important;
+    flex-direction:  row !important;
+    flex-wrap:       nowrap !important;
+    align-items:     center !important;
+    justify-content: flex-end !important;
+    gap:             var(--mdm-sp-sm) !important;
+    flex-shrink:     0 !important;
+    flex-grow:       0 !important;
+}
+.sapMDMFieldMasterPage .sapFDynamicPageTitleWrapper,
+.sapMDMFieldMasterPage .sapFDynamicPageHeader {
+    padding-inline-start: 0rem !important;
+    padding-inline-end:   0rem !important;
+}
+.sapMDMFieldMasterPage .sapFDynamicPageContent,
+.sapMDMFieldMasterPage .sapFDynamicPageContentWrapper {
+    padding-inline-start: 0 !important;
+    padding-inline-end:   0 !important;
+}
+.sapMDMFieldMasterPage { background: var(--mdm-bg); }
+.sapMDMTitleToolbar.sapMTB {
+    display:     flex !important;
+    flex-wrap:   nowrap !important;
+    align-items: center !important;
+    gap:         var(--mdm-sp-sm) !important;
+    height:      auto !important;
+    min-height:  2.5rem !important;
+    padding:     0 !important;
+    background:  transparent !important;
+    border:      none !important;
+    box-shadow:  none !important;
+}
+.sapMDMTitleToolbar .sapMTBContent {
+    display:         flex !important;
+    flex-wrap:       nowrap !important;
+    align-items:     center !important;
+    justify-content: flex-end !important;
+    gap:             var(--mdm-sp-sm) !important;
+}
+
+
+/* ----------------------------------------------------------------
+   6. BUTTONS
+   ---------------------------------------------------------------- */
+.sapMBtnContent {
+    font-size:   var(--mdm-fs-base) !important;
+    font-family: "72", "72full", Arial, sans-serif !important;
+}
+.sapMBtn.sapMBtnEmphasized .sapMBtnInner {
+    font-size:    var(--mdm-fs-base) !important;
+    font-weight:  700 !important;
+    background:   var(--mdm-blue) !important;
+    border-color: var(--mdm-blue) !important;
+    border-radius: var(--mdm-r-sm) !important;
+    height:       2.375rem !important;
+    padding:      0 1.125rem !important;
+    white-space:  nowrap !important;
+}
+.sapMBtn.sapMBtnEmphasized:hover .sapMBtnInner {
+    background: var(--mdm-blue-dark) !important;
+}
+.sapMBtn.sapMBtnTransparent .sapMBtnInner {
+    font-size:    var(--mdm-fs-base) !important;
+    font-weight:  600 !important;
+    color:        var(--mdm-blue) !important;
+    border-radius: var(--mdm-r-sm) !important;
+    height:       2.375rem !important;
+    padding:      0 0.75rem !important;
+    white-space:  nowrap !important;
+}
+.sapMBtn.sapMBtnTransparent:hover .sapMBtnInner {
+    background: var(--mdm-blue-hover) !important;
+    color:      var(--mdm-blue-dark) !important;
+}
+.sapMBtn.sapMBtnDefault .sapMBtnInner {
+    font-size:    var(--mdm-fs-base) !important;
+    font-weight:  600 !important;
+    color:        var(--mdm-blue) !important;
+    border-color: var(--mdm-blue) !important;
+    border-radius: var(--mdm-r-sm) !important;
+    height:       2.375rem !important;
+}
+.sapMBtn.sapMBtnDefault:hover .sapMBtnInner {
+    background: var(--mdm-blue-light) !important;
+}
+.sapMDMActionBtn.sapMBtn {
+    width:     2.25rem !important;
+    min-width: 2.25rem !important;
+    padding:   0 !important;
+}
+.sapMDMActionBtn .sapMBtnInner {
+    min-width:       2.25rem !important;
+    height:          2.25rem !important;
+    padding:         0 !important;
+    justify-content: center !important;
+    border-radius:   var(--mdm-r-sm) !important;
+}
+.sapMBtnIcon { font-size: 1rem !important; }
+
+
+/* ----------------------------------------------------------------
+   7. FILTER HEADER
+   ---------------------------------------------------------------- */
+.sapFDynamicPageHeader {
+    background:    var(--mdm-surface) !important;
+    border-bottom: 1px solid var(--mdm-border) !important;
+    box-shadow:    0 2px 6px rgba(0,0,0,.05) !important;
+}
+.sapMLabel, .sapUiFormLabel {
+    font-size:     var(--mdm-fs-sm) !important;
+    font-weight:   600 !important;
+    color:         var(--mdm-ink-muted) !important;
+    margin-bottom: 0.25rem !important;
+}
+.sapMInputBase, .sapMSelect {
+    font-size:     var(--mdm-fs-base) !important;
+    border-radius: var(--mdm-r-sm) !important;
+    border-color:  #c5cacf !important;
+}
+.sapMInputBaseFocused {
+    border-color: var(--mdm-blue) !important;
+    box-shadow:   0 0 0 2px rgba(10,110,209,.14) !important;
+}
+.sapMDMFilterActions { padding-top: 1.5rem !important; }
+
+
+/* ================================================================
+   8. TABLE  —  single-line condensed rows, 11px cell font
+   ================================================================ */
+
+/* Table wrapper */
+.sapMDMFormalTable.sapMList {
+    width:         100% !important;
+    margin:        0 !important;
+    border-radius: 0 !important;
+    border-left:   none !important;
+    border-right:  none !important;
+    border-top:    1px solid var(--mdm-border) !important;
+    border-bottom: 1px solid var(--mdm-border) !important;
+    background:    var(--mdm-surface) !important;
+}
+
+/* Allow horizontal scroll ONLY when viewport is very narrow */
+.sapMDMFormalTable .sapMListTblWrapper {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    width: 100% !important;
+}
+
+/* Inner <table>: fixed layout honours our rem column widths exactly */
+.sapMDMFormalTable .sapMListTbl {
+    width:        100% !important;
+    table-layout: fixed !important;
+}
+
+/* ── Column headers ──────────────────────────────────────────── */
+.sapMDMFormalTable .sapMListTblHeaderRow > th {
+    background-color: #eef0f3 !important;
+    border-bottom:    2px solid #cdd0d4 !important;
+    white-space:      nowrap !important;
+    overflow:         hidden !important;
+    padding:          0.35rem 0.5rem !important;
+    vertical-align:   middle !important;
+}
+/* Target every possible selector SAP Horizon uses for header text */
+.sapMDMFormalTable .sapMListTblHeader .sapMText,
+.sapMDMFormalTable .sapMListTblHeader .sapMLabel,
+.sapMDMFormalTable .sapMListTblHeaderCell .sapMText,
+.sapMDMFormalTable .sapMListTblHeaderCell .sapMLabel,
+.sapMDMFormalTable th .sapMText,
+.sapMDMFormalTable th .sapMLabel {
+    font-size:     13px !important;    /* headers slightly larger than cells */
+    font-weight:   700 !important;
+    color:         var(--mdm-ink-muted) !important;
+    white-space:   nowrap !important;
+    overflow:      hidden !important;
+    text-overflow: ellipsis !important;
+    display:       block !important;
+}
+
+/* ── Data rows ───────────────────────────────────────────────── */
+
+/* Row height — 28px is the tightest comfortable touch target */
+.sapMDMFormalTable .sapMLIB,
+.sapMDMFormalTable .sapMListTblRow {
+    height:     var(--mdm-tbl-row-h) !important;
+    min-height: var(--mdm-tbl-row-h) !important;
+    max-height: var(--mdm-tbl-row-h) !important;
+}
+
+/* Cell padding — vertical only; horizontal comes from column width */
+.sapMDMFormalTable .sapMListTblCell,
+.sapMDMFormalTable td.sapMListTblCell {
+    padding-top:    5px !important;
+    padding-bottom: 5px !important;
+    padding-left:   0.5rem !important;
+    padding-right:  0.5rem !important;
+    vertical-align: middle !important;
+    border-bottom:  1px solid #f0f2f5 !important;
+    /* overflow:hidden on the td itself prevents the cell from
+       expanding and pushing the row taller                    */
+    overflow:       hidden !important;
+    max-height:     var(--mdm-tbl-row-h) !important;
+}
+
+/* ── THE KEY RULE: every text node stays on one line ─────────── */
+/*
+   white-space: nowrap   — prevents line breaks inside the cell
+   overflow: hidden      — clips content that exceeds column width
+   text-overflow: ellipsis — shows "…" at the clip point
+   display: block        — required for text-overflow to work
+   max-width: 100%       — keeps the element inside its column td
+
+   We target every control that can appear in a table cell:
+   sapMText (sap.m.Text), sapMLnk (sap.m.Link),
+   sapMObjectStatusText (the text span inside ObjectStatus),
+   sapMObjectStatus (the ObjectStatus wrapper itself)
+*/
+.sapMDMFormalTable .sapMListTblCell .sapMText,
+.sapMDMFormalTable .sapMListTblCell .sapMLnk,
+.sapMDMFormalTable .sapMListTblCell .sapMObjectStatusText,
+.sapMDMFormalTable td .sapMText,
+.sapMDMFormalTable td .sapMLnk,
+.sapMDMFormalTable td .sapMObjectStatusText {
+    font-size:     var(--mdm-tbl-fs) !important;   /* 11px */
+    white-space:   nowrap !important;
+    overflow:      hidden !important;
+    text-overflow: ellipsis !important;
+    display:       block !important;
+    max-width:     100% !important;
+    line-height:   1.3 !important;
+}
+
+/* Link colour */
+.sapMDMFormalTable .sapMListTblCell .sapMLnk {
+    color:       var(--mdm-blue) !important;
+    font-weight: 600 !important;
+}
+.sapMDMFormalTable .sapMListTblCell .sapMLnk:hover {
+    color:           var(--mdm-blue-dark) !important;
+    text-decoration: underline !important;
+}
+
+/* ObjectStatus wrapper — must not grow taller than the row */
+.sapMDMFormalTable .sapMListTblCell .sapMObjectStatus {
+    font-size:  var(--mdm-tbl-fs) !important;
+    overflow:   hidden !important;
+    max-width:  100% !important;
+    max-height: var(--mdm-tbl-row-h) !important;
+    display:    flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* Row states */
+.sapMDMFormalTable .sapMLIB:not(.sapMLIBSelected):hover {
+    background-color: #f3f7ff !important;
+    cursor: pointer;
+}
+.sapMDMFormalTable .sapMLIBSelected {
+    background-color: var(--mdm-blue-light) !important;
+}
+
+/* Table toolbar — "Fields" title */
+.sapMDMFormalTable .sapMTBHeader-CTX {
+    background:           var(--mdm-surface) !important;
+    border-bottom:        1px solid var(--mdm-border) !important;
+    padding-inline-start: 1rem !important;
+    padding-inline-end:   0.5rem !important;
+    min-height:           2.5rem !important;
+}
+.sapMDMFormalTable .sapMTBHeader-CTX .sapMTitle,
+.sapMDMFormalTable .sapMTBHeader-CTX .sapMTitleStyle {
+    font-size:   var(--mdm-fs-md) !important;
+    font-weight: 700 !important;
+    color:       var(--mdm-ink) !important;
+}
+
+/* Pop-in labels */
+.sapMListTblSubCntRow .sapMListTblSubCntLbl {
+    font-size:      var(--mdm-fs-xs) !important;
+    font-weight:    700 !important;
+    color:          var(--mdm-ink-muted) !important;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    min-width:      7rem;
+}
+.sapMListTblSubCntRow .sapMListTblSubCntVal {
+    font-size: var(--mdm-tbl-fs) !important;
+    color:     var(--mdm-ink) !important;
+}
+
+
+/* ----------------------------------------------------------------
+   9. STATUS BADGE
+   ---------------------------------------------------------------- */
+.sapMDMFormalTable .sapMObjectStatus .sapMObjectStatusText {
+    font-size:      var(--mdm-tbl-fs) !important;
+    font-weight:    700 !important;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    border-radius:  1rem !important;
+    padding:        0.15rem 0.5rem !important;
+    white-space:    nowrap !important;
+}
+/* Active badge — green pill */
+.sapMDMFormalTable .sapMObjectStatusStateSuccess .sapMObjectStatusText {
+    background-color: #e8f5ee !important;
+    color:            var(--mdm-success) !important;
+    border:           1px solid #b5ddc5 !important;
+}
+/* Inactive badge — red pill */
+.sapMDMFormalTable .sapMObjectStatusStateError .sapMObjectStatusText {
+    background-color: #fce8e8 !important;
+    color:            var(--mdm-danger) !important;
+    border:           1px solid #f5baba !important;
+}
+
+
+/* ----------------------------------------------------------------
+   10. BREADCRUMBS
+   ---------------------------------------------------------------- */
+.sapMBreadcrumbs .sapMLnk {
+    font-size: var(--mdm-fs-sm) !important;
+    color:     var(--mdm-ink-muted) !important;
+}
+.sapMBreadcrumbs .sapMLnk:hover { color: var(--mdm-blue) !important; }
+.sapMBreadcrumbs .sapMBreadcrumbsSeparator {
+    color:     var(--mdm-border) !important;
+    font-size: var(--mdm-fs-xs) !important;
+}
+
+
+/* ----------------------------------------------------------------
+   11. DIALOG
+   ---------------------------------------------------------------- */
+.sapMDialog { border-radius: var(--mdm-r-lg) !important; }
+.sapMDialogTitle .sapMTitle {
+    font-size:   1.2rem !important;
+    font-weight: 700 !important;
+    color:       var(--mdm-ink) !important;
+}
+.sapUiBLy {
+    background:      rgba(15,25,40,.5) !important;
+    backdrop-filter: blur(2px) !important;
+}
+
+
+/* ----------------------------------------------------------------
+   12. MESSAGE STRIP
+   ---------------------------------------------------------------- */
+.sapMMessageStrip { border-radius: var(--mdm-r-sm) !important; }
+.sapMMessageStrip .sapMMessageStripMessage {
+    font-size: var(--mdm-fs-base) !important;
+}
+
+
+/* ----------------------------------------------------------------
+   13. CONTENT WRAPPER — remove SAP inline clip-path & overflow
+   ---------------------------------------------------------------- */
+div[id$="fieldMasterPage-contentWrapper"],
+.sapFDynamicPageContentWrapper,
+.sapFDynamicPageContentWrapperStandard {
+    overflow-x:  hidden !important;
+    overflow-y:  auto !important;
+    clip-path: none !important;
+    min-width: 0 !important;
+}
+.sapFDynamicPage,
+.sapFDynamicPageContent,
+.sapFDynamicPageContentWrapper,
+.sapFDynamicPageContentWrapperStandard {
+    width:      100% !important;
+    max-width:  none !important;
+    box-sizing: border-box !important;
+}
+.sapFDynamicPageContent > div,
+.sapFDynamicPageContentWrapper > div {
+    width:         100% !important;
+    max-width:     none !important;
+    padding-right: 0 !important;
+    margin-right:  0 !important;
+}
+.sapMDMFieldMasterPage .sapUiRespGrid {
+    width:         100% !important;
+    max-width:     none !important;
+    margin-right:  0 !important;
+    padding-right: 0 !important;
+}
+.sapMDMFormalTable.sapMList,
+.sapMDMFormalTable .sapMListTblWrapper {
+    width:     100% !important;
+    max-width: none !important;
+}
+
+
+/* ----------------------------------------------------------------
+   14. SIDEBAR TOGGLE — smooth resize
+   ---------------------------------------------------------------- */
+.sapTntToolPageMainContent {
+    transition:  margin-left 0.25s ease, width 0.25s ease !important;
+    box-sizing:  border-box !important;
+    min-width:   0 !important;
+    overflow-x:  hidden !important;
+}
+
+
+/* ----------------------------------------------------------------
+   15. SCROLLBARS
+   ---------------------------------------------------------------- */
+::-webkit-scrollbar        { width: 5px; height: 5px; }
+::-webkit-scrollbar-track  { background: #f0f2f5; border-radius: 3px; }
+::-webkit-scrollbar-thumb  { background: #c5cacf; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--mdm-ink-faint); }
+
+
+/* ================================================================
+   16. RESPONSIVE
+   ================================================================ */
+@media (min-width: 1440px) {
+    :root {
+        --mdm-fs-base: 1.0625rem;
+        --mdm-fs-xxl:  2rem;
+        --mdm-fs-xl:   1.625rem;
+    }
+}
+@media (max-width: 1280px) {
+    :root {
+        --mdm-fs-xxl:  1.5rem;
+        --mdm-fs-xl:   1.25rem;
+        --mdm-fs-base: 0.9375rem;
+    }
+}
+@media (max-width: 1024px) {
+    :root {
+        --mdm-fs-xxl:  1.375rem;
+        --mdm-fs-xl:   1.125rem;
+        --mdm-fs-base: 0.9375rem;
+    }
+    .sapFDynamicPageTitleMainActions { gap: var(--mdm-sp-xs) !important; }
+}
+@media (max-width: 900px) {
+    :root {
+        --mdm-fs-xxl:  1.25rem;
+        --mdm-fs-xl:   1.0625rem;
+        --mdm-fs-base: 0.875rem;
+    }
+    #exportBtn .sapMBtnContent,
+    #importBtn .sapMBtnContent { display: none !important; }
+    #exportBtn .sapMBtnIcon,
+    #importBtn .sapMBtnIcon    { margin: 0 !important; }
+}
+@media (max-width: 600px) {
+    :root {
+        --mdm-fs-xxl:  1.125rem;
+        --mdm-fs-xl:   1rem;
+        --mdm-fs-base: 0.875rem;
+    }
+    .sapFDynamicPageTitleMain { flex-wrap: wrap !important; }
+    .sapFDynamicPageTitleMainActions {
+        width:           100% !important;
+        justify-content: flex-end !important;
+    }
+}
+
+
+/* ================================================================
+   17. TRANSITIONS
+   ================================================================ */
+.sapMBtn,
+.sapMInputBase,
+.sapMSelect,
+.sapMLIB,
+.sapTntNavLIItem {
+    transition: all .15s ease !important;
+}

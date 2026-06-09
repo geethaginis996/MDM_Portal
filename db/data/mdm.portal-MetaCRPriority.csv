@@ -1,0 +1,5 @@
+code,description,sequence
+LOW,Low,1
+NORMAL,Normal,2
+HIGH,High,3
+URGENT,Urgent,4

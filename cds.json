@@ -1,0 +1,16 @@
+{
+  "cds": {
+    "requires": {
+      "db": {
+        "kind": "sqlite",
+        "credentials": {
+          "url": "db.sqlite"
+        }
+      },
+      "auth": "mock"
+    },
+    "odata": {
+      "version": "v4"
+    }
+  }
+}

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mvc:View
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:f="sap.f"
+    xmlns:tnt="sap.tnt"
+    xmlns:core="sap.ui.core"
+    controllerName="mdm.portal.controller.App"
+    displayBlock="true">
+
+    <tnt:ToolPage id="toolPage" sideExpanded="true">
+
+        <tnt:header>
+            <f:ShellBar
+                id="shellBar"
+                title="MDM Portal"
+                secondTitle="{ui>/shellBreadcrumb}"
+                homeIcon="sap-icon://home"
+                homeIconTooltip="MDM Portal Home"
+                showMenuButton="true"
+                menuButtonPressed=".onSideNavToggle"
+                showSearch="true"
+                searchButtonPressed=".onSearchOpen"
+                showNotifications="true"
+                notificationsNumber="{ui>/pendingApprovals}"
+                notificationsPressed=".onNotificationsPress"
+                showProductSwitcher="true"
+                customStyleClasses="mdmShellBar">
+
+                <!-- profile: the only child aggregation we need -->
+                <f:profile>
+                    <Avatar
+                        id="userAvatar"
+                        initials="RJ"
+                        displaySize="XS"
+                        press=".onAvatarPress"
+                        tooltip="User menu"
+                        backgroundColor="Accent6"/>
+                </f:profile>
+
+            </f:ShellBar>
+        </tnt:header>
+
+        <tnt:sideContent>
+            <tnt:SideNavigation
+                id="sideNavigation"
+                itemSelect=".onNavItemSelect"
+                expanded="true">
+
+                <tnt:item>
+                    <tnt:NavigationList>
+
+                        <tnt:NavigationListItem text="Configuration" icon="sap-icon://settings" expanded="true">
+                            <tnt:NavigationListItem text="Field Master"     icon="sap-icon://form"       key="fieldMaster"/>
+                            <tnt:NavigationListItem text="Field Groups"     icon="sap-icon://group"      key="fieldGroups"/>
+                            <tnt:NavigationListItem text="Value Tables"     icon="sap-icon://table-view" key="valueTables"/>
+                            <tnt:NavigationListItem text="Validation Rules" icon="sap-icon://validate"   key="validationRules"/>
+                        </tnt:NavigationListItem>
+
+                        <tnt:NavigationListItem text="BP Configuration" icon="sap-icon://customer" expanded="false">
+                            <tnt:NavigationListItem text="BP Roles"       icon="sap-icon://role"     key="bpRoles"/>
+                            <tnt:NavigationListItem text="BP Categories"  icon="sap-icon://customer" key="bpCategories"/>
+                            <tnt:NavigationListItem text="Account Groups" icon="sap-icon://accounts" key="accountGroups"/>
+                        </tnt:NavigationListItem>
+
+                        <tnt:NavigationListItem text="Release Management" icon="sap-icon://workflow-tasks" expanded="false">
+                            <tnt:NavigationListItem text="Release Codes"      icon="sap-icon://unlocked" key="releaseCodes"/>
+                            <tnt:NavigationListItem text="Release Strategies" icon="sap-icon://decision"  key="releaseStrategies"/>
+                        </tnt:NavigationListItem>
+
+                        <tnt:NavigationListItem text="Change Requests" icon="sap-icon://request" expanded="true">
+                            <tnt:NavigationListItem text="My Requests"    icon="sap-icon://my-view" key="myRequests"/>
+                            <tnt:NavigationListItem text="Approval Inbox" icon="sap-icon://inbox"   key="approvalInbox"/>
+                        </tnt:NavigationListItem>
+
+                    </tnt:NavigationList>
+                </tnt:item>
+
+                <tnt:fixedItem>
+                    <tnt:NavigationList>
+                        <tnt:NavigationListItem text="Help"     icon="sap-icon://sys-help"        key="help"/>
+                        <tnt:NavigationListItem text="Settings" icon="sap-icon://action-settings" key="appSettings"/>
+                    </tnt:NavigationList>
+                </tnt:fixedItem>
+
+            </tnt:SideNavigation>
+        </tnt:sideContent>
+
+     
+        <tnt:mainContents>
+            <NavContainer id="appPages"/>
+        </tnt:mainContents>
+
+    </tnt:ToolPage>
+
+</mvc:View>

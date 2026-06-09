@@ -1,0 +1,5 @@
+code,description,sequence
+BP,Business Partner,1
+MATERIAL,Material,2
+VENDOR,Vendor,3
+CUSTOMER,Customer,4

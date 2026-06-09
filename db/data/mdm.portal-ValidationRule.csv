@@ -1,0 +1,6 @@
+validation_id,description,function_name,input_param_1,input_param_2,input_param_3,trigger_on,error_message
+VAL_REQUIRED,Required Field Check,checkRequired,,,, SAVE,This field is required
+VAL_NUMERIC,Numeric Only,checkNumeric,,,,FIELD,Only numeric values are allowed
+VAL_EMAIL,Email Format,checkEmailFormat,,,,FIELD,Invalid email format
+VAL_DATE,Date Range Check,checkDateRange,today,,,FIELD,Date must not be in the past
+VAL_LENGTH,Max Length Check,checkMaxLength,40,,,FIELD,Value exceeds maximum length

@@ -1,0 +1,4 @@
+code,description,sequence
+REQUIRED,Required,1
+OPTIONAL,Optional,2
+SUPPRESS,Suppress,3

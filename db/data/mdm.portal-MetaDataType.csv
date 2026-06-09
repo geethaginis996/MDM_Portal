@@ -1,0 +1,6 @@
+code,description,sequence
+STRING,Character / Text,1
+INTEGER,Numeric Integer,2
+DECIMAL,Decimal Number,3
+DATE,Date,4
+BOOLEAN,Boolean / Checkbox,5

@@ -1,0 +1,8 @@
+code,description,sequence
+DRAFT,Draft,1
+SUBMITTED,Submitted,2
+IN_REVIEW,In Review,3
+APPROVED,Approved,4
+REJECTED,Rejected,5
+POSTED,Posted to SAP,6
+CANCELLED,Cancelled,7

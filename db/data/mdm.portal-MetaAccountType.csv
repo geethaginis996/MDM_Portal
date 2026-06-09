@@ -1,0 +1,4 @@
+code,description,sequence
+CUSTOMER,Customer,1
+VENDOR,Vendor,2
+BOTH,Customer and Vendor,3

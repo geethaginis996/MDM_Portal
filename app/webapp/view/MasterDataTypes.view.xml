@@ -1,0 +1,47 @@
+<mvc:View xmlns:mvc="sap.ui.core.mvc"
+          xmlns="sap.m"
+          xmlns:f="sap.f"
+          controllerName="mdm.portal.controller.MasterDataTypes"
+          displayBlock="true">
+    <Page title="Master Data Types" showNavButton="false">
+        <headerContent>
+            <Button text="Add" type="Emphasized" icon="sap-icon://add" press=".onAdd"/>
+        </headerContent>
+        <content>
+            <Table id="mdtTable"
+                   items="{/MasterDataTypes}"
+                   growing="true"
+                   growingThreshold="20"
+                   mode="SingleSelectMaster"
+                   selectionChange=".onSelect">
+                <headerToolbar>
+                    <Toolbar>
+                        <Title text="Master Data Types"/>
+                        <ToolbarSpacer/>
+                        <SearchField width="250px" search=".onSearch"/>
+                    </Toolbar>
+                </headerToolbar>
+                <columns>
+                    <Column><Text text="ID"/></Column>
+                    <Column><Text text="Description"/></Column>
+                    <Column><Text text="Object Class"/></Column>
+                    <Column><Text text="Sequence"/></Column>
+                    <Column><Text text="Active"/></Column>
+                </columns>
+                <items>
+                    <ColumnListItem>
+                        <cells>
+                            <Text text="{master_data_type_id}"/>
+                            <Text text="{description}"/>
+                            <Text text="{object_class}"/>
+                            <Text text="{sequence}"/>
+                            <ObjectStatus
+                                text="{= ${active} ? 'Active' : 'Inactive'}"
+                                state="{= ${active} ? 'Success' : 'Error'}"/>
+                        </cells>
+                    </ColumnListItem>
+                </items>
+            </Table>
+        </content>
+    </Page>
+</mvc:View>

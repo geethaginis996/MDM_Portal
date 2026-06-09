@@ -1,0 +1,4 @@
+code,description,sequence
+CHANGE,On Field Change,1
+SAVE,On Save,2
+BOTH,On Change and Save,3

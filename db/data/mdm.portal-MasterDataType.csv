@@ -1,0 +1,3 @@
+master_data_type_id,description,icon,object_class,sequence,active
+BUSINESS PARTNER,Business Partner,sap-icon://customer,BP,1,true
+MATERIAL,Material ,sap-icon://product,MATERIAL,2,true

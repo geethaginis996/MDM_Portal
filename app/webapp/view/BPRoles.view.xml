@@ -1,0 +1,10 @@
+<mvc:View xmlns:mvc="sap.ui.core.mvc"
+          xmlns="sap.m"
+          controllerName="mdm.portal.controller.BPRoles"
+          displayBlock="true">
+    <Page title="BP Roles" showNavButton="false">
+        <content>
+            <MessageStrip text="BP Roles screen — coming soon" type="Information" showIcon="true" class="sapUiMediumMargin"/>
+        </content>
+    </Page>
+</mvc:View>

@@ -1,0 +1,160 @@
+{
+    "_version": "1.58.0",
+    "sap.app": {
+        "id": "mdm.portal",
+        "type": "application",
+        "title": "MDM Portal",
+        "dataSources": {
+            "mainService": {
+                "uri": "/odata/v4/mdmportal/",
+                "type": "OData",
+                "settings": {
+                    "odataVersion": "4.0"
+                }
+            }
+        }
+    },
+    "sap.ui": {
+        "technology": "UI5",
+        "deviceTypes": {
+            "desktop": true,
+            "tablet": true,
+            "phone": true
+        },
+        "supportedThemes": [
+            "sap_horizon",
+            "sap_horizon_dark",
+            "sap_fiori_3"
+        ]
+    },
+    "sap.ui5": {
+        "contentDensities": {
+            "compact": true,
+            "cozy": false
+        },
+        "resources": {
+            "css": [
+                {
+                    "uri": "css/sidebar.css"
+                }
+            ]
+        },
+        "dependencies": {
+            "minUI5Version": "1.120.0",
+            "libs": {
+                "sap.m": {},
+                "sap.f": {},
+                "sap.tnt": {},
+                "sap.ui.core": {},
+                "sap.ui.layout": {}
+            }
+        },
+        "rootView": {
+            "viewName": "mdm.portal.view.App",
+            "type": "XML",
+            "id": "app"
+        },
+        "models": {
+            "": {
+                "dataSource": "mainService",
+                "preload": true,
+                "settings": {
+                    "synchronizationMode": "None",
+                    "operationMode": "Server",
+                    "autoExpandSelect": true,
+                    "groupId": "$direct"
+                }
+            },
+            "i18n": {
+                "type": "sap.ui.model.resource.ResourceModel",
+                "settings": {
+                    "bundleName": "mdm.portal.i18n.i18n",
+                    "supportedLocales": [
+                        "",
+                        "en"
+                    ],
+                    "fallbackLocale": ""
+                }
+            }
+        },
+        "routing": {
+            "config": {
+                "routerClass": "sap.m.routing.Router",
+                "viewType": "XML",
+                "viewPath": "mdm.portal.view",
+                "controlId": "appPages",
+                "controlAggregation": "pages",
+                "bypassed": {
+                    "target": "fieldMaster"
+                }
+            },
+            "routes": [
+                {
+                    "name": "fieldMaster",
+                    "pattern": "",
+                    "target": "fieldMaster"
+                },
+                {
+                    "name": "fieldMasterDetail",
+                    "pattern": "fieldmaster/{fieldId}",
+                    "target": "fieldMasterDetail"
+                },
+                {
+                    "name": "bpRoles",
+                    "pattern": "bproles",
+                    "target": "bpRoles"
+                }
+            ],
+            "targets": {
+                "fieldMaster": {
+                    "viewName": "FieldMaster",
+                    "viewLevel": 1
+                },
+                "fieldMasterDetail": {
+                    "viewName": "FieldMasterDetail",
+                    "viewLevel": 2
+                },
+                "bpRoles": {
+                    "viewName": "BPRoles",
+                    "viewLevel": 1
+                },
+                "fieldGroups": {
+                    "viewName": "FieldMaster",
+                    "viewLevel": 1
+                },
+                "valueTables": {
+                    "viewName": "FieldMaster",
+                    "viewLevel": 1
+                },
+                "validationRules": {
+                    "viewName": "FieldMaster",
+                    "viewLevel": 1
+                },
+                "bpCategories": {
+                    "viewName": "FieldMaster",
+                    "viewLevel": 1
+                },
+                "accountGroups": {
+                    "viewName": "FieldMaster",
+                    "viewLevel": 1
+                },
+                "releaseCodes": {
+                    "viewName": "FieldMaster",
+                    "viewLevel": 1
+                },
+                "releaseStrategies": {
+                    "viewName": "FieldMaster",
+                    "viewLevel": 1
+                },
+                "myRequests": {
+                    "viewName": "FieldMaster",
+                    "viewLevel": 1
+                },
+                "approvalInbox": {
+                    "viewName": "FieldMaster",
+                    "viewLevel": 1
+                }
+            }
+        }
+    }
+}
