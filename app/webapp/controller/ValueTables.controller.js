@@ -2,189 +2,163 @@ sap.ui.define([
     "sap/ui/core/mvc/Controller",
     "sap/ui/model/Filter",
     "sap/ui/model/FilterOperator",
-    "sap/ui/model/Sorter",
     "sap/ui/model/json/JSONModel",
     "sap/m/MessageToast",
     "sap/m/MessageBox",
     "sap/m/ActionSheet",
     "sap/m/Button"
 ], function (
-    Controller, Filter, FilterOperator, Sorter,
+    Controller, Filter, FilterOperator,
     JSONModel, MessageToast, MessageBox, ActionSheet, Button
 ) {
     "use strict";
 
-    return Controller.extend("mdm.portal.controller.BPRoles", {
+    return Controller.extend("mdm.portal.controller.ValueTables", {
 
+        // ── Lifecycle ────────────────────────────────────────────────
         onInit: function () {
             var oUiModel = new JSONModel({
                 totalCount  : 0,
-                fieldCounts : {},
-                prereqCounts: {}
+                usedByCounts: {}    // { valueTableId: fieldCount }
             });
             this.getView().setModel(oUiModel, "ui");
 
-            var oFiltersModel = new JSONModel({ masterDataTypes: [{ key: "", text: "All types" }] });
-            this.getView().setModel(oFiltersModel, "filters");
-            this._loadMasterDataTypes(oFiltersModel);
-            this._loadCounts();
+            // Pre-load how many fields use each value table
+            this._loadUsedByCounts();
 
             var oRouter = this.getOwnerComponent().getRouter();
-            oRouter.getRoute("bpRoles").attachPatternMatched(this._onRouteMatched, this);
+            oRouter.getRoute("valueTables").attachPatternMatched(this._onRouteMatched, this);
         },
 
-        _loadMasterDataTypes: function (oFiltersModel) {
-            var oModel = this.getOwnerComponent().getModel();
-            oModel.bindList("/MasterDataTypes", null, [new Sorter("sequence")])
-                .requestContexts(0, 50)
-                .then(function (aCtx) {
-                    var aItems = [{ key: "", text: "All types" }];
-                    aCtx.forEach(function (c) {
-                        aItems.push({ key: c.getProperty("master_data_type_id"), text: c.getProperty("description") });
-                    });
-                    oFiltersModel.setProperty("/masterDataTypes", aItems);
-                });
-        },
-
-        _loadCounts: function () {
+        // ── Used-by counts (fields per value table) ──────────────────
+        _loadUsedByCounts: function () {
             var oModel   = this.getOwnerComponent().getModel();
             var oUiModel = this.getView().getModel("ui");
-
-            oModel.bindList("/BPRoleFields", null, null, null, {
-                $select: "role_role_id,field_field_id"
+            oModel.bindList("/FieldMasters", null, null, null, {
+                $select: "field_id,value_table_value_table_id"
             }).requestContexts(0, Infinity).then(function (aCtx) {
                 var oCounts = {};
                 aCtx.forEach(function (c) {
-                    var sRole = c.getProperty("role_role_id");
-                    if (sRole) { oCounts[sRole] = (oCounts[sRole] || 0) + 1; }
+                    var sVt = c.getProperty("value_table_value_table_id");
+                    if (sVt) { oCounts[sVt] = (oCounts[sVt] || 0) + 1; }
                 });
-                oUiModel.setProperty("/fieldCounts", oCounts);
-            }).catch(function () {});
-
-            oModel.bindList("/BPRolePrereqFields", null, null, null, {
-                $select: "role_role_id,field_field_id"
-            }).requestContexts(0, Infinity).then(function (aCtx) {
-                var oCounts = {};
-                aCtx.forEach(function (c) {
-                    var sRole = c.getProperty("role_role_id");
-                    if (sRole) { oCounts[sRole] = (oCounts[sRole] || 0) + 1; }
-                });
-                oUiModel.setProperty("/prereqCounts", oCounts);
-            }).catch(function () {});
+                oUiModel.setProperty("/usedByCounts", oCounts);
+            }).catch(function () {
+                // decorative — ignore errors
+            });
         },
 
         _onRouteMatched: function () {
-            var oTable = this.byId("roleTable");
+            var oTable = this.byId("valueTable");
             if (!oTable) { return; }
             var oBinding = oTable.getBinding("items");
             if (oBinding) {
                 oBinding.attachEventOnce("dataReceived", this._onDataReceived, this);
+                // Re-read so edits made on the detail page show on return
                 oBinding.refresh();
             } else {
                 this.getView().attachEventOnce("afterRendering", function () {
-                    var oB = this.byId("roleTable").getBinding("items");
-                    if (oB) { oB.attachEventOnce("dataReceived", this._onDataReceived, this); }
+                    var oB = this.byId("valueTable").getBinding("items");
+                    if (oB) {
+                        oB.attachEventOnce("dataReceived", this._onDataReceived, this);
+                    }
                 }, this);
             }
         },
 
+        // ── Data received — counts ───────────────────────────────────
         _onDataReceived: function () {
-            var oBinding = this.byId("roleTable").getBinding("items");
+            var oBinding = this.byId("valueTable").getBinding("items");
             if (!oBinding) { return; }
+
             var oHeaderCtx = oBinding.getHeaderContext && oBinding.getHeaderContext();
             if (oHeaderCtx) {
                 oHeaderCtx.requestProperty("$count").then(function (iTotal) {
-                    this.byId("tableTitle").setText("BP Roles (" + (iTotal || 0) + ")");
+                    this.byId("tableTitle").setText("Value Tables (" + (iTotal || 0) + ")");
                     this.getView().getModel("ui").setProperty("/totalCount", iTotal || 0);
                 }.bind(this));
             }
-            this._loadCounts();
+            // Refresh used-by counts (a field's value-table link may have changed)
+            this._loadUsedByCounts();
         },
 
-        formatYesNo: function (vVal) {
-            return this._truthy(vVal) ? "Yes" : "No";
-        },
-        formatActiveText: function (vActive) {
-            return this._truthy(vActive) ? "Active" : "Inactive";
-        },
-        formatActiveState: function (vActive) {
-            return this._truthy(vActive) ? "Success" : "Error";
-        },
-        _truthy: function (v) {
-            if (typeof v === "string") {
-                var s = v.trim().toLowerCase();
-                return (s === "yes" || s === "true" || s === "1" || s === "active" || s === "x");
-            }
-            return v === true || v === 1;
-        },
-        formatCount: function (sRoleId, oCounts) {
-            if (!sRoleId || !oCounts) { return "0"; }
-            var iCount = oCounts[sRoleId];
-            return (iCount === undefined || iCount === null) ? "0" : String(iCount);
+        // ── Formatter: "Used By" count text ──────────────────────────
+        formatUsedBy: function (sVtId, oCounts) {
+            if (!sVtId || !oCounts) { return "\u2014"; }
+            var iCount = oCounts[sVtId];
+            if (iCount === undefined || iCount === null) { return "\u2014"; }
+            return iCount + " field" + (iCount === 1 ? "" : "s");
         },
 
+        // ── Filters ──────────────────────────────────────────────────
         onFilterLiveChange: function () { this._applyFilters(); },
         onFilterChange    : function () { this._applyFilters(); },
         onGo              : function () { this._applyFilters(); },
 
         _applyFilters: function () {
             var sSearch = this.byId("filterSearch").getValue();
-            var sMDT    = this.byId("filterMDT").getSelectedKey();
+            var sSource = this.byId("filterSourceTable").getValue();
             var sStatus = this.byId("filterStatus").getSelectedKey();
 
             var aFilters = [];
+
             if (sSearch) {
                 aFilters.push(new Filter({
                     filters: [
-                        new Filter("role_id",     FilterOperator.Contains, sSearch),
-                        new Filter("description", FilterOperator.Contains, sSearch)
+                        new Filter("value_table_id", FilterOperator.Contains, sSearch),
+                        new Filter("description",    FilterOperator.Contains, sSearch)
                     ],
                     and: false
                 }));
             }
-            if (sMDT) {
-                aFilters.push(new Filter("master_data_type_master_data_type_id", FilterOperator.EQ, sMDT));
+            if (sSource) {
+                aFilters.push(new Filter("source_table", FilterOperator.Contains, sSource));
             }
-            if (sStatus !== "") {
-                aFilters.push(new Filter("active", FilterOperator.EQ, sStatus === "true"));
+            if (sStatus) {
+                aFilters.push(new Filter("status", FilterOperator.EQ, sStatus));
             }
 
-            var oBinding = this.byId("roleTable").getBinding("items");
+            var oBinding = this.byId("valueTable").getBinding("items");
             if (!oBinding) { return; }
-            oBinding.filter(aFilters.length ? [new Filter({ filters: aFilters, and: true })] : []);
+            oBinding.filter(
+                aFilters.length ? [new Filter({ filters: aFilters, and: true })] : []
+            );
             oBinding.attachEventOnce("dataReceived", this._onDataReceived, this);
         },
 
         onClearFilters: function () {
             this.byId("filterSearch").setValue("");
-            this.byId("filterMDT").setSelectedKey("");
+            this.byId("filterSourceTable").setValue("");
             this.byId("filterStatus").setSelectedKey("");
-            var oBinding = this.byId("roleTable").getBinding("items");
+            var oBinding = this.byId("valueTable").getBinding("items");
             if (oBinding) {
                 oBinding.filter([]);
                 oBinding.attachEventOnce("dataReceived", this._onDataReceived, this);
             }
         },
 
+        // ── Multi-select toolbar ─────────────────────────────────────
         onSelectionChange: function () {
-            var bHas = this.byId("roleTable").getSelectedItems().length > 0;
+            var bHas = this.byId("valueTable").getSelectedItems().length > 0;
             this.byId("bulkActivateBtn").setVisible(bHas);
             this.byId("bulkDeleteBtn").setVisible(bHas);
             this.byId("bulkSeparator").setVisible(bHas);
         },
 
         onBulkActivate: function () {
-            var aSelected = this.byId("roleTable").getSelectedItems();
+            var aSelected = this.byId("valueTable").getSelectedItems();
             if (!aSelected.length) { return; }
-            MessageBox.confirm("Activate " + aSelected.length + " role(s)?", {
+            MessageBox.confirm("Activate " + aSelected.length + " value table(s)?", {
                 title  : "Confirm Activation",
                 onClose: function (sAction) {
                     if (sAction === MessageBox.Action.OK) {
                         var aPromises = aSelected.map(function (oItem) {
-                            return oItem.getBindingContext().setProperty("active", true);
+                            return oItem.getBindingContext().setProperty("status", "ACTIVE");
                         });
                         Promise.all(aPromises)
-                            .then(function () { return this.getOwnerComponent().getModel().submitBatch("$auto"); }.bind(this))
+                            .then(function () {
+                                return this.getOwnerComponent().getModel().submitBatch("$auto");
+                            }.bind(this))
                             .then(function () { MessageToast.show("Activated successfully."); })
                             .catch(function (e) { MessageBox.error("Activation failed: " + e.message); });
                     }
@@ -193,9 +167,9 @@ sap.ui.define([
         },
 
         onBulkDelete: function () {
-            var aSelected = this.byId("roleTable").getSelectedItems();
+            var aSelected = this.byId("valueTable").getSelectedItems();
             if (!aSelected.length) { return; }
-            MessageBox.confirm("Delete " + aSelected.length + " role(s)? This cannot be undone.", {
+            MessageBox.confirm("Delete " + aSelected.length + " value table(s)? This cannot be undone.", {
                 title  : "Confirm Deletion",
                 onClose: function (sAction) {
                     if (sAction === MessageBox.Action.OK) {
@@ -210,9 +184,11 @@ sap.ui.define([
             });
         },
 
+        // ── Row context menu ─────────────────────────────────────────
         onRowMenuPress: function (oEvent) {
             var oButton = oEvent.getSource();
-            this._oMenuCtx = oButton.getBindingContext();
+            var oCtx    = oButton.getBindingContext();
+
             if (!this._oActionSheet) {
                 this._oActionSheet = new ActionSheet({
                     buttons: [
@@ -223,51 +199,65 @@ sap.ui.define([
                 });
                 this.getView().addDependent(this._oActionSheet);
             }
+            this._oMenuCtx = oCtx;
             this._oActionSheet.openBy(oButton);
         },
 
         _onMenuEdit: function () {
-            var sId = this._oMenuCtx.getProperty("role_id");
-            this.getOwnerComponent().getRouter().navTo("bpRoleDetail", { roleId: encodeURIComponent(sId) });
+            var sId = this._oMenuCtx.getProperty("value_table_id");
+            this.getOwnerComponent().getRouter().navTo("valueTableDetail", {
+                valueTableId: encodeURIComponent(sId)
+            });
         },
 
         _onMenuDeactivate: function () {
-            this._oMenuCtx.setProperty("active", false);
+            this._oMenuCtx.setProperty("status", "INACTIVE");
             this.getOwnerComponent().getModel().submitBatch("$auto")
-                .then(function () { MessageToast.show("Role deactivated."); })
+                .then(function () { MessageToast.show("Value table deactivated."); })
                 .catch(function (e) { MessageBox.error("Failed: " + e.message); });
         },
 
+        // ── Navigation ───────────────────────────────────────────────
         onLinkPress: function (oEvent) {
-            var sId = oEvent.getSource().getBindingContext().getProperty("role_id");
-            this.getOwnerComponent().getRouter().navTo("bpRoleDetail", { roleId: encodeURIComponent(sId) });
+            var sId = oEvent.getSource().getBindingContext().getProperty("value_table_id");
+            this.getOwnerComponent().getRouter().navTo("valueTableDetail", {
+                valueTableId: encodeURIComponent(sId)
+            });
         },
 
         onRowPress: function (oEvent) {
-            var sId = oEvent.getSource().getBindingContext().getProperty("role_id");
-            this.getOwnerComponent().getRouter().navTo("bpRoleDetail", { roleId: encodeURIComponent(sId) });
+            var sId = oEvent.getSource().getBindingContext().getProperty("value_table_id");
+            this.getOwnerComponent().getRouter().navTo("valueTableDetail", {
+                valueTableId: encodeURIComponent(sId)
+            });
         },
 
         onAdd: function () {
-            this.getOwnerComponent().getRouter().navTo("bpRoleDetail", { roleId: "NEW" });
+            this.getOwnerComponent().getRouter().navTo("valueTableDetail", { valueTableId: "NEW" });
         },
 
+        // ── Export ───────────────────────────────────────────────────
         onExport: function () {
-            var oBinding = this.byId("roleTable").getBinding("items");
+            var oBinding = this.byId("valueTable").getBinding("items");
             if (!oBinding) { return; }
             oBinding.requestContexts(0, oBinding.getLength()).then(function (aCtx) {
                 var aData = aCtx.map(function (oCtx) {
                     return {
-                        "Role ID"            : oCtx.getProperty("role_id"),
-                        "Description"        : oCtx.getProperty("description"),
-                        "Master Data Type"   : oCtx.getProperty("master_data_type/description"),
-                        "Initial BP Required": oCtx.getProperty("initial_bp_required") ? "Yes" : "No",
-                        "Sequence"           : oCtx.getProperty("sequence"),
-                        "Active"             : oCtx.getProperty("active") ? "Yes" : "No"
+                        "Table ID"    : oCtx.getProperty("value_table_id"),
+                        "Description" : oCtx.getProperty("description"),
+                        "Source Table": oCtx.getProperty("source_table"),
+                        "Output Key"  : oCtx.getProperty("output_key"),
+                        "Output Desc" : oCtx.getProperty("output_desc") || "",
+                        "Input 1"     : oCtx.getProperty("input_1") || "",
+                        "Input 2"     : oCtx.getProperty("input_2") || "",
+                        "Input 3"     : oCtx.getProperty("input_3") || "",
+                        "Status"      : oCtx.getProperty("status")
                     };
                 });
-                this._downloadCSV(aData, "bp-roles.csv");
-            }.bind(this)).catch(function (e) { MessageBox.error("Export failed: " + e.message); });
+                this._downloadCSV(aData, "value-tables.csv");
+            }.bind(this)).catch(function (e) {
+                MessageBox.error("Export failed: " + e.message);
+            });
         },
 
         _downloadCSV: function (aData, sFilename) {

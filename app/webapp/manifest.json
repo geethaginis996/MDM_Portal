@@ -35,7 +35,7 @@
         "resources": {
             "css": [
                 {
-                    "uri": "css/sidebar.css"
+                    "uri": "css/Sidebar.css"
                 }
             ]
         },
@@ -62,7 +62,7 @@
                     "synchronizationMode": "None",
                     "operationMode": "Server",
                     "autoExpandSelect": true,
-                    "groupId": "$direct"
+                    "groupId": "$auto"
                 }
             },
             "i18n": {
@@ -100,9 +100,44 @@
                     "target": "fieldMasterDetail"
                 },
                 {
+                    "name": "fieldGroups",
+                    "pattern": "fieldgroups",
+                    "target": "fieldGroups"
+                },
+                {
+                    "name": "fieldGroupDetail",
+                    "pattern": "fieldgroups/{groupId}",
+                    "target": "fieldGroupDetail"
+                },
+                {
+                    "name": "valueTables",
+                    "pattern": "valuetables",
+                    "target": "valueTables"
+                },
+                {
+                    "name": "valueTableDetail",
+                    "pattern": "valuetables/{valueTableId}",
+                    "target": "valueTableDetail"
+                },
+                {
+                    "name": "validationRules",
+                    "pattern": "validationrules",
+                    "target": "validationRules"
+                },
+                {
+                    "name": "validationRuleDetail",
+                    "pattern": "validationrules/{validationId}",
+                    "target": "validationRuleDetail"
+                },
+                {
                     "name": "bpRoles",
                     "pattern": "bproles",
                     "target": "bpRoles"
+                },
+                {
+                    "name": "bpRoleDetail",
+                    "pattern": "bproles/{roleId}",
+                    "target": "bpRoleDetail"
                 }
             ],
             "targets": {
@@ -114,20 +149,24 @@
                     "viewName": "FieldMasterDetail",
                     "viewLevel": 2
                 },
+                "fieldGroups": {
+                    "viewName": "FieldGroups",
+                    "viewLevel": 1
+                },
+                "fieldGroupDetail": {
+                    "viewName": "FieldGroupDetail",
+                    "viewLevel": 2
+                },
                 "bpRoles": {
                     "viewName": "BPRoles",
                     "viewLevel": 1
                 },
-                "fieldGroups": {
-                    "viewName": "FieldMaster",
-                    "viewLevel": 1
-                },
                 "valueTables": {
-                    "viewName": "FieldMaster",
+                    "viewName": "ValueTables",
                     "viewLevel": 1
                 },
                 "validationRules": {
-                    "viewName": "FieldMaster",
+                    "viewName": "ValidationRules",
                     "viewLevel": 1
                 },
                 "bpCategories": {
@@ -153,6 +192,18 @@
                 "approvalInbox": {
                     "viewName": "FieldMaster",
                     "viewLevel": 1
+                },
+                "valueTableDetail": {
+                    "viewName": "ValueTableDetail",
+                    "viewLevel": 2
+                },
+                "validationRuleDetail": {
+                    "viewName": "ValidationRuleDetail",
+                    "viewLevel": 2
+                },
+                "bpRoleDetail": {
+                    "viewName": "BPRoleDetail",
+                    "viewLevel": 2
                 }
             }
         }

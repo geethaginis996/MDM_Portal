@@ -1,0 +1,9 @@
+role_role_id,field_field_id,field_status,sequence,default_value,read_only
+FLVN01,NAME1,REQUIRED,10,,false
+FLVN01,NAME2,OPTIONAL,20,,false
+FLVN01,BUKRS,REQUIRED,30,,false
+FLVN01,BANKL,OPTIONAL,40,,false
+FLCU01,NAME1,REQUIRED,10,,false
+FLCU01,BUKRS,REQUIRED,20,,false
+BUP001,PARTNER,REQUIRED,10,,false
+BUP001,NAME1,REQUIRED,20,,false

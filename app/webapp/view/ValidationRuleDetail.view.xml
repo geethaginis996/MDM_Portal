@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mvc:View
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core"
+    xmlns:l="sap.ui.layout"
+    controllerName="mdm.portal.controller.ValidationRuleDetail"
+    displayBlock="true">
+
+    <Page id="detailPage" showHeader="false">
+
+        <content>
+            <!-- Top bar with breadcrumb -->
+            <VBox>
+                <Bar class="sapMPageHeader">
+                    <contentLeft>
+                        <Button icon="sap-icon://nav-back" type="Transparent" press=".onNavBack"/>
+                        <Breadcrumbs id="pageBreadcrumb" separatorStyle="Slash" class="sapUiTinyMarginBegin">
+                            <Link text="Configuration" press=".onNavBack"/>
+                            <Link text="Validation Rules" press=".onNavBack"/>
+                        </Breadcrumbs>
+                    </contentLeft>
+                </Bar>
+            </VBox>
+
+            <!-- Page heading -->
+            <VBox class="sapUiMediumMarginBeginEnd sapUiSmallMarginTop">
+                <HBox alignItems="Center">
+                    <core:Icon src="sap-icon://validate" size="2rem" color="Accent8"
+                               class="sapUiSmallMarginEnd"/>
+                    <VBox>
+                        <Title id="pageTitle" text="" level="H2" wrapping="false"/>
+                        <Text id="pageSubtitle" text="" class="sapUiTinyMarginTop"
+                              style="color: var(--sapContent_LabelColor); font-size: 0.875rem;"/>
+                    </VBox>
+                </HBox>
+
+                <HBox wrap="Wrap" class="sapUiSmallMarginTop" alignItems="Center">
+                    <ObjectAttribute id="attrTrigger" title="Trigger" text=""/>
+                    <Text text="\u00b7" class="sapUiTinyMarginBegin sapUiTinyMarginEnd"
+                          style="color: var(--sapContent_LabelColor);"/>
+                    <ObjectAttribute id="attrUsage" title="Linked to" text=""/>
+                </HBox>
+            </VBox>
+
+            <HBox class="sapUiTinyMarginTop sapUiMediumMarginBeginEnd">
+                <core:HTML content="&lt;hr style='border:none;border-top:1px solid var(--sapGroup_TitleBorderColor);margin:0 0 0.5rem 0;width:100%'/&gt;"/>
+            </HBox>
+
+            <!-- Icon Tab Bar -->
+            <IconTabBar id="detailTabs" select=".onTabSelect" expanded="true"
+                        class="sapUiResponsiveContentPadding">
+                <items>
+
+                    <!-- TAB 1 - General -->
+                    <IconTabFilter text="General" key="general" icon="sap-icon://hint">
+                        <VBox class="sapUiMediumMarginBeginEnd">
+                            <Title text="General" level="H4"
+                                   class="sapUiSmallMarginTop sapUiSmallMarginBottom"/>
+                            <l:Grid defaultSpan="L6 M6 S12" hSpacing="2">
+                                <l:content>
+                                    <VBox>
+                                        <Label text="Validation ID" required="true" labelFor="inId"/>
+                                        <Input id="inId" value="{validation_id}" placeholder="e.g. VAL002"
+                                               editable="{view>/isNew}"
+                                               maxLength="20" liveChange=".onFieldChange"/>
+                                        <Text text="Unique ID in the validation registry."
+                                              style="font-size:0.75rem; color:var(--sapContent_LabelColor);"
+                                              class="sapUiTinyMarginTop"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Function Name" required="true" labelFor="inFunction"/>
+                                        <Input id="inFunction" value="{function_name}" placeholder="e.g. validateBankDetails"
+                                               maxLength="80" liveChange=".onFieldChange"
+                                               showValueHelp="true" valueHelpRequest=".onFunctionValueHelp"/>
+                                        <Text text="Published function in the CAP service layer (srv/validation-service.js)."
+                                              style="font-size:0.75rem; color:var(--sapContent_LabelColor);"
+                                              class="sapUiTinyMarginTop"/>
+                                    </VBox>
+                                    <VBox class="sapUiMediumMarginTop">
+                                        <Label text="Description" labelFor="inDescription"/>
+                                        <TextArea id="inDescription" value="{description}" rows="2" width="100%"
+                                                  placeholder="What does this rule check?"
+                                                  maxLength="100" liveChange=".onFieldChange"/>
+                                    </VBox>
+                                    <VBox/>
+                                    <VBox>
+                                        <Label text="Trigger" required="true" labelFor="selTrigger"/>
+                                        <Select id="selTrigger" width="100%" change=".onFieldChange" forceSelection="false">
+                                            <core:Item key="FIELD" text="On Field Change"/>
+                                            <core:Item key="SAVE"  text="On Save"/>
+                                        </Select>
+                                        <Text text="When this rule runs once attached to a field."
+                                              style="font-size:0.75rem; color:var(--sapContent_LabelColor);"
+                                              class="sapUiTinyMarginTop"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Error Message" required="true" labelFor="inErrorMessage"/>
+                                        <Input id="inErrorMessage" value="{error_message}"
+                                               placeholder="Message shown when validation fails"
+                                               maxLength="200" liveChange=".onFieldChange"/>
+                                    </VBox>
+                                </l:content>
+                            </l:Grid>
+                        </VBox>
+                    </IconTabFilter>
+
+                    <!-- TAB 2 - Input Parameters -->
+                    <IconTabFilter text="Input Parameters" key="params" icon="sap-icon://filter-fields">
+                        <VBox class="sapUiMediumMarginBeginEnd">
+                            <HBox alignItems="Center" class="sapUiSmallMarginTop sapUiSmallMarginBottom">
+                                <Title text="Input Parameters" level="H4"/>
+                                <Text text="Up to 3 parameters mapped to fields at runtime"
+                                      class="sapUiSmallMarginBegin"
+                                      style="font-size:0.75rem; color:var(--sapContent_LabelColor);"/>
+                            </HBox>
+
+                            <HBox alignItems="End" class="sapUiTinyMarginBottom" wrap="Wrap">
+                                <VBox width="3rem" justifyContent="Center" class="sapUiSmallMarginEnd">
+                                    <Text text="P1" style="font-weight:bold; color:var(--sapContent_LabelColor);"/>
+                                </VBox>
+                                <VBox width="22rem" class="sapUiSmallMarginEnd">
+                                    <Label text="Parameter Name"/>
+                                    <Input id="inParam1" value="{input_param_1}" placeholder="optional"
+                                           maxLength="200" liveChange=".onFieldChange"/>
+                                </VBox>
+                            </HBox>
+                            <HBox alignItems="End" class="sapUiTinyMarginBottom" wrap="Wrap">
+                                <VBox width="3rem" justifyContent="Center" class="sapUiSmallMarginEnd">
+                                    <Text text="P2" style="font-weight:bold; color:var(--sapContent_LabelColor);"/>
+                                </VBox>
+                                <VBox width="22rem" class="sapUiSmallMarginEnd">
+                                    <Label text="Parameter Name"/>
+                                    <Input id="inParam2" value="{input_param_2}" placeholder="optional"
+                                           maxLength="200" liveChange=".onFieldChange"/>
+                                </VBox>
+                            </HBox>
+                            <HBox alignItems="End" class="sapUiTinyMarginBottom" wrap="Wrap">
+                                <VBox width="3rem" justifyContent="Center" class="sapUiSmallMarginEnd">
+                                    <Text text="P3" style="font-weight:bold; color:var(--sapContent_LabelColor);"/>
+                                </VBox>
+                                <VBox width="22rem" class="sapUiSmallMarginEnd">
+                                    <Label text="Parameter Name"/>
+                                    <Input id="inParam3" value="{input_param_3}" placeholder="optional"
+                                           maxLength="200" liveChange=".onFieldChange"/>
+                                </VBox>
+                            </HBox>
+
+                            <MessageStrip
+                                text="Parameter names must match the signature of the CAP function. Source fields are resolved from the BP/Material being edited when the validation runs."
+                                type="Information" showIcon="true"
+                                class="sapUiMediumMarginTop"/>
+                        </VBox>
+                    </IconTabFilter>
+
+                    <!-- TAB 3 - Linked Fields -->
+                    <IconTabFilter id="tabUsage" text="Linked Fields" key="usage"
+                                   count="{ui>/usageCount}" icon="sap-icon://connected">
+                        <VBox>
+                            <Toolbar class="sapUiSmallMarginTop">
+                                <Title text="Fields Using This Validation" level="H4"/>
+                                <ToolbarSpacer/>
+                            </Toolbar>
+                            <Table id="usageTable" noDataText="Not linked to any field yet."
+                                   fixedLayout="true" alternateRowColors="true"
+                                   items="{usage>/items}">
+                                <columns>
+                                    <Column width="8rem"><Label text="Field Name" design="Bold"/></Column>
+                                    <Column><Label text="Description" design="Bold"/></Column>
+                                    <Column width="7rem"><Label text="Main Group" design="Bold"/></Column>
+                                    <Column width="7rem"><Label text="Sub Group" design="Bold"/></Column>
+                                    <Column width="6rem"><Label text="Data Type" design="Bold"/></Column>
+                                    <Column width="5rem" hAlign="Center"><Label text="Status" design="Bold"/></Column>
+                                </columns>
+                                <items>
+                                    <ColumnListItem type="Active" press=".onUsageRowPress">
+                                        <cells>
+                                            <Link text="{usage>field_id}" press=".onUsageLinkPress" wrapping="false"/>
+                                            <Text text="{usage>description}" wrapping="false"/>
+                                            <Text text="{= ${usage>main_group} ? ${usage>main_group} : '\u2014'}" wrapping="false"/>
+                                            <Text text="{= ${usage>sub_group} ? ${usage>sub_group} : '\u2014'}" wrapping="false"/>
+                                            <Text text="{usage>data_type}" wrapping="false"/>
+                                            <ObjectStatus text="{= ${usage>active} ? 'Active' : 'Inactive'}"
+                                                state="{= ${usage>active} ? 'Success' : 'Error'}"/>
+                                        </cells>
+                                    </ColumnListItem>
+                                </items>
+                            </Table>
+                        </VBox>
+                    </IconTabFilter>
+
+                </items>
+            </IconTabBar>
+        </content>
+
+        <footer>
+            <OverflowToolbar>
+                <ToolbarSpacer/>
+                <Button id="btnCopy" text="Copy" icon="sap-icon://copy"
+                        type="Transparent" press=".onCopy"/>
+                <Button id="btnCancel" text="Cancel" type="Default" press=".onCancel"/>
+                <Button id="btnSave" text="Save" type="Emphasized" press=".onSave"/>
+            </OverflowToolbar>
+        </footer>
+
+    </Page>
+</mvc:View>

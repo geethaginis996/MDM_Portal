@@ -341,8 +341,8 @@
                                     coloured text label — compact and professional.
                                 -->
                                 <ObjectStatus
-                                    text="{= ${active} ? 'Active' : 'Inactive'}"
-                                    state="{= ${active} ? 'Success' : 'Error'}"/>
+                                    text="{path: 'active', formatter: '.formatActiveText'}"
+                                    state="{path: 'active', formatter: '.formatActiveState'}"/>
 
                                 <Button icon="sap-icon://slim-arrow-right"
                                         type="Transparent"

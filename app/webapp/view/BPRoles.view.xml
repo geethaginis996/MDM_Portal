@@ -1,10 +1,174 @@
-<mvc:View xmlns:mvc="sap.ui.core.mvc"
-          xmlns="sap.m"
-          controllerName="mdm.portal.controller.BPRoles"
-          displayBlock="true">
-    <Page title="BP Roles" showNavButton="false">
-        <content>
-            <MessageStrip text="BP Roles screen — coming soon" type="Information" showIcon="true" class="sapUiMediumMargin"/>
-        </content>
-    </Page>
+<?xml version="1.0" encoding="UTF-8"?>
+<mvc:View
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:f="sap.f"
+    xmlns:core="sap.ui.core"
+    xmlns:l="sap.ui.layout"
+    controllerName="mdm.portal.controller.BPRoles"
+    displayBlock="true">
+
+    <f:DynamicPage id="bpRolesPage" fitContent="true"
+        toggleHeaderOnTitleClick="true" preserveHeaderStateOnScroll="false"
+        class="sapUiSizeCondensed sapMDMFieldMasterPage">
+
+        <f:title>
+            <f:DynamicPageTitle>
+                <f:heading>
+                    <VBox>
+                        <Title text="BP Roles" level="H2" wrapping="false"/>
+                        <HBox class="sapUiTinyMarginTop">
+                            <ObjectStatus id="countTotal" text="{ui>/totalCount} roles configured"
+                                          state="Information"/>
+                        </HBox>
+                    </VBox>
+                </f:heading>
+                <f:snappedHeading>
+                    <Title text="BP Roles" level="H3" wrapping="false"/>
+                </f:snappedHeading>
+                <f:actions>
+                    <OverflowToolbar style="Clear">
+                        <Button id="exportBtn" text="Export" icon="sap-icon://download"
+                                type="Transparent" press=".onExport">
+                            <layoutData><OverflowToolbarLayoutData priority="Low" overflowText="Export"/></layoutData>
+                        </Button>
+                        <Button id="addBtn" text="New Role" icon="sap-icon://add"
+                                type="Emphasized" press=".onAdd">
+                            <layoutData><OverflowToolbarLayoutData priority="NeverOverflow"/></layoutData>
+                        </Button>
+                    </OverflowToolbar>
+                </f:actions>
+            </f:DynamicPageTitle>
+        </f:title>
+
+        <f:header>
+            <f:DynamicPageHeader pinnable="true" backgroundDesign="Translucent">
+                <VBox>
+                    <l:Grid defaultSpan="XL4 L4 M6 S12" hSpacing="1" vSpacing="0.5"
+                            class="sapUiSmallMarginTopBottom">
+                        <l:content>
+                            <VBox>
+                                <Label text="Role ID / Description" labelFor="filterSearch" design="Bold"/>
+                                <Input id="filterSearch" placeholder="Search…" showClearIcon="true"
+                                       width="100%" liveChange=".onFilterLiveChange"/>
+                            </VBox>
+                        </l:content>
+                        <l:content>
+                            <VBox>
+                                <Label text="Master Data Type" labelFor="filterMDT" design="Bold"/>
+                                <Select id="filterMDT" width="100%" change=".onFilterChange"
+                                        forceSelection="false"
+                                        items="{path: 'filters>/masterDataTypes'}">
+                                    <core:ListItem key="{filters>key}" text="{filters>text}"/>
+                                </Select>
+                            </VBox>
+                        </l:content>
+                        <l:content>
+                            <VBox>
+                                <Label text="Status" labelFor="filterStatus" design="Bold"/>
+                                <Select id="filterStatus" width="100%" change=".onFilterChange" forceSelection="false">
+                                    <core:Item key="" text="All"/>
+                                    <core:Item key="true" text="Active"/>
+                                    <core:Item key="false" text="Inactive"/>
+                                </Select>
+                            </VBox>
+                        </l:content>
+                    </l:Grid>
+
+                    <!-- Filter actions in a full-width toolbar: the ToolbarSpacer
+                         pushes the buttons right without any grid-column math, so
+                         they can never be clipped at the page edge. -->
+                    <Toolbar style="Clear" class="sapUiSmallMarginTop">
+                        <ToolbarSpacer/>
+                        <Button text="Clear" type="Transparent" press=".onClearFilters"/>
+                        <Button text="Go" type="Emphasized" press=".onGo"/>
+                    </Toolbar>
+                </VBox>
+            </f:DynamicPageHeader>
+        </f:header>
+
+        <f:content>
+            <VBox>
+                <MessageStrip id="pageMessageStrip" text="" type="Information"
+                              showCloseButton="true" visible="false"
+                              class="sapUiSmallMarginBegin sapUiSmallMarginEnd sapUiSmallMarginTop"/>
+
+                <Table id="roleTable"
+                    items="{
+                        path: '/BPRoles',
+                        parameters: {
+                            $count: true,
+                            $expand: 'master_data_type($select=master_data_type_id,description)',
+                            $select: 'role_id,description,initial_bp_required,sequence,active,master_data_type_master_data_type_id',
+                            $orderby: 'sequence asc,role_id asc'
+                        }
+                    }"
+                    growing="true" growingThreshold="50" growingScrollToLoad="true"
+                    noDataText="No BP roles found"
+                    mode="MultiSelect" fixedLayout="true" alternateRowColors="true"
+                    sticky="ColumnHeaders,HeaderToolbar"
+                    selectionChange=".onSelectionChange"
+                    class="sapMDMFormalTable">
+
+                    <headerToolbar>
+                        <OverflowToolbar id="tableToolbar" style="Clear">
+                            <Title id="tableTitle" text="BP Roles" level="H3"/>
+                            <ToolbarSpacer/>
+                            <Button id="bulkActivateBtn" text="Activate" icon="sap-icon://accept"
+                                    type="Success" visible="false" press=".onBulkActivate">
+                                <layoutData><OverflowToolbarLayoutData priority="NeverOverflow"/></layoutData>
+                            </Button>
+                            <Button id="bulkDeleteBtn" text="Delete" icon="sap-icon://delete"
+                                    type="Negative" visible="false" press=".onBulkDelete">
+                                <layoutData><OverflowToolbarLayoutData priority="NeverOverflow"/></layoutData>
+                            </Button>
+                            <ToolbarSeparator id="bulkSeparator" visible="false"/>
+                        </OverflowToolbar>
+                    </headerToolbar>
+
+                    <columns>
+                        <Column id="colId"        width="7rem"  vAlign="Middle" importance="High">
+                            <Label text="BP Role ID" design="Bold"/></Column>
+                        <Column id="colDesc"      width="11rem" vAlign="Middle" importance="High">
+                            <Label text="Description" design="Bold"/></Column>
+                        <Column id="colMDT"       width="8rem"  vAlign="Middle" importance="Medium">
+                            <Label text="Master Data Type" design="Bold"/></Column>
+                        <Column id="colInitBP"    width="7rem"  vAlign="Middle" hAlign="Center" importance="Medium">
+                            <Label text="Initial BP Required" design="Bold"/></Column>
+                        <Column id="colPrereq"    width="7rem"  vAlign="Middle" hAlign="Center" importance="Low">
+                            <Label text="Prerequisite Fields" design="Bold"/></Column>
+                        <Column id="colAssigned"  width="6rem"  vAlign="Middle" hAlign="Center" importance="Medium">
+                            <Label text="Assigned Fields" design="Bold"/></Column>
+                        <Column id="colStatus"    width="5rem"  vAlign="Middle" hAlign="Center" importance="High">
+                            <Label text="Status" design="Bold"/></Column>
+                        <Column id="colActions"   width="3rem"  vAlign="Middle" hAlign="End" importance="High"/>
+                    </columns>
+
+                    <items>
+                        <ColumnListItem type="Active" press=".onRowPress">
+                            <cells>
+                                <Link text="{role_id}" press=".onLinkPress" wrapping="false"/>
+                                <Text text="{description}" wrapping="false" maxLines="1"/>
+                                <Text text="{master_data_type/description}" wrapping="false"/>
+                                <ObjectStatus
+                                    text="{path: 'initial_bp_required', formatter: '.formatYesNo'}"
+                                    state="None"/>
+                                <ObjectStatus
+                                    text="{parts: [{path: 'role_id'}, {path: 'ui>/prereqCounts'}], formatter: '.formatCount'}"
+                                    state="None"/>
+                                <ObjectStatus
+                                    text="{parts: [{path: 'role_id'}, {path: 'ui>/fieldCounts'}], formatter: '.formatCount'}"
+                                    state="None"/>
+                                <ObjectStatus
+                                    text="{path: 'active', formatter: '.formatActiveText'}"
+                                    state="{path: 'active', formatter: '.formatActiveState'}"/>
+                                <Button icon="sap-icon://overflow" type="Transparent"
+                                        tooltip="More actions" press=".onRowMenuPress"/>
+                            </cells>
+                        </ColumnListItem>
+                    </items>
+                </Table>
+            </VBox>
+        </f:content>
+    </f:DynamicPage>
 </mvc:View>

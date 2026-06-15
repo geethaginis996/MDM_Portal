@@ -1,0 +1,3 @@
+role_role_id,prerequisite_role_role_id,auto_pull
+FLCU01,BUP001,true
+FLVN01,BUP001,true

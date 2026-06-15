@@ -58,6 +58,9 @@ sap.ui.define([
             if (oBinding) {
                 // Subsequent route matches — binding already exists
                 oBinding.attachEventOnce("dataReceived", this._updateCount, this);
+                // Re-read from the server so edits saved on the detail page
+                // (status changes, new fields) appear when returning to the list.
+                oBinding.refresh();
             } else {
                 // First route match — wait for view to finish rendering
                 this.getView().attachEventOnce("afterRendering", function () {
@@ -191,6 +194,23 @@ sap.ui.define([
 
         // ── Filters ──────────────────────────────────────────────────────
         onFilterLiveChange: function () { this._applyFilters(); },
+        // ── Formatters: active status ────────────────────────────────
+        // Data may deliver 'active' as: "Yes"/"No", true/false, 1/0,
+        // or "true"/"false". Normalise all of them.
+        formatActiveText: function (vActive) {
+            return this._isActive(vActive) ? "Active" : "Inactive";
+        },
+        formatActiveState: function (vActive) {
+            return this._isActive(vActive) ? "Success" : "Error";
+        },
+        _isActive: function (vActive) {
+            if (typeof vActive === "string") {
+                var s = vActive.trim().toLowerCase();
+                return (s === "yes" || s === "true" || s === "1" || s === "active" || s === "x");
+            }
+            return vActive === true || vActive === 1;
+        },
+
         onFilterChange    : function () { this._applyFilters();},
         onGo              : function () { this._applyFilters(); },
 
@@ -324,8 +344,18 @@ _applyFilters: function () {
         },
 
         onFieldLinkPress: function (oEvent) {
-            oEvent.stopPropagation();
-            var oCtx = oEvent.getSource().getBindingContext();
+            // NOTE: sap.ui.base.Event has no stopPropagation(); that is a DOM
+            // method. The row's own press fires separately and navigates to the
+            // same place, so no propagation control is needed here.
+            var oSrc = oEvent.getSource();
+            var oCtx = oSrc.getBindingContext();
+            if (!oCtx) {
+                var oParent = oSrc.getParent();
+                while (oParent && !oCtx) {
+                    oCtx = oParent.getBindingContext && oParent.getBindingContext();
+                    oParent = oParent.getParent && oParent.getParent();
+                }
+            }
             if (!oCtx) { return; }
             this.getOwnerComponent().getRouter().navTo("fieldMasterDetail", {
                 fieldId: encodeURIComponent(oCtx.getProperty("field_id"))
@@ -341,7 +371,6 @@ _applyFilters: function () {
         },
 
         onRowMenuPress: function (oEvent) {
-            oEvent.stopPropagation();
             var oButton = oEvent.getSource();
             if (!this._oActionSheet) {
                 this._oActionSheet = new ActionSheet({

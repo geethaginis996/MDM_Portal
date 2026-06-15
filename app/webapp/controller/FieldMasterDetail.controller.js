@@ -231,7 +231,9 @@ sap.ui.define(
                 ? aResults[1][0].getProperty("display_type_id")
                 : "";
 
-              var oContext = oModel.bindList("/FieldMasters").create({
+              var oContext = oModel.bindList("/FieldMasters", null, [], [], {
+                $$updateGroupId: "fieldMasterUpdate"
+              }).create({
                 field_id: "",
                 description: "",
                 data_type: sDefaultDataType,
@@ -249,7 +251,9 @@ sap.ui.define(
           )
           .catch(
             function () {
-              var oContext = oModel.bindList("/FieldMasters").create({
+              var oContext = oModel.bindList("/FieldMasters", null, [], [], {
+                $$updateGroupId: "fieldMasterUpdate"
+              }).create({
                 field_id: "",
                 description: "",
                 data_type: "",
@@ -443,23 +447,43 @@ sap.ui.define(
 
         this._oViewModel.setProperty("/busy", true);
 
+        var bIsNew = this._oViewModel.getProperty("/isNew");
+        var oCtx   = this.getView().getBindingContext();
+
+        // field_id is the key and is two-way bound; ensure it is set for new records
+        if (oCtx && bIsNew) {
+          oCtx.setProperty("field_id", sFieldId);
+        }
+
         this.getView()
           .getModel()
           .submitBatch("fieldMasterUpdate")
           .then(
             function () {
+              if (bIsNew && oCtx && oCtx.created) {
+                return oCtx.created().then(function () { return true; });
+              }
+              return false;
+            }
+          )
+          .then(
+            function (bWasCreated) {
               this._oViewModel.setProperty("/busy", false);
               this._oViewModel.setProperty("/isDirty", false);
               MessageToast.show("Field saved successfully.");
 
-              // Refresh header with updated values
-              var oCtx = this.getView().getBindingContext();
-              if (oCtx) {
-                oCtx.requestObject().then(
-                  function (oData) {
-                    this._updateHeader(oData);
-                  }.bind(this),
-                );
+              if (bWasCreated) {
+                // Return to the list so it reloads with the new row
+                this.onNavBack();
+              } else {
+                var oCtx2 = this.getView().getBindingContext();
+                if (oCtx2) {
+                  oCtx2.requestObject().then(
+                    function (oData) {
+                      if (oData) { this._updateHeader(oData); }
+                    }.bind(this),
+                  );
+                }
               }
             }.bind(this),
           )
@@ -508,8 +532,12 @@ sap.ui.define(
             var oModel = this.getView().getModel();
 
             // Create a new record pre-populated with copied values
-            // Field ID is cleared — user must enter a unique one
-            var oNewContext = oModel.bindList("/FieldMasters").create({
+            // Field ID is cleared — user must enter a unique one.
+            // Bound to the deferred update group so it is NOT auto-posted
+            // (with $auto, a groupless create posts immediately with empty id).
+            var oNewContext = oModel.bindList("/FieldMasters", null, [], [], {
+              $$updateGroupId: "fieldMasterUpdate"
+            }).create({
               field_id: "",
               description: oData.description + " (Copy)",
               data_type: oData.data_type,

@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mvc:View
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:f="sap.f"
+    xmlns:core="sap.ui.core"
+    xmlns:l="sap.ui.layout"
+    controllerName="mdm.portal.controller.ValueTables"
+    displayBlock="true">
+
+    <f:DynamicPage
+        id="valueTablesPage"
+        fitContent="true"
+        toggleHeaderOnTitleClick="true"
+        preserveHeaderStateOnScroll="false"
+        class="sapUiSizeCondensed sapMDMFieldMasterPage">
+
+        <f:title>
+            <f:DynamicPageTitle>
+                <f:heading>
+                    <VBox>
+                        <Title text="Value Tables" level="H2" wrapping="false"/>
+                        <HBox class="sapUiTinyMarginTop">
+                            <ObjectStatus id="countTotal" text="{ui>/totalCount} value tables"
+                                          state="Information"/>
+                        </HBox>
+                    </VBox>
+                </f:heading>
+                <f:snappedHeading>
+                    <Title text="Value Tables" level="H3" wrapping="false"/>
+                </f:snappedHeading>
+                <f:actions>
+                    <OverflowToolbar style="Clear">
+                        <Button id="exportBtn" text="Export" icon="sap-icon://download"
+                                type="Transparent" press=".onExport">
+                            <layoutData>
+                                <OverflowToolbarLayoutData priority="Low" overflowText="Export"/>
+                            </layoutData>
+                        </Button>
+                        <Button id="addValueTableBtn" text="New Value Table" icon="sap-icon://add"
+                                type="Emphasized" press=".onAdd">
+                            <layoutData>
+                                <OverflowToolbarLayoutData priority="NeverOverflow"/>
+                            </layoutData>
+                        </Button>
+                    </OverflowToolbar>
+                </f:actions>
+            </f:DynamicPageTitle>
+        </f:title>
+
+        <f:header>
+            <f:DynamicPageHeader pinnable="true" backgroundDesign="Translucent">
+                <l:Grid defaultSpan="XL3 L3 M6 S12" hSpacing="1" vSpacing="0.5"
+                        class="sapUiSmallMarginBeginEnd sapUiSmallMarginTopBottom">
+                    <l:content>
+                        <VBox>
+                            <Label text="Value Table ID / Description" labelFor="filterSearch" design="Bold"/>
+                            <Input id="filterSearch" placeholder="Search…" showClearIcon="true"
+                                   width="100%" liveChange=".onFilterLiveChange"/>
+                        </VBox>
+                    </l:content>
+                    <l:content>
+                        <VBox>
+                            <Label text="Backend Table" labelFor="filterSourceTable" design="Bold"/>
+                            <Input id="filterSourceTable" placeholder="e.g. T001" showClearIcon="true"
+                                   width="100%" liveChange=".onFilterLiveChange"/>
+                        </VBox>
+                    </l:content>
+                    <l:content>
+                        <VBox>
+                            <Label text="Status" labelFor="filterStatus" design="Bold"/>
+                            <Select id="filterStatus" width="100%" change=".onFilterChange" forceSelection="false">
+                                <core:Item key="" text="All"/>
+                                <core:Item key="ACTIVE" text="Active"/>
+                                <core:Item key="INACTIVE" text="Inactive"/>
+                            </Select>
+                        </VBox>
+                    </l:content>
+                    <l:content>
+                        <VBox justifyContent="End" height="100%">
+                            <HBox justifyContent="End" alignItems="Center" class="sapUiTinyMarginTop">
+                                <Button text="Clear" type="Transparent" press=".onClearFilters"
+                                        class="sapUiTinyMarginEnd"/>
+                                <Button text="Go" type="Emphasized" press=".onGo"/>
+                            </HBox>
+                        </VBox>
+                    </l:content>
+                </l:Grid>
+            </f:DynamicPageHeader>
+        </f:header>
+
+        <f:content>
+            <VBox>
+                <MessageStrip id="pageMessageStrip" text="" type="Information"
+                              showCloseButton="true" visible="false"
+                              class="sapUiSmallMarginBegin sapUiSmallMarginEnd sapUiSmallMarginTop"/>
+
+                <Table id="valueTable"
+                    items="{
+                        path: '/ValueTables',
+                        parameters: {
+                            $count: true,
+                            $select: 'value_table_id,description,source_table,input_1,input_2,input_3,output_key,output_desc,status',
+                            $orderby: 'value_table_id asc'
+                        }
+                    }"
+                    growing="true" growingThreshold="50" growingScrollToLoad="true"
+                    noDataText="No value tables found"
+                    mode="MultiSelect" fixedLayout="true" alternateRowColors="true"
+                    sticky="ColumnHeaders,HeaderToolbar"
+                    selectionChange=".onSelectionChange"
+                    class="sapMDMFormalTable">
+
+                    <headerToolbar>
+                        <OverflowToolbar id="tableToolbar" style="Clear">
+                            <Title id="tableTitle" text="Value Tables" level="H3"/>
+                            <ToolbarSpacer/>
+                            <Button id="bulkActivateBtn" text="Activate" icon="sap-icon://accept"
+                                    type="Success" visible="false" press=".onBulkActivate">
+                                <layoutData><OverflowToolbarLayoutData priority="NeverOverflow"/></layoutData>
+                            </Button>
+                            <Button id="bulkDeleteBtn" text="Delete" icon="sap-icon://delete"
+                                    type="Negative" visible="false" press=".onBulkDelete">
+                                <layoutData><OverflowToolbarLayoutData priority="NeverOverflow"/></layoutData>
+                            </Button>
+                            <ToolbarSeparator id="bulkSeparator" visible="false"/>
+                        </OverflowToolbar>
+                    </headerToolbar>
+
+                    <columns>
+                        <Column id="colId"          width="8rem"  vAlign="Middle" importance="High">
+                            <Label text="Value Table ID" design="Bold"/></Column>
+                        <Column id="colDescription" width="9rem"  vAlign="Middle" importance="High">
+                            <Label text="Description" design="Bold"/></Column>
+                        <Column id="colSourceTable" width="6rem"  vAlign="Middle" importance="High">
+                            <Label text="Backend Table" design="Bold"/></Column>
+                        <Column id="colInput1"      width="4rem"  vAlign="Middle" importance="Low">
+                            <Label text="Input 1" design="Bold"/></Column>
+                        <Column id="colInput2"      width="4rem"  vAlign="Middle" importance="Low">
+                            <Label text="Input 2" design="Bold"/></Column>
+                        <Column id="colInput3"      width="4rem"  vAlign="Middle" importance="Low">
+                            <Label text="Input 3" design="Bold"/></Column>
+                        <Column id="colOutputKey"   width="5rem"  vAlign="Middle" importance="Medium">
+                            <Label text="Output Key" design="Bold"/></Column>
+                        <Column id="colOutputDesc"  width="5rem"  vAlign="Middle" importance="Low">
+                            <Label text="Output Description" design="Bold"/></Column>
+                        <Column id="colUsedBy"      width="5rem"  vAlign="Middle" hAlign="Center" importance="Medium">
+                            <Label text="Used By" design="Bold"/></Column>
+                        <Column id="colStatus"      width="5rem"  vAlign="Middle" hAlign="Center" importance="High">
+                            <Label text="Status" design="Bold"/></Column>
+                        <Column id="colActions"     width="3rem"  vAlign="Middle" hAlign="End" importance="High"/>
+                    </columns>
+
+                    <items>
+                        <ColumnListItem type="Active" press=".onRowPress">
+                            <cells>
+                                <Link text="{value_table_id}" press=".onLinkPress" wrapping="false"/>
+                                <Text text="{description}" wrapping="false" maxLines="1"/>
+                                <ObjectIdentifier text="{source_table}"/>
+                                <Text text="{= ${input_1} ? ${input_1} : '\u2014'}" wrapping="false"/>
+                                <Text text="{= ${input_2} ? ${input_2} : '\u2014'}" wrapping="false"/>
+                                <Text text="{= ${input_3} ? ${input_3} : '\u2014'}" wrapping="false"/>
+                                <Text text="{output_key}" wrapping="false"/>
+                                <Text text="{= ${output_desc} ? ${output_desc} : '\u2014'}" wrapping="false"/>
+                                <ObjectStatus
+                                    text="{parts: [{path: 'value_table_id'}, {path: 'ui>/usedByCounts'}], formatter: '.formatUsedBy'}"
+                                    state="None"/>
+                                <ObjectStatus
+                                    text="{= ${status} === 'ACTIVE' ? 'Active' : 'Inactive'}"
+                                    state="{= ${status} === 'ACTIVE' ? 'Success' : 'Error'}"/>
+                                <Button icon="sap-icon://overflow" type="Transparent"
+                                        tooltip="More actions" press=".onRowMenuPress"/>
+                            </cells>
+                        </ColumnListItem>
+                    </items>
+                </Table>
+            </VBox>
+        </f:content>
+    </f:DynamicPage>
+</mvc:View>

@@ -59,6 +59,54 @@ body, .sapUiBody {
     width: 100% !important;
 }
 
+/* Prevent the page content from spilling past the viewport when the
+   side nav is expanded. The main content area stays within its
+   container; wide tables scroll inside their own wrapper. */
+.sapTntToolPageMainContent {
+    min-width: 0 !important;
+    overflow-x: hidden !important;
+}
+.sapFDynamicPageContent,
+.sapFDynamicPageContentWrapper {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+.sapFDynamicPageHeader,
+.sapFDynamicPageTitleWrapper {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+}
+/* The expanded filter header should size to its content, not show its
+   own vertical scrollbar. */
+.sapFDynamicPageHeader,
+.sapFDynamicPageHeaderContent,
+.sapFDynamicPageHeaderContent > div {
+    overflow-y: visible !important;
+    height: auto !important;
+    max-height: none !important;
+}
+/* The DynamicPage wraps the pinned header in a scroll container; force it
+   to grow with content instead of showing an internal vertical scrollbar. */
+.sapFDynamicPage > .sapFDynamicPageContentWrapper > .sapFDynamicPageHeaderWrapper,
+.sapFDynamicPageHeaderWrapper {
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+}
+
+/* Keep the filter Grid (search + dropdowns + Clear/Go) fully inside the
+   page so the trailing "Go" button is never clipped at the right edge. */
+.sapFDynamicPageHeader .sapUiRespGrid {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+}
+.sapFDynamicPageHeader .sapUiRespGridSpanXL3,
+.sapFDynamicPageHeader .sapUiRespGridSpanL3 {
+    box-sizing: border-box !important;
+}
+
 
 /* ----------------------------------------------------------------
    3. SHELL BAR
@@ -386,6 +434,19 @@ body, .sapUiBody {
     display:       block !important;
     max-width:     100% !important;
     line-height:   1.3 !important;
+}
+
+/* Action buttons (chevron / overflow) must stay fully clickable —
+   never clipped by the cell's overflow:hidden, and always on top. */
+.sapMDMFormalTable .sapMListTblCell .sapMBtn,
+.sapMDMFormalTable td .sapMBtn {
+    overflow: visible !important;
+    pointer-events: auto !important;
+    position: relative !important;
+    z-index: 2 !important;
+}
+.sapMDMFormalTable td.sapMListTblCell:last-child {
+    overflow: visible !important;
 }
 
 /* Link colour */

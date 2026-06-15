@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mvc:View
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core"
+    xmlns:l="sap.ui.layout"
+    controllerName="mdm.portal.controller.BPRoleDetail"
+    displayBlock="true">
+
+    <Page id="detailPage" showHeader="false">
+        <content>
+            <VBox>
+                <Bar class="sapMPageHeader">
+                    <contentLeft>
+                        <Button icon="sap-icon://nav-back" type="Transparent" press=".onNavBack"/>
+                        <Breadcrumbs id="pageBreadcrumb" separatorStyle="Slash" class="sapUiTinyMarginBegin">
+                            <Link text="Configuration" press=".onNavBack"/>
+                            <Link text="BP Roles" press=".onNavBack"/>
+                        </Breadcrumbs>
+                    </contentLeft>
+                </Bar>
+            </VBox>
+
+            <VBox class="sapUiMediumMarginBeginEnd sapUiSmallMarginTop">
+                <HBox alignItems="Center">
+                    <core:Icon src="sap-icon://employee-rejections" size="2rem" color="Accent8"
+                               class="sapUiSmallMarginEnd"/>
+                    <VBox>
+                        <Title id="pageTitle" text="" level="H2" wrapping="false"/>
+                        <Text id="pageSubtitle" text="" class="sapUiTinyMarginTop"
+                              style="color: var(--sapContent_LabelColor); font-size: 0.875rem;"/>
+                    </VBox>
+                </HBox>
+                <HBox wrap="Wrap" class="sapUiSmallMarginTop" alignItems="Center">
+                    <ObjectStatus id="attrStatus" text="Active" state="Success"/>
+                    <Text text="\u00b7" class="sapUiTinyMarginBegin sapUiTinyMarginEnd"
+                          style="color: var(--sapContent_LabelColor);"/>
+                    <ObjectAttribute id="attrMDT" title="Master Data Type" text=""/>
+                    <Text text="\u00b7" class="sapUiTinyMarginBegin sapUiTinyMarginEnd"
+                          style="color: var(--sapContent_LabelColor);"/>
+                    <ObjectAttribute id="attrFields" title="Assigned fields" text=""/>
+                </HBox>
+            </VBox>
+
+            <HBox class="sapUiTinyMarginTop sapUiMediumMarginBeginEnd">
+                <core:HTML content="&lt;hr style='border:none;border-top:1px solid var(--sapGroup_TitleBorderColor);margin:0 0 0.5rem 0;width:100%'/&gt;"/>
+            </HBox>
+
+            <IconTabBar id="detailTabs" select=".onTabSelect" expanded="true"
+                        class="sapUiResponsiveContentPadding">
+                <items>
+
+                    <!-- TAB 1 - General -->
+                    <IconTabFilter text="General" key="general" icon="sap-icon://hint">
+                        <VBox class="sapUiMediumMarginBeginEnd">
+                            <Title text="Role Attributes" level="H4"
+                                   class="sapUiSmallMarginTop sapUiSmallMarginBottom"/>
+                            <l:Grid defaultSpan="L6 M6 S12" hSpacing="2">
+                                <l:content>
+                                    <VBox>
+                                        <Label text="BP Role ID" required="true" labelFor="inId"/>
+                                        <Input id="inId" value="{role_id}" placeholder="e.g. FLVN01"
+                                               editable="{view>/isNew}"
+                                               maxLength="10" liveChange=".onFieldChange"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Description" required="true" labelFor="inDescription"/>
+                                        <Input id="inDescription" value="{description}"
+                                               placeholder="e.g. Vendor (Fin. Accounting)"
+                                               maxLength="100" liveChange=".onFieldChange"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Master Data Type" required="true" labelFor="selMDT"/>
+                                        <Select id="selMDT" width="100%" change=".onFieldChange"
+                                                items="{path: 'lookups>/masterDataTypes'}">
+                                            <core:Item key="{lookups>key}" text="{lookups>text}"/>
+                                        </Select>
+                                        <Text text="Determines which account group type is applicable."
+                                              style="font-size:0.75rem; color:var(--sapContent_LabelColor);"
+                                              class="sapUiTinyMarginTop"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Sequence" required="true" labelFor="inSequence"/>
+                                        <Input id="inSequence" value="{sequence}" type="Number"
+                                               placeholder="e.g. 1" liveChange=".onFieldChange"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Active" labelFor="swActive"/>
+                                        <Switch id="swActive" state="{active}"
+                                                customTextOn="Yes" customTextOff="No"
+                                                change=".onFieldChange"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Initial BP Required" labelFor="swInitBP"/>
+                                        <Switch id="swInitBP" state="{initial_bp_required}"
+                                                customTextOn="Yes" customTextOff="No"
+                                                change=".onFieldChange"/>
+                                        <Text text="When enabled, the user must provide an existing BP number when creating with this role."
+                                              style="font-size:0.75rem; color:var(--sapContent_LabelColor);"
+                                              class="sapUiTinyMarginTop"/>
+                                    </VBox>
+                                </l:content>
+                            </l:Grid>
+
+                            <MessageStrip
+                                text="BP Number &amp; Account Groups: If BUP001 (General) is in the selection, the BP number is generated on save and the BP Account Group is mandatory; otherwise the user provides an existing BP number. The Initial BP Required flag can override this default."
+                                type="Information" showIcon="true"
+                                class="sapUiMediumMarginTop"/>
+                        </VBox>
+                    </IconTabFilter>
+
+                    <!-- TAB 2 - Field Assignment -->
+                    <IconTabFilter id="tabFields" text="Field Assignment" key="fields"
+                                   count="{ui>/fieldCount}" icon="sap-icon://form">
+                        <VBox>
+                            <Toolbar class="sapUiSmallMarginTop">
+                                <Title text="Field Assignment" level="H4"/>
+                                <ToolbarSpacer/>
+                                <Button text="Assign Fields" icon="sap-icon://add" type="Emphasized"
+                                        press=".onAssignFields" enabled="{= !${view>/isNew}}"/>
+                            </Toolbar>
+                            <Table id="fieldsTable"
+                                   noDataText="{= ${view>/isNew} ? 'Save the role first to assign fields.' : 'No fields assigned yet.'}"
+                                   fixedLayout="true" alternateRowColors="true"
+                                   items="{assigned>/items}">
+                                <columns>
+                                    <Column width="7rem"><Label text="Main ▸ Sub Group" design="Bold"/></Column>
+                                    <Column width="7rem"><Label text="Field Name" design="Bold"/></Column>
+                                    <Column><Label text="Description" design="Bold"/></Column>
+                                    <Column width="6rem"><Label text="Data Type" design="Bold"/></Column>
+                                    <Column width="6rem" hAlign="Center"><Label text="Field Status" design="Bold"/></Column>
+                                    <Column width="5rem" hAlign="End"><Label text="Seq" design="Bold"/></Column>
+                                    <Column width="6rem" hAlign="Center"><Label text="Prerequisite" design="Bold"/></Column>
+                                </columns>
+                                <items>
+                                    <ColumnListItem type="Active" press=".onFieldRowPress">
+                                        <cells>
+                                            <Text text="{assigned>group_path}" wrapping="false"/>
+                                            <Link text="{assigned>field_id}" press=".onFieldLinkPress" wrapping="false"/>
+                                            <Text text="{assigned>description}" wrapping="false"/>
+                                            <Text text="{assigned>data_type}" wrapping="false"/>
+                                            <ObjectStatus
+                                                text="{path: 'assigned>field_status', formatter: '.formatStatusText'}"
+                                                state="{path: 'assigned>field_status', formatter: '.formatStatusState'}"/>
+                                            <Text text="{assigned>sequence}" wrapping="false"/>
+                                            <ObjectStatus
+                                                text="{= ${assigned>is_prerequisite} ? 'Prerequisite' : '\u2014'}"
+                                                state="{= ${assigned>is_prerequisite} ? 'Warning' : 'None'}"/>
+                                        </cells>
+                                    </ColumnListItem>
+                                </items>
+                            </Table>
+                            <VBox class="sapUiSmallMargin">
+                                <MessageStrip
+                                    text="Legend: Required must be filled · Optional may be filled · Suppress hidden from form. The same field can have different statuses across different BP roles."
+                                    type="Information" showIcon="true"/>
+                            </VBox>
+                        </VBox>
+                    </IconTabFilter>
+
+                    <!-- TAB 3 - Prerequisite Fields -->
+                    <IconTabFilter id="tabPrereq" text="Prerequisite Fields" key="prereq"
+                                   count="{ui>/prereqCount}" icon="sap-icon://chain-link">
+                        <VBox class="sapUiMediumMarginBeginEnd">
+                            <MessageStrip
+                                text="At runtime the system first prompts the user for the prerequisite fields defined here. All other fields for this BP role are hidden until the prerequisites are filled and validated."
+                                type="Information" showIcon="true"
+                                class="sapUiSmallMarginTop sapUiSmallMarginBottom"/>
+                            <Toolbar>
+                                <Title text="Prerequisite Fields (in prompt order)" level="H4"/>
+                                <ToolbarSpacer/>
+                                <Button text="Add Prerequisite" icon="sap-icon://add" type="Transparent"
+                                        press=".onAddPrereq" enabled="{= !${view>/isNew}}"/>
+                            </Toolbar>
+                            <Table id="prereqTable"
+                                   noDataText="No prerequisite fields defined."
+                                   fixedLayout="true" alternateRowColors="true"
+                                   items="{prereq>/items}">
+                                <columns>
+                                    <Column width="4rem" hAlign="Center"><Label text="Order" design="Bold"/></Column>
+                                    <Column width="7rem"><Label text="Field Name" design="Bold"/></Column>
+                                    <Column><Label text="Description" design="Bold"/></Column>
+                                    <Column width="7rem"><Label text="Source Group" design="Bold"/></Column>
+                                    <Column width="6rem"><Label text="Data Type" design="Bold"/></Column>
+                                </columns>
+                                <items>
+                                    <ColumnListItem>
+                                        <cells>
+                                            <Text text="{prereq>sequence}" wrapping="false"/>
+                                            <Link text="{prereq>field_id}" press=".onPrereqLinkPress" wrapping="false"/>
+                                            <Text text="{prereq>description}" wrapping="false"/>
+                                            <Text text="{prereq>group_path}" wrapping="false"/>
+                                            <Text text="{prereq>data_type}" wrapping="false"/>
+                                        </cells>
+                                    </ColumnListItem>
+                                </items>
+                            </Table>
+                        </VBox>
+                    </IconTabFilter>
+
+                    <!-- TAB 4 - Prerequisite Roles -->
+                    <IconTabFilter id="tabPrereqRoles" text="Prerequisite Roles" key="prereqroles"
+                                   count="{ui>/prereqRolesCount}" icon="sap-icon://org-chart">
+                        <VBox class="sapUiMediumMarginBeginEnd">
+                            <Toolbar class="sapUiSmallMarginTop">
+                                <Title text="Prerequisite Roles" level="H4"/>
+                                <ToolbarSpacer/>
+                                <Button text="Add Role" icon="sap-icon://add" type="Transparent"
+                                        press=".onAddPrereqRole" enabled="{= !${view>/isNew}}"/>
+                            </Toolbar>
+                            <MessageStrip
+                                text="When this role is selected at runtime, all prerequisite roles listed below are automatically pulled in (including their own prerequisites, recursively)."
+                                type="Information" showIcon="true"
+                                class="sapUiSmallMarginBottom"/>
+                            <Table id="prereqRolesTable"
+                                   noDataText="No prerequisite roles defined."
+                                   fixedLayout="true" alternateRowColors="true"
+                                   items="{prereqroles>/items}">
+                                <columns>
+                                    <Column width="7rem"><Label text="Role ID" design="Bold"/></Column>
+                                    <Column><Label text="Description" design="Bold"/></Column>
+                                    <Column width="8rem"><Label text="Master Data Type" design="Bold"/></Column>
+                                    <Column width="6rem" hAlign="Center"><Label text="Auto Pull" design="Bold"/></Column>
+                                </columns>
+                                <items>
+                                    <ColumnListItem type="Active" press=".onPrereqRolePress">
+                                        <cells>
+                                            <Link text="{prereqroles>role_id}" press=".onPrereqRoleLinkPress" wrapping="false"/>
+                                            <Text text="{prereqroles>description}" wrapping="false"/>
+                                            <Text text="{prereqroles>mdt}" wrapping="false"/>
+                                            <ObjectStatus
+                                                text="{= ${prereqroles>auto_pull} ? 'Yes' : 'No'}"
+                                                state="{= ${prereqroles>auto_pull} ? 'Success' : 'None'}"/>
+                                        </cells>
+                                    </ColumnListItem>
+                                </items>
+                            </Table>
+                        </VBox>
+                    </IconTabFilter>
+
+                    <!-- TAB 5 - Change Log -->
+                    <IconTabFilter text="Change Log" key="changelog" icon="sap-icon://history">
+                        <Table id="logTable" noDataText="No changes recorded yet."
+                               items="{path: '/AuditLogs', suspended: true}">
+                            <columns>
+                                <Column width="180px"><Text text="Timestamp"/></Column>
+                                <Column width="130px"><Text text="User"/></Column>
+                                <Column width="100px"><Text text="Action"/></Column>
+                                <Column><Text text="Before"/></Column>
+                                <Column><Text text="After"/></Column>
+                            </columns>
+                            <items>
+                                <ColumnListItem>
+                                    <cells>
+                                        <Text text="{acted_at}"/>
+                                        <Text text="{actor}"/>
+                                        <ObjectStatus text="{action}"
+                                            state="{= ${action} === 'CREATE' ? 'Success' : ${action} === 'DELETE' ? 'Error' : 'None'}"/>
+                                        <Text text="{before_value}" maxLines="2"/>
+                                        <Text text="{after_value}" maxLines="2"/>
+                                    </cells>
+                                </ColumnListItem>
+                            </items>
+                        </Table>
+                    </IconTabFilter>
+
+                </items>
+            </IconTabBar>
+        </content>
+
+        <footer>
+            <OverflowToolbar>
+                <ToolbarSpacer/>
+                <Button id="btnCopy" text="Copy Role" icon="sap-icon://copy"
+                        type="Transparent" press=".onCopy"/>
+                <Button id="btnCancel" text="Cancel" type="Default" press=".onCancel"/>
+                <Button id="btnSave" text="Save" type="Emphasized" press=".onSave"/>
+            </OverflowToolbar>
+        </footer>
+    </Page>
+</mvc:View>

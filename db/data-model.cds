@@ -81,7 +81,7 @@ type CRStatus               : String(20) @assert.range enum { DRAFT; IN_APPROVAL
 
 
 entity MasterDataType : managed {
-    key master_data_type_id : String(10);
+    key master_data_type_id : String(30);
         description         : String(100)          not null;
         icon                : String(40);
         object_class        : MasterDataObjectClass not null;

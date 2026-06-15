@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mvc:View
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:f="sap.f"
+    xmlns:core="sap.ui.core"
+    xmlns:l="sap.ui.layout"
+    controllerName="mdm.portal.controller.FieldGroups"
+    displayBlock="true">
+
+    <f:DynamicPage
+        id="fieldGroupsPage"
+        fitContent="true"
+        toggleHeaderOnTitleClick="true"
+        preserveHeaderStateOnScroll="false"
+        class="sapUiSizeCondensed sapMDMFieldMasterPage">
+
+        <!-- ── Title ──────────────────────────────────────────────── -->
+        <f:title>
+            <f:DynamicPageTitle>
+
+                <f:heading>
+                    <VBox>
+                        <Title text="Field Groups" level="H2" wrapping="false"/>
+                        <HBox class="sapUiTinyMarginTop">
+                            <ObjectStatus id="countMain" text="{ui>/mainCount} main"
+                                          state="Information" class="sapUiTinyMarginEnd"/>
+                            <ObjectStatus id="countSub"  text="{ui>/subCount} sub"
+                                          state="None"/>
+                        </HBox>
+                    </VBox>
+                </f:heading>
+
+                <f:snappedHeading>
+                    <Title text="Field Groups" level="H3" wrapping="false"/>
+                </f:snappedHeading>
+
+                <f:actions>
+                    <OverflowToolbar style="Clear">
+                        <!-- Object-type toggle: Business Partner | Material -->
+                        <SegmentedButton id="objectClassToggle"
+                                         selectionChange=".onObjectClassChange"
+                                         selectedKey="BP">
+                            <items>
+                                <SegmentedButtonItem key="BP"       text="Business Partner"/>
+                                <SegmentedButtonItem key="MATERIAL" text="Material"/>
+                            </items>
+                        </SegmentedButton>
+                        <ToolbarSeparator/>
+                        <Button id="exportBtn"
+                                text="Export"
+                                icon="sap-icon://download"
+                                type="Transparent"
+                                press=".onExport">
+                            <layoutData>
+                                <OverflowToolbarLayoutData priority="Low" overflowText="Export"/>
+                            </layoutData>
+                        </Button>
+                        <Button id="addGroupBtn"
+                                text="New Group"
+                                icon="sap-icon://add"
+                                type="Emphasized"
+                                press=".onAdd">
+                            <layoutData>
+                                <OverflowToolbarLayoutData priority="NeverOverflow"/>
+                            </layoutData>
+                        </Button>
+                    </OverflowToolbar>
+                </f:actions>
+
+            </f:DynamicPageTitle>
+        </f:title>
+
+        <!-- ── Filter header ─────────────────────────────────────── -->
+        <f:header>
+            <f:DynamicPageHeader pinnable="true" backgroundDesign="Translucent">
+                <l:Grid defaultSpan="XL3 L3 M6 S12"
+                        hSpacing="1" vSpacing="0.5"
+                        class="sapUiSmallMarginBeginEnd sapUiSmallMarginTopBottom">
+                    <l:content>
+                        <VBox>
+                            <Label text="Group ID / Description" labelFor="filterSearch" design="Bold"/>
+                            <Input id="filterSearch" placeholder="Search…"
+                                   showClearIcon="true" width="100%"
+                                   liveChange=".onFilterLiveChange"/>
+                        </VBox>
+                    </l:content>
+                    <l:content>
+                        <VBox>
+                            <Label text="Group Type" labelFor="filterGroupType" design="Bold"/>
+                            <Select id="filterGroupType" width="100%"
+                                    change=".onFilterChange" forceSelection="false">
+                                <core:Item key=""    text="All"/>
+                                <core:Item key="MAIN" text="Main Group"/>
+                                <core:Item key="SUB"  text="Sub Group"/>
+                            </Select>
+                        </VBox>
+                    </l:content>
+                    <l:content>
+                        <VBox>
+                            <Label text="Parent" labelFor="filterParent" design="Bold"/>
+                            <Select id="filterParent" width="100%"
+                                    change=".onFilterChange" forceSelection="false"
+                                    items="{path: 'filters>/parentGroups'}">
+                                <core:ListItem key="{filters>key}" text="{filters>text}"/>
+                            </Select>
+                        </VBox>
+                    </l:content>
+                    <l:content>
+                        <VBox>
+                            <Label text="Status" labelFor="filterStatus" design="Bold"/>
+                            <Select id="filterStatus" width="100%"
+                                    change=".onFilterChange" forceSelection="false">
+                                <core:Item key=""      text="All"/>
+                                <core:Item key="true"  text="Active"/>
+                                <core:Item key="false" text="Inactive"/>
+                            </Select>
+                        </VBox>
+                    </l:content>
+                    <l:content>
+                        <VBox justifyContent="End" height="100%">
+                            <HBox justifyContent="End" alignItems="Center"
+                                  class="sapUiTinyMarginTop">
+                                <Button text="Clear" type="Transparent"
+                                        press=".onClearFilters"
+                                        class="sapUiTinyMarginEnd"/>
+                                <Button text="Go" type="Emphasized" press=".onGo"/>
+                            </HBox>
+                        </VBox>
+                    </l:content>
+                </l:Grid>
+            </f:DynamicPageHeader>
+        </f:header>
+
+        <!-- ── Table ─────────────────────────────────────────────── -->
+        <f:content>
+            <VBox>
+                <MessageStrip id="pageMessageStrip" text="" type="Information"
+                              showCloseButton="true" visible="false"
+                              class="sapUiSmallMarginBegin sapUiSmallMarginEnd sapUiSmallMarginTop"/>
+
+                <Table
+                    id="groupTable"
+                    items="{
+                        path: '/FieldGroups',
+                        parameters: {
+                            $count: true,
+                            $expand: 'master_data_type($select=master_data_type_id,description,object_class)',
+                            $select: 'group_id,description,icon,sequence,active,master_data_type_master_data_type_id,parent_group_id_group_id,master_data_type',
+                            $orderby: 'sequence asc,group_id asc'
+                        }
+                    }"
+                    growing="true"
+                    growingThreshold="50"
+                    growingScrollToLoad="true"
+                    noDataText="No field groups found"
+                    mode="MultiSelect"
+                    fixedLayout="true"
+                    alternateRowColors="true"
+                    sticky="ColumnHeaders,HeaderToolbar"
+                    selectionChange=".onSelectionChange"
+                    class="sapMDMFormalTable">
+
+                    <headerToolbar>
+                        <OverflowToolbar id="tableToolbar" style="Clear">
+                            <Title id="tableTitle" text="Groups" level="H3"/>
+                            <ToolbarSpacer/>
+                            <Button id="bulkActivateBtn" text="Activate"
+                                    icon="sap-icon://accept" type="Success"
+                                    visible="false" press=".onBulkActivate">
+                                <layoutData>
+                                    <OverflowToolbarLayoutData priority="NeverOverflow"/>
+                                </layoutData>
+                            </Button>
+                            <Button id="bulkDeleteBtn" text="Delete"
+                                    icon="sap-icon://delete" type="Negative"
+                                    visible="false" press=".onBulkDelete">
+                                <layoutData>
+                                    <OverflowToolbarLayoutData priority="NeverOverflow"/>
+                                </layoutData>
+                            </Button>
+                            <ToolbarSeparator id="bulkSeparator" visible="false"/>
+                        </OverflowToolbar>
+                    </headerToolbar>
+
+                    <columns>
+                        <Column id="colGroupId"    width="8rem"  vAlign="Middle" importance="High">
+                            <Label text="Group ID" design="Bold"/>
+                        </Column>
+                        <Column id="colDescription" width="12rem" vAlign="Middle" importance="High">
+                            <Label text="Description" design="Bold"/>
+                        </Column>
+                        <Column id="colType"       width="7rem"  vAlign="Middle" hAlign="Center" importance="High">
+                            <Label text="Type" design="Bold"/>
+                        </Column>
+                        <Column id="colParent"     width="7rem"  vAlign="Middle" importance="Medium">
+                            <Label text="Parent Group" design="Bold"/>
+                        </Column>
+                        <Column id="colIcon"       width="4rem"  vAlign="Middle" hAlign="Center" importance="Low">
+                            <Label text="Icon" design="Bold"/>
+                        </Column>
+                        <Column id="colSequence"   width="5rem"  vAlign="Middle" hAlign="End" importance="Low">
+                            <Label text="Sequence" design="Bold"/>
+                        </Column>
+                        <Column id="colSubGroups"  width="6rem"  vAlign="Middle" hAlign="Center" importance="Medium">
+                            <Label text="Sub Groups" design="Bold"/>
+                        </Column>
+                        <Column id="colFields"     width="5rem"  vAlign="Middle" hAlign="Center" importance="Medium">
+                            <Label text="Fields" design="Bold"/>
+                        </Column>
+                        <Column id="colStatus"     width="5rem"  vAlign="Middle" hAlign="Center" importance="High">
+                            <Label text="Status" design="Bold"/>
+                        </Column>
+                        <Column id="colActions"    width="3rem"  vAlign="Middle" hAlign="End" importance="High"/>
+                    </columns>
+
+                    <items>
+                        <ColumnListItem type="Active" press=".onRowPress">
+                            <cells>
+
+                                <Link text="{group_id}" press=".onGroupLinkPress" wrapping="false"/>
+
+                                <Text text="{description}" wrapping="false" maxLines="1"/>
+
+                                <!-- Main Group chip vs Sub Group chip -->
+                                <ObjectStatus
+                                    text="{path: 'parent_group_id_group_id', formatter: '.formatTypeText'}"
+                                    state="{path: 'parent_group_id_group_id', formatter: '.formatTypeState'}"
+                                    inverted="{path: 'parent_group_id_group_id', formatter: '.formatTypeInverted'}"/>
+
+                                <Text text="{path: 'parent_group_id_group_id', formatter: '.formatParent'}"
+                                      wrapping="false"/>
+
+                                <!-- Icon preview -->
+                                <core:Icon src="{icon}" size="1rem" color="Default"/>
+
+                                <Text text="{sequence}" wrapping="false"/>
+
+                                <!-- Sub-group count badge — populated by controller into ui model -->
+                                <Text text="{parts: [{path: 'group_id'}, {path: 'ui>/subGroupCounts'}], formatter: '.formatCount'}"
+                                      wrapping="false"/>
+
+                                <!-- Field count badge -->
+                                <Text text="{parts: [{path: 'group_id'}, {path: 'ui>/fieldCounts'}], formatter: '.formatCount'}"
+                                      wrapping="false"/>
+
+                                <ObjectStatus
+                                    text="{path: 'active', formatter: '.formatActiveText'}"
+                                    state="{path: 'active', formatter: '.formatActiveState'}"/>
+
+                                <Button icon="sap-icon://overflow"
+                                        type="Transparent"
+                                        tooltip="More actions"
+                                        press=".onRowMenuPress"/>
+                            </cells>
+                        </ColumnListItem>
+                    </items>
+                </Table>
+            </VBox>
+        </f:content>
+
+    </f:DynamicPage>
+
+</mvc:View>

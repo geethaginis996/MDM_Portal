@@ -46,6 +46,7 @@
                                         <Input id="inFieldId"
                                                value="{field_id}"
                                                placeholder="e.g. BUKRS"
+                                               editable="{view>/isNew}"
                                                liveChange=".onFieldChange"/>
                                     </VBox>
                                     <VBox>

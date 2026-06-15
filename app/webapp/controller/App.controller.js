@@ -45,25 +45,25 @@ sap.ui.define([
                 var oToolPageDom = oToolPage.getDomRef();
                 if (!oToolPageDom) return;
 
-                var oWrapper = oToolPageDom.querySelector(
-                    "[id$='fieldMasterPage-contentWrapper']"
-                );
-                if (!oWrapper) return;
-
-                // MutationObserver watches inline style changes and removes clip-path
+                // Observe the whole ToolPage subtree. Pages are created and
+                // destroyed by routing, so watching a single wrapper found at
+                // startup misses pages navigated to later. On any style/child
+                // change, strip clip-path from every DynamicPage wrapper.
+                var fnStrip = this._fixClipPath.bind(this);
                 var oObserver = new MutationObserver(function () {
-                    if (oWrapper.style.clipPath && oWrapper.style.clipPath !== "none") {
-                        oWrapper.style.clipPath = "none";
-                        oWrapper.style.overflow = "auto";
-                    }
+                    fnStrip();
                 });
 
-                oObserver.observe(oWrapper, {
+                oObserver.observe(oToolPageDom, {
                     attributes: true,
-                    attributeFilter: ["style"]
+                    attributeFilter: ["style"],
+                    subtree: true,
+                    childList: true
                 });
 
                 this._oClipPathObserver = oObserver;
+                // Run once now in case a page is already rendered
+                fnStrip();
             }.bind(this), 600);
         },
         _adjustContentWidth: function () {
@@ -85,17 +85,17 @@ sap.ui.define([
             // Fire resize so SAP Table re-evaluates demandPopin columns
             window.dispatchEvent(new Event("resize"));
 
-            // Also invalidate the table control to force column recalculation
+            // Invalidate the current page's table (id differs per page:
+            // fieldTable / groupTable / valueTable / ruleTable) so columns
+            // recalculate after the side nav toggles.
             var oNavContainer = this.byId("appPages");
             if (oNavContainer) {
                 var oPage = oNavContainer.getCurrentPage();
-                if (oPage) {
-                    var oTable = oPage.byId
-                        ? oPage.byId("fieldTable")
-                        : sap.ui.getCore().byId("__xmlview0--fieldTable");
-                    if (oTable) {
-                        oTable.invalidate();
-                    }
+                if (oPage && oPage.findAggregatedObjects) {
+                    var aTables = oPage.findAggregatedObjects(true, function (oCtrl) {
+                        return oCtrl.isA && oCtrl.isA("sap.m.Table");
+                    });
+                    aTables.forEach(function (oTable) { oTable.invalidate(); });
                 }
             }
         },
@@ -160,13 +160,18 @@ sap.ui.define([
             var oToolPageDom = oToolPage.getDomRef();
             if (!oToolPageDom) return;
 
-            var oWrapper = oToolPageDom.querySelector(
-                "[id$='fieldMasterPage-contentWrapper']"
+            // Target EVERY DynamicPage content wrapper currently in the DOM,
+            // so the fix works for FieldMaster, FieldGroups, ValueTables,
+            // ValidationRules — whichever page is showing.
+            var aWrappers = oToolPageDom.querySelectorAll(
+                "[id$='-contentWrapper'], .sapFDynamicPageContentWrapper"
             );
-            if (oWrapper) {
-                oWrapper.style.clipPath = "none";
+            aWrappers.forEach(function (oWrapper) {
+                if (oWrapper.style.clipPath && oWrapper.style.clipPath !== "none") {
+                    oWrapper.style.clipPath = "none";
+                }
                 oWrapper.style.overflow = "auto";
-            }
+            });
         },
         // ── ShellBar search icon pressed ────────────────────────────────
         onSearchOpen: function () {

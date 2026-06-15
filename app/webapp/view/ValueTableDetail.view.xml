@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mvc:View
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core"
+    xmlns:l="sap.ui.layout"
+    controllerName="mdm.portal.controller.ValueTableDetail"
+    displayBlock="true">
+
+    <Page id="detailPage" showHeader="false">
+
+        <content>
+            <!-- Top bar with breadcrumb -->
+            <VBox>
+                <Bar class="sapMPageHeader">
+                    <contentLeft>
+                        <Button icon="sap-icon://nav-back" type="Transparent" press=".onNavBack"/>
+                        <Breadcrumbs id="pageBreadcrumb" separatorStyle="Slash" class="sapUiTinyMarginBegin">
+                            <Link text="Configuration" press=".onNavBack"/>
+                            <Link text="Value Tables"  press=".onNavBack"/>
+                        </Breadcrumbs>
+                    </contentLeft>
+                </Bar>
+            </VBox>
+
+            <!-- Page heading -->
+            <VBox class="sapUiMediumMarginBeginEnd sapUiSmallMarginTop">
+                <HBox alignItems="Center">
+                    <core:Icon src="sap-icon://table-view" size="2rem" color="Accent8"
+                               class="sapUiSmallMarginEnd"/>
+                    <VBox>
+                        <Title id="pageTitle" text="" level="H2" wrapping="false"/>
+                        <Text id="pageSubtitle" text="" class="sapUiTinyMarginTop"
+                              style="color: var(--sapContent_LabelColor); font-size: 0.875rem;"/>
+                    </VBox>
+                </HBox>
+
+                <!-- Object key strip -->
+                <HBox wrap="Wrap" class="sapUiSmallMarginTop" alignItems="Center">
+                    <ObjectStatus id="attrStatus" text="Active" state="Success"/>
+                    <Text text="\u00b7" class="sapUiTinyMarginBegin sapUiTinyMarginEnd"
+                          style="color: var(--sapContent_LabelColor);"/>
+                    <ObjectAttribute id="attrSource" title="Backend Table" text=""/>
+                    <Text text="\u00b7" class="sapUiTinyMarginBegin sapUiTinyMarginEnd"
+                          style="color: var(--sapContent_LabelColor);"/>
+                    <ObjectAttribute id="attrUsage" title="Used by" text=""/>
+                </HBox>
+            </VBox>
+
+            <HBox class="sapUiTinyMarginTop sapUiMediumMarginBeginEnd">
+                <core:HTML content="&lt;hr style='border:none;border-top:1px solid var(--sapGroup_TitleBorderColor);margin:0 0 0.5rem 0;width:100%'/&gt;"/>
+            </HBox>
+
+            <!-- Icon Tab Bar -->
+            <IconTabBar id="detailTabs" select=".onTabSelect" expanded="true"
+                        class="sapUiResponsiveContentPadding">
+                <items>
+
+                    <!-- TAB 1 - General -->
+                    <IconTabFilter text="General" key="general" icon="sap-icon://hint">
+                        <VBox class="sapUiMediumMarginBeginEnd">
+                            <Title text="General" level="H4"
+                                   class="sapUiSmallMarginTop sapUiSmallMarginBottom"/>
+                            <l:Grid defaultSpan="L6 M6 S12" hSpacing="2">
+                                <l:content>
+                                    <VBox>
+                                        <Label text="Value Table ID" required="true" labelFor="inId"/>
+                                        <Input id="inId" value="{value_table_id}" placeholder="e.g. VT001"
+                                               editable="{view>/isNew}"
+                                               maxLength="20" liveChange=".onFieldChange"/>
+                                        <Text text="Unique ID across the value table registry."
+                                              style="font-size:0.75rem; color:var(--sapContent_LabelColor);"
+                                              class="sapUiTinyMarginTop"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Description" required="true" labelFor="inDescription"/>
+                                        <Input id="inDescription" value="{description}" placeholder="e.g. Company Codes"
+                                               maxLength="100" liveChange=".onFieldChange"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Backend Table / CDS View" required="true" labelFor="inSourceTable"/>
+                                        <Input id="inSourceTable" value="{source_table}" placeholder="e.g. T001"
+                                               maxLength="60" liveChange=".onFieldChange"
+                                               showValueHelp="true" valueHelpRequest=".onSourceTableValueHelp"/>
+                                        <Text text="ABAP table or CDS view name in the source system."
+                                              style="font-size:0.75rem; color:var(--sapContent_LabelColor);"
+                                              class="sapUiTinyMarginTop"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Status" labelFor="swStatus"/>
+                                        <Switch id="swStatus" state="{= ${status} === 'ACTIVE'}"
+                                                customTextOn="Active" customTextOff="Inactive"
+                                                change=".onStatusChange"/>
+                                    </VBox>
+                                </l:content>
+                            </l:Grid>
+                        </VBox>
+                    </IconTabFilter>
+
+                    <!-- TAB 2 - Input Parameters -->
+                    <IconTabFilter text="Input Parameters" key="inputs" icon="sap-icon://filter-fields">
+                        <VBox class="sapUiMediumMarginBeginEnd">
+                            <HBox alignItems="Center" class="sapUiSmallMarginTop sapUiSmallMarginBottom">
+                                <Title text="Input Filter Parameters" level="H4"/>
+                                <Text text="Optional - up to 3 filter inputs passed to the backend query"
+                                      class="sapUiSmallMarginBegin"
+                                      style="font-size:0.75rem; color:var(--sapContent_LabelColor);"/>
+                            </HBox>
+
+                            <!-- Param row 1 -->
+                            <HBox alignItems="End" class="sapUiTinyMarginBottom" wrap="Wrap">
+                                <VBox width="3rem" justifyContent="Center" class="sapUiSmallMarginEnd">
+                                    <Text text="I1" style="font-weight:bold; color:var(--sapContent_LabelColor);"/>
+                                </VBox>
+                                <VBox width="16rem" class="sapUiSmallMarginEnd">
+                                    <Label text="Parameter Name"/>
+                                    <Input id="inInput1" value="{input_1}" placeholder="optional"
+                                           maxLength="40" liveChange=".onFieldChange"/>
+                                </VBox>
+                            </HBox>
+                            <!-- Param row 2 -->
+                            <HBox alignItems="End" class="sapUiTinyMarginBottom" wrap="Wrap">
+                                <VBox width="3rem" justifyContent="Center" class="sapUiSmallMarginEnd">
+                                    <Text text="I2" style="font-weight:bold; color:var(--sapContent_LabelColor);"/>
+                                </VBox>
+                                <VBox width="16rem" class="sapUiSmallMarginEnd">
+                                    <Label text="Parameter Name"/>
+                                    <Input id="inInput2" value="{input_2}" placeholder="optional"
+                                           maxLength="40" liveChange=".onFieldChange"/>
+                                </VBox>
+                            </HBox>
+                            <!-- Param row 3 -->
+                            <HBox alignItems="End" class="sapUiTinyMarginBottom" wrap="Wrap">
+                                <VBox width="3rem" justifyContent="Center" class="sapUiSmallMarginEnd">
+                                    <Text text="I3" style="font-weight:bold; color:var(--sapContent_LabelColor);"/>
+                                </VBox>
+                                <VBox width="16rem" class="sapUiSmallMarginEnd">
+                                    <Label text="Parameter Name"/>
+                                    <Input id="inInput3" value="{input_3}" placeholder="optional"
+                                           maxLength="40" liveChange=".onFieldChange"/>
+                                </VBox>
+                            </HBox>
+
+                            <MessageStrip
+                                text="Input parameters are used to filter results at runtime. When the value help is invoked, the parameter values are read from the fields currently in scope (same BP, sales area, company code, etc.)."
+                                type="Information" showIcon="true"
+                                class="sapUiMediumMarginTop"/>
+                        </VBox>
+                    </IconTabFilter>
+
+                    <!-- TAB 3 - Output Columns -->
+                    <IconTabFilter text="Output Columns" key="output" icon="sap-icon://chain-link">
+                        <VBox class="sapUiMediumMarginBeginEnd">
+                            <Title text="Output Columns" level="H4"
+                                   class="sapUiSmallMarginTop sapUiSmallMarginBottom"/>
+                            <l:Grid defaultSpan="L6 M6 S12" hSpacing="2">
+                                <l:content>
+                                    <VBox>
+                                        <Label text="Output Key" required="true" labelFor="inOutputKey"/>
+                                        <Input id="inOutputKey" value="{output_key}" placeholder="e.g. BUKRS"
+                                               maxLength="40" liveChange=".onFieldChange"/>
+                                        <Text text="Column written back to the field value when a row is picked."
+                                              style="font-size:0.75rem; color:var(--sapContent_LabelColor);"
+                                              class="sapUiTinyMarginTop"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Output Description" required="true" labelFor="inOutputDesc"/>
+                                        <Input id="inOutputDesc" value="{output_desc}" placeholder="e.g. BUTXT"
+                                               maxLength="40" liveChange=".onFieldChange"/>
+                                        <Text text="Column shown to the user alongside the key in the picker."
+                                              style="font-size:0.75rem; color:var(--sapContent_LabelColor);"
+                                              class="sapUiTinyMarginTop"/>
+                                    </VBox>
+                                </l:content>
+                            </l:Grid>
+                            <MessageStrip
+                                text="Live Preview: On save, the system runs a sample query against the backend. Failed validations (missing table, missing column) block activation."
+                                type="Information" showIcon="true"
+                                class="sapUiMediumMarginTop"/>
+                        </VBox>
+                    </IconTabFilter>
+
+                    <!-- TAB 4 - Usage -->
+                    <IconTabFilter id="tabUsage" text="Usage" key="usage"
+                                   count="{ui>/usageCount}" icon="sap-icon://connected">
+                        <VBox>
+                            <Toolbar class="sapUiSmallMarginTop">
+                                <Title text="Fields Using This Value Table" level="H4"/>
+                                <ToolbarSpacer/>
+                            </Toolbar>
+                            <Table id="usageTable" noDataText="Not linked to any field yet."
+                                   fixedLayout="true" alternateRowColors="true"
+                                   items="{usage>/items}">
+                                <columns>
+                                    <Column width="8rem"><Label text="Field Name" design="Bold"/></Column>
+                                    <Column><Label text="Description" design="Bold"/></Column>
+                                    <Column width="7rem"><Label text="Display Type" design="Bold"/></Column>
+                                    <Column width="7rem"><Label text="Main Group" design="Bold"/></Column>
+                                    <Column width="7rem"><Label text="Sub Group" design="Bold"/></Column>
+                                    <Column width="5rem" hAlign="Center"><Label text="Status" design="Bold"/></Column>
+                                </columns>
+                                <items>
+                                    <ColumnListItem type="Active" press=".onUsageRowPress">
+                                        <cells>
+                                            <Link text="{usage>field_id}" press=".onUsageLinkPress" wrapping="false"/>
+                                            <Text text="{usage>description}" wrapping="false"/>
+                                            <Text text="{usage>display_type}" wrapping="false"/>
+                                            <Text text="{= ${usage>main_group} ? ${usage>main_group} : '\u2014'}" wrapping="false"/>
+                                            <Text text="{= ${usage>sub_group} ? ${usage>sub_group} : '\u2014'}" wrapping="false"/>
+                                            <ObjectStatus text="{= ${usage>active} ? 'Active' : 'Inactive'}"
+                                                state="{= ${usage>active} ? 'Success' : 'Error'}"/>
+                                        </cells>
+                                    </ColumnListItem>
+                                </items>
+                            </Table>
+                        </VBox>
+                    </IconTabFilter>
+
+                </items>
+            </IconTabBar>
+        </content>
+
+        <footer>
+            <OverflowToolbar>
+                <Button id="btnTestQuery" text="Test Query" icon="sap-icon://lab"
+                        type="Transparent" press=".onTestQuery"/>
+                <ToolbarSpacer/>
+                <Button id="btnCopy" text="Copy" icon="sap-icon://copy"
+                        type="Transparent" press=".onCopy"/>
+                <Button id="btnCancel" text="Cancel" type="Default" press=".onCancel"/>
+                <Button id="btnSave" text="Save" type="Emphasized" press=".onSave"/>
+            </OverflowToolbar>
+        </footer>
+
+    </Page>
+</mvc:View>

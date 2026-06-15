@@ -1,0 +1,322 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mvc:View
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:f="sap.f"
+    xmlns:core="sap.ui.core"
+    xmlns:l="sap.ui.layout"
+    controllerName="mdm.portal.controller.FieldGroupDetail"
+    displayBlock="true">
+
+    <Page id="detailPage" showHeader="false">
+
+        <content>
+            <!-- ── Shell-style top bar with breadcrumb ──────────────── -->
+            <VBox>
+                <Bar class="sapMPageHeader">
+                    <contentLeft>
+                        <Button icon="sap-icon://nav-back" type="Transparent" press=".onNavBack"/>
+                        <Breadcrumbs id="pageBreadcrumb"
+                                     separatorStyle="Slash"
+                                     class="sapUiTinyMarginBegin">
+                            <Link text="Configuration" press=".onNavBack"/>
+                            <Link text="Field Groups"  press=".onNavBack"/>
+                            <!-- current item rendered as plain text by control -->
+                        </Breadcrumbs>
+                    </contentLeft>
+                </Bar>
+            </VBox>
+
+            <!-- ── Page heading ─────────────────────────────────────── -->
+            <VBox class="sapUiMediumMarginBeginEnd sapUiSmallMarginTop">
+
+                <HBox alignItems="Center">
+                    <core:Icon id="groupIcon" src="{path: 'icon', mode: 'OneWay'}" size="2rem"
+                               color="Accent8" class="sapUiSmallMarginEnd"/>
+                    <VBox>
+                        <Title id="pageTitle" text="" level="H2" wrapping="false"/>
+                        <Text id="pageSubtitle" text="" class="sapUiTinyMarginTop"
+                              style="color: var(--sapContent_LabelColor); font-size: 0.875rem;"/>
+                    </VBox>
+                </HBox>
+
+                <!-- Status + metadata strip -->
+                <HBox wrap="Wrap" class="sapUiSmallMarginTop" alignItems="Center">
+                    <ObjectStatus id="attrStatus"   text="Active"  state="Success"/>
+                    <Text text="·" class="sapUiTinyMarginBegin sapUiTinyMarginEnd"
+                          style="color: var(--sapContent_LabelColor);"/>
+                    <ObjectAttribute id="attrType"     title="Type"     text="Main group"/>
+                    <Text text="·" class="sapUiTinyMarginBegin sapUiTinyMarginEnd"
+                          style="color: var(--sapContent_LabelColor);"/>
+                    <ObjectAttribute id="attrParent"   title="Parent"   text="— (Main Group)"/>
+                    <Text text="·" class="sapUiTinyMarginBegin sapUiTinyMarginEnd"
+                          style="color: var(--sapContent_LabelColor);"/>
+                    <ObjectAttribute id="attrSequence" title="Sequence" text=""/>
+                    <Text text="·" class="sapUiTinyMarginBegin sapUiTinyMarginEnd"
+                          style="color: var(--sapContent_LabelColor);"/>
+                    <ObjectAttribute id="attrSubCount" title="Sub Groups" text=""/>
+                </HBox>
+            </VBox>
+
+            <HBox class="sapUiTinyMarginTop sapUiMediumMarginBeginEnd">
+                <core:HTML content="&lt;hr style='border:none;border-top:1px solid var(--sapGroup_TitleBorderColor);margin:0 0 0.5rem 0;width:100%'/&gt;"/>
+            </HBox>
+
+            <!-- ── Icon Tab Bar ─────────────────────────────────────── -->
+            <IconTabBar id="detailTabs" select=".onTabSelect" expanded="true"
+                        class="sapUiResponsiveContentPadding">
+                <items>
+
+                    <!-- ── TAB 1 · General ── -->
+                    <IconTabFilter text="General" key="general" icon="sap-icon://hint">
+                        <VBox class="sapUiMediumMarginBeginEnd">
+
+                            <Title text="Group Details" level="H4"
+                                   class="sapUiSmallMarginTop sapUiSmallMarginBottom"/>
+
+                            <l:Grid defaultSpan="L6 M6 S12" hSpacing="2">
+                                <l:content>
+
+                                    <!-- Master Data Type -->
+                                    <VBox>
+                                        <Label text="Master Data Type" required="true"
+                                               labelFor="selMasterDataType"/>
+                                        <Select id="selMasterDataType" width="100%"
+                                                change=".onFieldChange"
+                                                items="{path: 'lookups>/masterDataTypes'}">
+                                            <core:Item key="{lookups>key}" text="{lookups>text}"/>
+                                        </Select>
+                                    </VBox>
+
+                                    <!-- Group ID -->
+                                    <VBox>
+                                        <Label text="Group ID" required="true" labelFor="inGroupId"/>
+                                        <Input id="inGroupId"
+                                               value="{group_id}"
+                                               placeholder="e.g. GRP_COCD"
+                                               editable="{view>/isNew}"
+                                               maxLength="20"
+                                               liveChange=".onFieldChange"/>
+                                        <Text text="Unique. Uppercase. Prefix GRP_ for main, SUB_ for sub."
+                                              style="font-size:0.75rem; color:var(--sapContent_LabelColor);"
+                                              class="sapUiTinyMarginTop"/>
+                                    </VBox>
+
+                                    <!-- Description -->
+                                    <VBox>
+                                        <Label text="Description" required="true" labelFor="inDescription"/>
+                                        <Input id="inDescription"
+                                               value="{description}"
+                                               placeholder="e.g. Company Code Data"
+                                               maxLength="100"
+                                               liveChange=".onFieldChange"/>
+                                    </VBox>
+
+                                    <!-- Icon -->
+                                    <VBox>
+                                        <Label text="Icon" labelFor="inIcon"/>
+                                        <HBox alignItems="Center">
+                                            <core:Icon id="iconPreview" src="{path: 'icon', mode: 'OneWay'}"
+                                                       size="1.5rem" color="Accent8"
+                                                       class="sapUiSmallMarginEnd"/>
+                                            <Input id="inIcon"
+                                                   value="{icon}"
+                                                   placeholder="sap-icon://building"
+                                                   width="100%"
+                                                   liveChange=".onIconLiveChange"/>
+                                        </HBox>
+                                    </VBox>
+
+                                    <!-- Parent Group -->
+                                    <VBox>
+                                        <Label text="Parent Group" labelFor="selParentGroup"/>
+                                        <Select id="selParentGroup" width="100%"
+                                                change=".onParentGroupChange"
+                                                forceSelection="false"
+                                                items="{path: 'lookups>/parentGroups'}">
+                                            <core:Item key="{lookups>key}" text="{lookups>text}"/>
+                                        </Select>
+                                        <Text id="parentGroupHint"
+                                              text="Leave blank to create a Main Group."
+                                              style="font-size:0.75rem; color:var(--sapContent_LabelColor);"
+                                              class="sapUiTinyMarginTop"/>
+                                    </VBox>
+
+                                    <!-- Sequence -->
+                                    <VBox>
+                                        <Label text="Sequence" required="true" labelFor="inSequence"/>
+                                        <Input id="inSequence"
+                                               value="{sequence}"
+                                               type="Number"
+                                               placeholder="e.g. 1"
+                                               liveChange=".onFieldChange"/>
+                                    </VBox>
+
+                                </l:content>
+                            </l:Grid>
+
+                            <!-- Active switch -->
+                            <HBox alignItems="Center" class="sapUiSmallMarginTop">
+                                <Label text="Active" labelFor="swActive"
+                                       class="sapUiSmallMarginEnd" width="8rem"/>
+                                <Switch id="swActive"
+                                        state="{active}"
+                                        customTextOn="Yes"
+                                        customTextOff="No"
+                                        change=".onFieldChange"/>
+                            </HBox>
+
+                        </VBox>
+                    </IconTabFilter>
+
+                    <!-- ── TAB 2 · Sub Groups ── -->
+                    <IconTabFilter id="tabSubGroups" text="Sub Groups" key="subGroups"
+                                   count="{ui>/subGroupCount}"
+                                   icon="sap-icon://add-subfolder">
+                        <VBox>
+                            <Toolbar class="sapUiSmallMarginTop">
+                                <Title text="Sub Groups" level="H4"/>
+                                <ToolbarSpacer/>
+                                <Button text="Add Sub-Group" icon="sap-icon://add"
+                                        type="Emphasized" press=".onAddSubGroup"
+                                        enabled="{= !${view>/isNew}}"/>
+                            </Toolbar>
+
+                            <Table id="subGroupTable"
+                                   noDataText="{= ${view>/isNew} ? 'Save the group first to add sub-groups.' : 'No sub-groups defined yet.'}"
+                                   fixedLayout="true"
+                                   alternateRowColors="true"
+                                   items="{subGroups>/items}">
+                                <columns>
+                                    <Column width="7rem">
+                                        <Label text="Group ID" design="Bold"/>
+                                    </Column>
+                                    <Column>
+                                        <Label text="Description" design="Bold"/>
+                                    </Column>
+                                    <Column width="4rem" hAlign="End">
+                                        <Label text="Seq" design="Bold"/>
+                                    </Column>
+                                    <Column width="5rem" hAlign="Center">
+                                        <Label text="Status" design="Bold"/>
+                                    </Column>
+                                    <Column width="3rem" hAlign="End"/>
+                                </columns>
+                                <items>
+                                    <ColumnListItem type="Active" press=".onSubGroupRowPress">
+                                        <cells>
+                                            <Link text="{subGroups>group_id}"
+                                                  press=".onSubGroupLinkPress" wrapping="false"/>
+                                            <Text text="{subGroups>description}" wrapping="false"/>
+                                            <Text text="{subGroups>sequence}" wrapping="false"/>
+                                            <ObjectStatus
+                                                text="{= ${subGroups>active} ? 'Active' : 'Inactive'}"
+                                                state="{= ${subGroups>active} ? 'Success' : 'Error'}"/>
+                                            <Button icon="sap-icon://slim-arrow-right"
+                                                    type="Transparent"
+                                                    press=".onSubGroupRowPress"/>
+                                        </cells>
+                                    </ColumnListItem>
+                                </items>
+                            </Table>
+                        </VBox>
+                    </IconTabFilter>
+
+                    <!-- ── TAB 3 · Assigned Fields ── -->
+                    <IconTabFilter id="tabAssignedFields" text="Assigned Fields" key="assignedFields"
+                                   count="{ui>/assignedFieldCount}"
+                                   icon="sap-icon://form">
+                        <VBox>
+                            <Toolbar class="sapUiSmallMarginTop">
+                                <Title text="Fields assigned to this group" level="H4"/>
+                                <ToolbarSpacer/>
+                            </Toolbar>
+
+                            <Table id="fieldsTable"
+                                   noDataText="No fields assigned to this group yet."
+                                   fixedLayout="true"
+                                   alternateRowColors="true"
+                                   items="{assignedFields>/items}">
+                                <columns>
+                                    <Column width="8rem">
+                                        <Label text="Field ID" design="Bold"/>
+                                    </Column>
+                                    <Column>
+                                        <Label text="Description" design="Bold"/>
+                                    </Column>
+                                    <Column width="6rem">
+                                        <Label text="Data Type" design="Bold"/>
+                                    </Column>
+                                    <Column width="7rem">
+                                        <Label text="Display Type" design="Bold"/>
+                                    </Column>
+                                    <Column width="5rem" hAlign="Center">
+                                        <Label text="Status" design="Bold"/>
+                                    </Column>
+                                    <Column width="3rem" hAlign="End"/>
+                                </columns>
+                                <items>
+                                    <ColumnListItem type="Active" press=".onFieldRowPress">
+                                        <cells>
+                                            <Link text="{assignedFields>field_id}"
+                                                  press=".onFieldLinkPress" wrapping="false"/>
+                                            <Text text="{assignedFields>description}" wrapping="false"/>
+                                            <Text text="{assignedFields>data_type}"   wrapping="false"/>
+                                            <Text text="{assignedFields>display_type}" wrapping="false"/>
+                                            <ObjectStatus
+                                                text="{= ${assignedFields>active} ? 'Active' : 'Inactive'}"
+                                                state="{= ${assignedFields>active} ? 'Success' : 'Error'}"/>
+                                            <Button icon="sap-icon://slim-arrow-right"
+                                                    type="Transparent"
+                                                    press=".onFieldRowPress"/>
+                                        </cells>
+                                    </ColumnListItem>
+                                </items>
+                            </Table>
+                        </VBox>
+                    </IconTabFilter>
+
+                    <!-- ── TAB 4 · Change Log ── -->
+                    <IconTabFilter text="Change Log" key="changelog" icon="sap-icon://history">
+                        <Table id="logTable"
+                               noDataText="No changes recorded yet."
+                               items="{path: '/AuditLogs', suspended: true}">
+                            <columns>
+                                <Column width="180px"><Text text="Timestamp"/></Column>
+                                <Column width="130px"><Text text="User"/></Column>
+                                <Column width="100px"><Text text="Action"/></Column>
+                                <Column><Text text="Before"/></Column>
+                                <Column><Text text="After"/></Column>
+                            </columns>
+                            <items>
+                                <ColumnListItem>
+                                    <cells>
+                                        <Text text="{acted_at}"/>
+                                        <Text text="{actor}"/>
+                                        <ObjectStatus text="{action}"
+                                            state="{= ${action} === 'CREATE' ? 'Success' :
+                                                       ${action} === 'DELETE' ? 'Error' : 'None'}"/>
+                                        <Text text="{before_value}" maxLines="2"/>
+                                        <Text text="{after_value}"  maxLines="2"/>
+                                    </cells>
+                                </ColumnListItem>
+                            </items>
+                        </Table>
+                    </IconTabFilter>
+
+                </items>
+            </IconTabBar>
+        </content>
+
+        <footer>
+            <OverflowToolbar>
+                <ToolbarSpacer/>
+                <Button id="btnCopy"   text="Copy"   icon="sap-icon://copy"
+                        type="Transparent" press=".onCopy"/>
+                <Button id="btnCancel" text="Cancel" type="Default" press=".onCancel"/>
+                <Button id="btnSave"   text="Save"   type="Emphasized" press=".onSave"/>
+            </OverflowToolbar>
+        </footer>
+
+    </Page>
+</mvc:View>
