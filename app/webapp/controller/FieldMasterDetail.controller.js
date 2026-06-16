@@ -174,6 +174,12 @@ sap.ui.define(
         this.getView().bindObject({
           path: sPath,
           parameters: {
+            $select: [
+              "field_id", "description", "data_type", "length", "decimals",
+              "display_type", "active", "source_table", "source_field",
+              "main_group_group_id", "sub_group_group_id",
+              "value_table_value_table_id", "validation_validation_id"
+            ].join(","),
             $expand: [
               "main_group($select=group_id,description)",
               "sub_group($select=group_id,description)",
@@ -460,8 +466,12 @@ sap.ui.define(
           .submitBatch("fieldMasterUpdate")
           .then(
             function () {
-              if (bIsNew && oCtx && oCtx.created) {
-                return oCtx.created().then(function () { return true; });
+              if (bIsNew && oCtx && typeof oCtx.created === "function") {
+                var pCreated = oCtx.created();
+                if (pCreated && typeof pCreated.then === "function") {
+                  return pCreated.then(function () { return true; });
+                }
+                return true;
               }
               return false;
             }
@@ -525,6 +535,9 @@ sap.ui.define(
           MessageToast.show("No field selected to copy.");
           return;
         }
+        // Clear any stale pending create/patch from a previous copy attempt so
+        // it cannot keep retrying and colliding on the key.
+        this.getView().getModel().resetChanges("fieldMasterUpdate");
 
         // Read current field data
         oCtx.requestObject().then(

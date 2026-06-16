@@ -1,0 +1,4 @@
+category_id,description,icon,sequence,active
+Person,Natural Person,sap-icon://person-placeholder,1,true
+Organization,Organization,sap-icon://building,2,true
+Group,Group,sap-icon://group,3,true

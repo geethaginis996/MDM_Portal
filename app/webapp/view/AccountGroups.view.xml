@@ -5,10 +5,10 @@
     xmlns:f="sap.f"
     xmlns:core="sap.ui.core"
     xmlns:l="sap.ui.layout"
-    controllerName="mdm.portal.controller.BPRoles"
+    controllerName="mdm.portal.controller.AccountGroups"
     displayBlock="true">
 
-    <f:DynamicPage id="bpRolesPage" fitContent="true"
+    <f:DynamicPage id="accountGroupsPage" fitContent="true"
         toggleHeaderOnTitleClick="false" headerExpanded="true" preserveHeaderStateOnScroll="false"
         class="sapUiSizeCondensed sapMDMFieldMasterPage">
 
@@ -16,23 +16,33 @@
             <f:DynamicPageTitle>
                 <f:heading>
                     <VBox>
-                        <Title text="BP Roles" level="H2" wrapping="false"/>
+                        <Title text="Account Groups" level="H2" wrapping="false"/>
                         <HBox class="sapUiTinyMarginTop">
-                            <ObjectStatus id="countTotal" text="{ui>/totalCount} roles configured"
+                            <ObjectStatus id="countCustomer" text="{ui>/customerCount} customer"
+                                          state="Information" class="sapUiTinyMarginEnd"/>
+                            <ObjectStatus id="countVendor" text="{ui>/vendorCount} vendor"
                                           state="Information"/>
                         </HBox>
                     </VBox>
                 </f:heading>
                 <f:snappedHeading>
-                    <Title text="BP Roles" level="H3" wrapping="false"/>
+                    <Title text="Account Groups" level="H3" wrapping="false"/>
                 </f:snappedHeading>
                 <f:actions>
                     <OverflowToolbar style="Clear">
+                        <SegmentedButton id="typeSegment" selectedKey="CUSTOMER"
+                                         selectionChange=".onTypeSegmentChange">
+                            <items>
+                                <SegmentedButtonItem key="CUSTOMER" text="Customer"/>
+                                <SegmentedButtonItem key="VENDOR"   text="Vendor"/>
+                            </items>
+                        </SegmentedButton>
+                        <ToolbarSeparator/>
                         <Button id="exportBtn" text="Export" icon="sap-icon://download"
                                 type="Transparent" press=".onExport">
                             <layoutData><OverflowToolbarLayoutData priority="Low" overflowText="Export"/></layoutData>
                         </Button>
-                        <Button id="addBtn" text="New Role" icon="sap-icon://add"
+                        <Button id="addBtn" text="New Account Group" icon="sap-icon://add"
                                 type="Emphasized" press=".onAdd">
                             <layoutData><OverflowToolbarLayoutData priority="NeverOverflow"/></layoutData>
                         </Button>
@@ -44,23 +54,13 @@
         <f:header>
             <f:DynamicPageHeader pinnable="false" backgroundDesign="Translucent">
                 <VBox>
-                    <l:Grid defaultSpan="XL4 L4 M6 S12" hSpacing="1" vSpacing="0.5"
+                    <l:Grid defaultSpan="XL6 L6 M6 S12" hSpacing="1" vSpacing="0.5"
                             class="sapUiSmallMarginTopBottom">
                         <l:content>
                             <VBox>
-                                <Label text="Role ID / Description" labelFor="filterSearch" design="Bold"/>
+                                <Label text="Account Group / Description" labelFor="filterSearch" design="Bold"/>
                                 <Input id="filterSearch" placeholder="Search…" showClearIcon="true"
                                        width="100%" liveChange=".onFilterLiveChange"/>
-                            </VBox>
-                        </l:content>
-                        <l:content>
-                            <VBox>
-                                <Label text="Master Data Type" labelFor="filterMDT" design="Bold"/>
-                                <Select id="filterMDT" width="100%" change=".onFilterChange"
-                                        forceSelection="false"
-                                        items="{path: 'filters>/masterDataTypes'}">
-                                    <core:ListItem key="{filters>key}" text="{filters>text}"/>
-                                </Select>
                             </VBox>
                         </l:content>
                         <l:content>
@@ -74,10 +74,6 @@
                             </VBox>
                         </l:content>
                     </l:Grid>
-
-                    <!-- Filter actions in a full-width toolbar: the ToolbarSpacer
-                         pushes the buttons right without any grid-column math, so
-                         they can never be clipped at the page edge. -->
                     <Toolbar style="Clear" class="sapUiSmallMarginTop">
                         <ToolbarSpacer/>
                         <Button text="Clear" type="Transparent" press=".onClearFilters"/>
@@ -89,22 +85,17 @@
 
         <f:content>
             <VBox>
-                <MessageStrip id="pageMessageStrip" text="" type="Information"
-                              showCloseButton="true" visible="false"
-                              class="sapUiSmallMarginBegin sapUiSmallMarginEnd sapUiSmallMarginTop"/>
-
-                <Table id="roleTable"
+                <Table id="agTable"
                     items="{
-                        path: '/BPRoles',
+                        path: '/AccountGroups',
                         parameters: {
                             $count: true,
-                            $expand: 'master_data_type($select=master_data_type_id,description)',
-                            $select: 'role_id,description,initial_bp_required,sequence,active,master_data_type_master_data_type_id',
-                            $orderby: 'sequence asc,role_id asc'
+                            $select: 'account_group_id,description,type,number_range_id,assignment_mode,one_time,active',
+                            $orderby: 'account_group_id asc'
                         }
                     }"
                     growing="true" growingThreshold="50" growingScrollToLoad="true"
-                    noDataText="No BP roles found"
+                    noDataText="No account groups found"
                     mode="MultiSelect" fixedLayout="true" alternateRowColors="true"
                     sticky="ColumnHeaders,HeaderToolbar"
                     selectionChange=".onSelectionChange"
@@ -112,7 +103,7 @@
 
                     <headerToolbar>
                         <OverflowToolbar id="tableToolbar" style="Clear">
-                            <Title id="tableTitle" text="BP Roles" level="H3"/>
+                            <Title id="tableTitle" text="Account Groups" level="H3"/>
                             <ToolbarSpacer/>
                             <Button id="bulkActivateBtn" text="Activate" icon="sap-icon://accept"
                                     type="Success" visible="false" press=".onBulkActivate">
@@ -127,37 +118,30 @@
                     </headerToolbar>
 
                     <columns>
-                        <Column id="colId"        width="7rem"  vAlign="Middle" importance="High">
-                            <Label text="BP Role ID" design="Bold"/></Column>
-                        <Column id="colDesc"      width="11rem" vAlign="Middle" importance="High">
+                        <Column id="colId"       width="8rem"  vAlign="Middle" importance="High">
+                            <Label text="Account Group" design="Bold"/></Column>
+                        <Column id="colDesc"     width="11rem" vAlign="Middle" importance="High">
                             <Label text="Description" design="Bold"/></Column>
-                        <Column id="colMDT"       width="8rem"  vAlign="Middle" importance="Medium">
-                            <Label text="Master Data Type" design="Bold"/></Column>
-                        <Column id="colInitBP"    width="7rem"  vAlign="Middle" hAlign="Center" importance="Medium">
-                            <Label text="Initial BP Required" design="Bold"/></Column>
-                        <Column id="colPrereq"    width="7rem"  vAlign="Middle" hAlign="Center" importance="Low">
-                            <Label text="Prerequisite Fields" design="Bold"/></Column>
-                        <Column id="colAssigned"  width="6rem"  vAlign="Middle" hAlign="Center" importance="Medium">
-                            <Label text="Assigned Fields" design="Bold"/></Column>
-                        <Column id="colStatus"    width="5rem"  vAlign="Middle" hAlign="Center" importance="High">
+                        <Column id="colType"     width="7rem"  vAlign="Middle" importance="Medium">
+                            <Label text="Type" design="Bold"/></Column>
+                        <Column id="colNumRange" width="9rem"  vAlign="Middle" importance="Medium">
+                            <Label text="Number Range" design="Bold"/></Column>
+                        <Column id="colFields"   width="7rem"  vAlign="Middle" hAlign="Center" importance="Low">
+                            <Label text="Additional Fields" design="Bold"/></Column>
+                        <Column id="colStatus"   width="6rem"  vAlign="Middle" hAlign="Center" importance="High">
                             <Label text="Status" design="Bold"/></Column>
-                        <Column id="colActions"   width="3rem"  vAlign="Middle" hAlign="End" importance="High"/>
+                        <Column id="colActions"  width="3rem"  vAlign="Middle" hAlign="End" importance="High"/>
                     </columns>
 
                     <items>
                         <ColumnListItem type="Active" press=".onRowPress">
                             <cells>
-                                <Link text="{role_id}" press=".onLinkPress" wrapping="false"/>
+                                <Link text="{account_group_id}" press=".onLinkPress" wrapping="false"/>
                                 <Text text="{description}" wrapping="false" maxLines="1"/>
-                                <Text text="{master_data_type/description}" wrapping="false"/>
+                                <ObjectStatus text="{path: 'type', formatter: '.formatType'}" state="None"/>
+                                <Text text="{path: 'assignment_mode', formatter: '.formatNumberRange'}" wrapping="false"/>
                                 <ObjectStatus
-                                    text="{path: 'initial_bp_required', formatter: '.formatYesNo'}"
-                                    state="None"/>
-                                <ObjectStatus
-                                    text="{parts: [{path: 'role_id'}, {path: 'ui>/prereqCounts'}], formatter: '.formatCount'}"
-                                    state="None"/>
-                                <ObjectStatus
-                                    text="{parts: [{path: 'role_id'}, {path: 'ui>/fieldCounts'}], formatter: '.formatCount'}"
+                                    text="{parts: [{path: 'account_group_id'}, {path: 'ui>/fieldCounts'}], formatter: '.formatCount'}"
                                     state="None"/>
                                 <ObjectStatus
                                     text="{path: 'active', formatter: '.formatActiveText'}"

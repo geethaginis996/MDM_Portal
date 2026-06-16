@@ -11,7 +11,7 @@
     <f:DynamicPage
         id="fieldGroupsPage"
         fitContent="true"
-        toggleHeaderOnTitleClick="true"
+        toggleHeaderOnTitleClick="false" headerExpanded="true"
         preserveHeaderStateOnScroll="false"
         class="sapUiSizeCondensed sapMDMFieldMasterPage">
 
@@ -53,7 +53,7 @@
                                 type="Transparent"
                                 press=".onExport">
                             <layoutData>
-                                <OverflowToolbarLayoutData priority="Low" overflowText="Export"/>
+                                <OverflowToolbarLayoutData priority="Low"/>
                             </layoutData>
                         </Button>
                         <Button id="addGroupBtn"
@@ -73,7 +73,8 @@
 
         <!-- ── Filter header ─────────────────────────────────────── -->
         <f:header>
-            <f:DynamicPageHeader pinnable="true" backgroundDesign="Translucent">
+            <f:DynamicPageHeader pinnable="false" backgroundDesign="Translucent">
+                <VBox>
                 <l:Grid defaultSpan="XL3 L3 M6 S12"
                         hSpacing="1" vSpacing="0.5"
                         class="sapUiSmallMarginBeginEnd sapUiSmallMarginTopBottom">
@@ -117,18 +118,13 @@
                             </Select>
                         </VBox>
                     </l:content>
-                    <l:content>
-                        <VBox justifyContent="End" height="100%">
-                            <HBox justifyContent="End" alignItems="Center"
-                                  class="sapUiTinyMarginTop">
-                                <Button text="Clear" type="Transparent"
-                                        press=".onClearFilters"
-                                        class="sapUiTinyMarginEnd"/>
-                                <Button text="Go" type="Emphasized" press=".onGo"/>
-                            </HBox>
-                        </VBox>
-                    </l:content>
                 </l:Grid>
+                    <Toolbar style="Clear" class="sapUiSmallMarginTop">
+                        <ToolbarSpacer/>
+                        <Button text="Clear" type="Transparent" press=".onClearFilters"/>
+                        <Button text="Go" type="Emphasized" press=".onGo"/>
+                    </Toolbar>
+                </VBox>
             </f:DynamicPageHeader>
         </f:header>
 
@@ -225,14 +221,13 @@
                                 <!-- Main Group chip vs Sub Group chip -->
                                 <ObjectStatus
                                     text="{path: 'parent_group_id_group_id', formatter: '.formatTypeText'}"
-                                    state="{path: 'parent_group_id_group_id', formatter: '.formatTypeState'}"
-                                    inverted="{path: 'parent_group_id_group_id', formatter: '.formatTypeInverted'}"/>
+                                    state="{path: 'parent_group_id_group_id', formatter: '.formatTypeState'}"/>
 
                                 <Text text="{path: 'parent_group_id_group_id', formatter: '.formatParent'}"
                                       wrapping="false"/>
 
                                 <!-- Icon preview -->
-                                <core:Icon src="{icon}" size="1rem" color="Default"/>
+                                <core:Icon src="{path: 'icon', formatter: '.formatIcon'}" size="1rem" color="Default"/>
 
                                 <Text text="{sequence}" wrapping="false"/>
 

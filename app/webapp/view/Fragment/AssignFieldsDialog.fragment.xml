@@ -1,0 +1,63 @@
+<core:FragmentDefinition
+    xmlns:core="sap.ui.core"
+    xmlns="sap.m">
+
+    <Dialog id="assignFieldsDialog"
+            title="{dlg>/title}"
+            contentWidth="48rem"
+            contentHeight="34rem"
+            resizable="true"
+            draggable="true">
+
+        <content>
+            <VBox class="sapUiSmallMargin">
+                <!-- Default status applied to newly selected fields -->
+                <HBox alignItems="Center" class="sapUiTinyMarginBottom" wrap="Wrap"
+                      visible="{dlg>/showStatus}">
+                    <Label text="Default field status for selected fields:" class="sapUiTinyMarginEnd"/>
+                    <Select id="dlgDefaultStatus" selectedKey="OPTIONAL">
+                        <core:Item key="REQUIRED" text="Required"/>
+                        <core:Item key="OPTIONAL" text="Optional"/>
+                        <core:Item key="SUPPRESS" text="Suppress"/>
+                    </Select>
+                    <ToolbarSpacer/>
+                </HBox>
+
+                <SearchField id="dlgSearch" placeholder="Search field name or description…"
+                             liveChange=".onDialogSearch" width="100%"
+                             class="sapUiTinyMarginBottom"/>
+
+                <Table id="dlgFieldsTable"
+                       mode="MultiSelect"
+                       growing="true" growingThreshold="100"
+                       noDataText="No selectable fields found"
+                       items="{dlg>/availableFields}"
+                       fixedLayout="true" alternateRowColors="true">
+                    <columns>
+                        <Column width="8rem"><Text text="Field Name"/></Column>
+                        <Column><Text text="Description"/></Column>
+                        <Column width="7rem"><Text text="Main ▸ Sub Group"/></Column>
+                        <Column width="6rem"><Text text="Data Type"/></Column>
+                    </columns>
+                    <items>
+                        <ColumnListItem>
+                            <cells>
+                                <Text text="{dlg>field_id}" wrapping="false"/>
+                                <Text text="{dlg>description}" wrapping="false"/>
+                                <Text text="{dlg>group_path}" wrapping="false"/>
+                                <Text text="{dlg>data_type}" wrapping="false"/>
+                            </cells>
+                        </ColumnListItem>
+                    </items>
+                </Table>
+            </VBox>
+        </content>
+
+        <beginButton>
+            <Button text="Add Selected" type="Emphasized" press=".onAssignFieldsConfirm"/>
+        </beginButton>
+        <endButton>
+            <Button text="Cancel" press=".onAssignFieldsCancel"/>
+        </endButton>
+    </Dialog>
+</core:FragmentDefinition>

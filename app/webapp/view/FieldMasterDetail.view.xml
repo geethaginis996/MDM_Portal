@@ -116,36 +116,6 @@
                     </IconTabFilter>
 
                     <!-- ── TAB 2 · Grouping ── -->
-                    <IconTabFilter text="Grouping" key="grouping" icon="sap-icon://group">
-                        <VBox class="sapUiMediumMarginBeginEnd">
-                            <Title text="Group Hierarchy" level="H4"
-                                   class="sapUiSmallMarginTop sapUiSmallMarginBottom"/>
-                            <layout:Grid defaultSpan="L6 M6 S12" hSpacing="2">
-                                <layout:content>
-                                    <VBox>
-                                        <Label text="Main Group" required="true"/>
-                                        <Select id="selMainGroup"
-                                                selectedKey="{main_group_group_id}"
-                                                change=".onMainGroupChange"
-                                                width="100%"
-                                                items="{path: 'lookups>/mainGroups'}">
-                                            <core:Item key="{lookups>key}" text="{lookups>text}"/>
-                                        </Select>
-                                    </VBox>
-                                    <VBox>
-                                        <Label text="Sub Group" required="true"/>
-                                        <Select id="selSubGroup"
-                                                selectedKey="{sub_group_group_id}"
-                                                width="100%"
-                                                change=".onFieldChange">
-                                            <core:Item key="" text="— Select Main Group first —"/>
-                                        </Select>
-                                    </VBox>
-                                </layout:content>
-                            </layout:Grid>
-                        </VBox>
-                    </IconTabFilter>
-
                     <!-- ── TAB 3 · Value Help ── -->
                     <IconTabFilter text="Value Help" key="valuehelp" icon="sap-icon://value-help">
                         <VBox class="sapUiMediumMarginBeginEnd">

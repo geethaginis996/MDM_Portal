@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mvc:View
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core"
+    xmlns:l="sap.ui.layout"
+    controllerName="mdm.portal.controller.BPCategoryDetail"
+    displayBlock="true">
+
+    <Page id="detailPage" showHeader="false">
+        <content>
+            <VBox>
+                <Bar class="sapMPageHeader">
+                    <contentLeft>
+                        <Button icon="sap-icon://nav-back" type="Transparent" press=".onNavBack"/>
+                        <Breadcrumbs id="pageBreadcrumb" separatorStyle="Slash" class="sapUiTinyMarginBegin">
+                            <Link text="Configuration" press=".onNavBack"/>
+                            <Link text="BP Categories" press=".onNavBack"/>
+                        </Breadcrumbs>
+                    </contentLeft>
+                </Bar>
+            </VBox>
+
+            <VBox class="sapUiMediumMarginBeginEnd sapUiSmallMarginTop">
+                <HBox alignItems="Center">
+                    <core:Icon id="headerIcon" src="sap-icon://customer" size="2rem" color="Accent8"
+                               class="sapUiSmallMarginEnd"/>
+                    <VBox>
+                        <Title id="pageTitle" text="" level="H2" wrapping="false"/>
+                        <Text id="pageSubtitle" text="BP Category · system-defined · category-specific field assignments"
+                              class="sapUiTinyMarginTop"
+                              style="color: var(--sapContent_LabelColor); font-size: 0.875rem;"/>
+                    </VBox>
+                </HBox>
+                <HBox wrap="Wrap" class="sapUiSmallMarginTop" alignItems="Center">
+                    <ObjectStatus id="attrStatus" text="Active" state="Success"/>
+                    <Text text="&#183;" class="sapUiTinyMarginBegin sapUiTinyMarginEnd"
+                          style="color: var(--sapContent_LabelColor);"/>
+                    <ObjectAttribute id="attrFields" title="Additional fields" text=""/>
+                </HBox>
+            </VBox>
+
+            <HBox class="sapUiTinyMarginTop sapUiMediumMarginBeginEnd">
+                <core:HTML content="&lt;hr style='border:none;border-top:1px solid var(--sapGroup_TitleBorderColor);margin:0 0 0.5rem 0;width:100%'/&gt;"/>
+            </HBox>
+
+            <IconTabBar id="detailTabs" select=".onTabSelect" expanded="true"
+                        class="sapUiResponsiveContentPadding">
+                <items>
+
+                    <!-- TAB 1 - General -->
+                    <IconTabFilter text="General" key="general" icon="sap-icon://hint">
+                        <VBox class="sapUiMediumMarginBeginEnd">
+                            <Title text="General" level="H4"
+                                   class="sapUiSmallMarginTop sapUiSmallMarginBottom"/>
+                            <l:Grid defaultSpan="L6 M6 S12" hSpacing="2">
+                                <l:content>
+                                    <VBox>
+                                        <Label text="Category ID" labelFor="inId"/>
+                                        <Input id="inId" value="{category_id}" editable="false"/>
+                                        <Text text="System-defined; cannot be changed."
+                                              style="font-size:0.75rem; color:var(--sapContent_LabelColor);"
+                                              class="sapUiTinyMarginTop"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Description" required="true" labelFor="inDescription"/>
+                                        <Input id="inDescription" value="{description}"
+                                               maxLength="100" liveChange=".onFieldChange"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Icon" labelFor="inIcon"/>
+                                        <Input id="inIcon" value="{icon}" placeholder="e.g. sap-icon://person-placeholder"
+                                               maxLength="40" liveChange=".onFieldChange"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Active" labelFor="swActive"/>
+                                        <Switch id="swActive" state="{active}"
+                                                customTextOn="Yes" customTextOff="No"
+                                                change=".onFieldChange"/>
+                                    </VBox>
+                                    <VBox class="sapUiSmallMarginTop">
+                                        <Label text="Applicable To" labelFor="inApplicable"/>
+                                        <Input id="inApplicable" value="Customer · Vendor · Both" editable="false"/>
+                                        <Text text="BP categories apply regardless of master data type."
+                                              style="font-size:0.75rem; color:var(--sapContent_LabelColor);"
+                                              class="sapUiTinyMarginTop"/>
+                                    </VBox>
+                                </l:content>
+                            </l:Grid>
+                            <MessageStrip
+                                text="How this works: Fields assigned to a BP category appear on the Create BP screen in addition to fields from the BP roles and account groups. They are typically identity-level attributes like first/last name for a Person, or registration number for an Organization."
+                                type="Information" showIcon="true"
+                                class="sapUiMediumMarginTop"/>
+                        </VBox>
+                    </IconTabFilter>
+
+                    <!-- TAB 2 - Field Assignments -->
+                    <IconTabFilter id="tabFields" text="Field Assignments" key="fields"
+                                   count="{ui>/fieldCount}" icon="sap-icon://form">
+                        <VBox>
+                            <Toolbar class="sapUiSmallMarginTop">
+                                <Title text="Category Field Assignments" level="H4"/>
+                                <ToolbarSpacer/>
+                                <Button text="Assign Field" icon="sap-icon://add" type="Transparent"
+                                        press=".onAssignField"/>
+                            </Toolbar>
+                            <Table id="fieldsTable" noDataText="No fields assigned to this category yet."
+                                   fixedLayout="true" alternateRowColors="true"
+                                   items="{assigned>/items}">
+                                <columns>
+                                    <Column width="7rem"><Label text="Field Name" design="Bold"/></Column>
+                                    <Column><Label text="Description" design="Bold"/></Column>
+                                    <Column width="7rem"><Label text="Main Group" design="Bold"/></Column>
+                                    <Column width="7rem"><Label text="Sub Group" design="Bold"/></Column>
+                                    <Column width="6rem"><Label text="Data Type" design="Bold"/></Column>
+                                    <Column width="6rem" hAlign="Center"><Label text="Field Status" design="Bold"/></Column>
+                                    <Column width="4rem" hAlign="End"><Label text="Seq" design="Bold"/></Column>
+                                </columns>
+                                <items>
+                                    <ColumnListItem type="Active" press=".onFieldRowPress">
+                                        <cells>
+                                            <Link text="{assigned>field_id}" press=".onFieldLinkPress" wrapping="false"/>
+                                            <Text text="{assigned>description}" wrapping="false"/>
+                                            <Text text="{assigned>main_group}" wrapping="false"/>
+                                            <Text text="{assigned>sub_group}" wrapping="false"/>
+                                            <Text text="{assigned>data_type}" wrapping="false"/>
+                                            <ObjectStatus
+                                                text="{path: 'assigned>field_status', formatter: '.formatStatusText'}"
+                                                state="{path: 'assigned>field_status', formatter: '.formatStatusState'}"/>
+                                            <Text text="{assigned>sequence}" wrapping="false"/>
+                                        </cells>
+                                    </ColumnListItem>
+                                </items>
+                            </Table>
+                            <VBox class="sapUiSmallMargin">
+                                <MessageStrip
+                                    text="Precedence: If a field is assigned at multiple layers (BP role / Account group / Category), the strongest field status wins. A field suppressed by the category will not appear on the Create BP screen."
+                                    type="Information" showIcon="true"/>
+                            </VBox>
+                        </VBox>
+                    </IconTabFilter>
+
+                    <!-- TAB 3 - Change Log -->
+                    <IconTabFilter text="Change Log" key="changelog" icon="sap-icon://history">
+                        <Table id="logTable" noDataText="No changes recorded yet."
+                               items="{path: '/AuditLogs', suspended: true}">
+                            <columns>
+                                <Column width="180px"><Text text="Timestamp"/></Column>
+                                <Column width="130px"><Text text="User"/></Column>
+                                <Column width="100px"><Text text="Action"/></Column>
+                                <Column><Text text="Before"/></Column>
+                                <Column><Text text="After"/></Column>
+                            </columns>
+                            <items>
+                                <ColumnListItem>
+                                    <cells>
+                                        <Text text="{acted_at}"/>
+                                        <Text text="{actor}"/>
+                                        <ObjectStatus text="{action}"
+                                            state="{= ${action} === 'CREATE' ? 'Success' : ${action} === 'DELETE' ? 'Error' : 'None'}"/>
+                                        <Text text="{before_value}" maxLines="2"/>
+                                        <Text text="{after_value}" maxLines="2"/>
+                                    </cells>
+                                </ColumnListItem>
+                            </items>
+                        </Table>
+                    </IconTabFilter>
+
+                </items>
+            </IconTabBar>
+        </content>
+
+        <footer>
+            <OverflowToolbar>
+                <ToolbarSpacer/>
+                <Button id="btnCancel" text="Cancel" type="Default" press=".onCancel"/>
+                <Button id="btnSave" text="Save" type="Emphasized" press=".onSave"/>
+            </OverflowToolbar>
+        </footer>
+    </Page>
+</mvc:View>

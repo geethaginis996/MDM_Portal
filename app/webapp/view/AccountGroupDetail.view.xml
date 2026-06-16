@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mvc:View
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core"
+    xmlns:l="sap.ui.layout"
+    controllerName="mdm.portal.controller.AccountGroupDetail"
+    displayBlock="true">
+
+    <Page id="detailPage" showHeader="false">
+        <content>
+            <VBox>
+                <Bar class="sapMPageHeader">
+                    <contentLeft>
+                        <Button icon="sap-icon://nav-back" type="Transparent" press=".onNavBack"/>
+                        <Breadcrumbs id="pageBreadcrumb" separatorStyle="Slash" class="sapUiTinyMarginBegin">
+                            <Link text="Configuration" press=".onNavBack"/>
+                            <Link text="Account Groups" press=".onNavBack"/>
+                        </Breadcrumbs>
+                    </contentLeft>
+                </Bar>
+            </VBox>
+
+            <VBox class="sapUiMediumMarginBeginEnd sapUiSmallMarginTop">
+                <HBox alignItems="Center">
+                    <core:Icon src="sap-icon://accounts" size="2rem" color="Accent6"
+                               class="sapUiSmallMarginEnd"/>
+                    <VBox>
+                        <Title id="pageTitle" text="" level="H2" wrapping="false"/>
+                        <Text id="pageSubtitle" text="" class="sapUiTinyMarginTop"
+                              style="color: var(--sapContent_LabelColor); font-size: 0.875rem;"/>
+                    </VBox>
+                </HBox>
+                <HBox wrap="Wrap" class="sapUiSmallMarginTop" alignItems="Center">
+                    <ObjectStatus id="attrStatus" text="Active" state="Success"/>
+                    <Text text="·" class="sapUiTinyMarginBegin sapUiTinyMarginEnd"
+                          style="color: var(--sapContent_LabelColor);"/>
+                    <ObjectAttribute id="attrType" title="Type" text=""/>
+                    <Text text="·" class="sapUiTinyMarginBegin sapUiTinyMarginEnd"
+                          style="color: var(--sapContent_LabelColor);"/>
+                    <ObjectAttribute id="attrFields" title="Additional fields" text=""/>
+                </HBox>
+            </VBox>
+
+            <IconTabBar id="detailTabs" select=".onTabSelect" expanded="true"
+                        class="sapUiResponsiveContentPadding">
+                <items>
+
+                    <!-- TAB 1 - General -->
+                    <IconTabFilter text="General" key="general" icon="sap-icon://hint">
+                        <VBox class="sapUiMediumMarginBeginEnd">
+                            <Title text="General" level="H4"
+                                   class="sapUiSmallMarginTop sapUiSmallMarginBottom"/>
+                            <l:Grid defaultSpan="L6 M6 S12" hSpacing="2">
+                                <l:content>
+                                    <VBox>
+                                        <Label text="Account Group" required="true" labelFor="inId"/>
+                                        <Input id="inId" value="{account_group_id}" placeholder="e.g. 0001"
+                                               editable="{view>/isNew}"
+                                               maxLength="10" liveChange=".onFieldChange"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Description" required="true" labelFor="inDescription"/>
+                                        <Input id="inDescription" value="{description}"
+                                               placeholder="e.g. Sold-to Party"
+                                               maxLength="100" liveChange=".onFieldChange"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Type" required="true" labelFor="typeGroup"/>
+                                        <RadioButtonGroup id="typeGroup" columns="2" select=".onTypeChange">
+                                            <RadioButton id="rbCustomer" text="Customer"/>
+                                            <RadioButton id="rbVendor"   text="Vendor"/>
+                                        </RadioButtonGroup>
+                                        <Text text="Determines which BP roles can use this account group."
+                                              style="font-size:0.75rem; color:var(--sapContent_LabelColor);"
+                                              class="sapUiTinyMarginTop"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Number Range" labelFor="selNumberRange"/>
+                                        <Select id="selNumberRange" width="100%" change=".onFieldChange">
+                                            <core:Item key="INTERNAL" text="Internal — 1–999999"/>
+                                            <core:Item key="EXTERNAL" text="External — A–Z"/>
+                                        </Select>
+                                        <Text text="The actual number-range assignment is also reflected on the BP role."
+                                              style="font-size:0.75rem; color:var(--sapContent_LabelColor);"
+                                              class="sapUiTinyMarginTop"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="One-Time Account" labelFor="swOneTime"/>
+                                        <Switch id="swOneTime" state="{one_time}"
+                                                customTextOn="Yes" customTextOff="No"
+                                                change=".onFieldChange"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Active" labelFor="swActive"/>
+                                        <Switch id="swActive" state="{active}"
+                                                customTextOn="Yes" customTextOff="No"
+                                                change=".onFieldChange"/>
+                                    </VBox>
+                                </l:content>
+                            </l:Grid>
+
+                            <MessageStrip
+                                text="Account groups are not linked to BP roles directly. Any BP role with matching Master Data Type and Account Group Required = Yes will automatically show this account group to the user."
+                                type="Information" showIcon="true"
+                                class="sapUiMediumMarginTop"/>
+                        </VBox>
+                    </IconTabFilter>
+
+                    <!-- TAB 2 - Additional Fields -->
+                    <IconTabFilter id="tabFields" text="Additional Fields" key="fields"
+                                   count="{ui>/fieldCount}" icon="sap-icon://form">
+                        <VBox>
+                            <Toolbar class="sapUiSmallMarginTop">
+                                <Title text="Additional Field Assignment" level="H4"/>
+                                <ToolbarSpacer/>
+                                <Button text="Assign Field" icon="sap-icon://add" type="Emphasized"
+                                        press=".onAssignFields" enabled="{= !${view>/isNew}}"/>
+                            </Toolbar>
+                            <Table id="fieldsTable"
+                                   noDataText="{= ${view>/isNew} ? 'Save the account group first to assign fields.' : 'No additional fields assigned yet.'}"
+                                   fixedLayout="true" alternateRowColors="true"
+                                   items="{assigned>/items}">
+                                <columns>
+                                    <Column width="7rem"><Label text="Field Name" design="Bold"/></Column>
+                                    <Column><Label text="Description" design="Bold"/></Column>
+                                    <Column width="8rem"><Label text="Source Group" design="Bold"/></Column>
+                                    <Column width="6rem" hAlign="Center"><Label text="Field Status" design="Bold"/></Column>
+                                    <Column width="6rem" hAlign="Center"><Label text="Overrides BP Role?" design="Bold"/></Column>
+                                    <Column width="4rem" hAlign="End"><Label text="Seq" design="Bold"/></Column>
+                                </columns>
+                                <items>
+                                    <ColumnListItem type="Active" press=".onFieldRowPress">
+                                        <cells>
+                                            <Link text="{assigned>field_id}" press=".onFieldLinkPress" wrapping="false"/>
+                                            <Text text="{assigned>description}" wrapping="false"/>
+                                            <Text text="{assigned>group_path}" wrapping="false"/>
+                                            <ObjectStatus
+                                                text="{path: 'assigned>field_status', formatter: '.formatStatusText'}"
+                                                state="{path: 'assigned>field_status', formatter: '.formatStatusState'}"/>
+                                            <ObjectStatus
+                                                text="{= ${assigned>overrides} ? 'Yes' : '—'}"
+                                                state="{= ${assigned>overrides} ? 'Warning' : 'None'}"/>
+                                            <Text text="{assigned>sequence}" wrapping="false"/>
+                                        </cells>
+                                    </ColumnListItem>
+                                </items>
+                            </Table>
+                            <VBox class="sapUiSmallMargin">
+                                <MessageStrip
+                                    text="Precedence rule: When the same field is assigned at both BP role and account group level, the account-group-level field status takes precedence."
+                                    type="Information" showIcon="true"/>
+                            </VBox>
+                        </VBox>
+                    </IconTabFilter>
+
+                </items>
+            </IconTabBar>
+        </content>
+
+        <footer>
+            <OverflowToolbar>
+                <ToolbarSpacer/>
+                <Button id="btnCopy" text="Copy" icon="sap-icon://copy"
+                        type="Transparent" press=".onCopy"/>
+                <Button id="btnCancel" text="Cancel" type="Default" press=".onCancel"/>
+                <Button id="btnSave" text="Save" type="Emphasized" press=".onSave"/>
+            </OverflowToolbar>
+        </footer>
+    </Page>
+</mvc:View>

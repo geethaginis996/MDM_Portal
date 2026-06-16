@@ -138,6 +138,26 @@
                     "name": "bpRoleDetail",
                     "pattern": "bproles/{roleId}",
                     "target": "bpRoleDetail"
+                },
+                {
+                    "name": "bpCategories",
+                    "pattern": "bpcategories",
+                    "target": "bpCategories"
+                },
+                {
+                    "name": "bpCategoryDetail",
+                    "pattern": "bpcategories/{categoryId}",
+                    "target": "bpCategoryDetail"
+                },
+                {
+                    "name": "accountGroups",
+                    "pattern": "accountgroups",
+                    "target": "accountGroups"
+                },
+                {
+                    "name": "accountGroupDetail",
+                    "pattern": "accountgroups/{accountGroupId}",
+                    "target": "accountGroupDetail"
                 }
             ],
             "targets": {
@@ -170,11 +190,11 @@
                     "viewLevel": 1
                 },
                 "bpCategories": {
-                    "viewName": "FieldMaster",
+                    "viewName": "BPCategories",
                     "viewLevel": 1
                 },
                 "accountGroups": {
-                    "viewName": "FieldMaster",
+                    "viewName": "AccountGroups",
                     "viewLevel": 1
                 },
                 "releaseCodes": {
@@ -203,6 +223,14 @@
                 },
                 "bpRoleDetail": {
                     "viewName": "BPRoleDetail",
+                    "viewLevel": 2
+                },
+                "bpCategoryDetail": {
+                    "viewName": "BPCategoryDetail",
+                    "viewLevel": 2
+                },
+                "accountGroupDetail": {
+                    "viewName": "AccountGroupDetail",
                     "viewLevel": 2
                 }
             }

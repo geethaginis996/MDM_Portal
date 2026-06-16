@@ -1,0 +1,54 @@
+<core:FragmentDefinition
+    xmlns:core="sap.ui.core"
+    xmlns="sap.m">
+
+    <Dialog id="addPrereqRoleDialog"
+            title="Add Prerequisite Roles"
+            contentWidth="42rem"
+            contentHeight="32rem"
+            resizable="true"
+            draggable="true">
+
+        <content>
+            <VBox class="sapUiSmallMargin">
+                <HBox alignItems="Center" class="sapUiTinyMarginBottom" wrap="Wrap">
+                    <CheckBox id="dlgAutoPull" text="Auto-pull selected roles at runtime" selected="true"/>
+                    <ToolbarSpacer/>
+                </HBox>
+
+                <SearchField id="dlgRoleSearch" placeholder="Search role ID or description…"
+                             liveChange=".onRoleDialogSearch" width="100%"
+                             class="sapUiTinyMarginBottom"/>
+
+                <Table id="dlgRolesTable"
+                       mode="MultiSelect"
+                       growing="true" growingThreshold="100"
+                       noDataText="No selectable roles found"
+                       items="{rdlg>/availableRoles}"
+                       fixedLayout="true" alternateRowColors="true">
+                    <columns>
+                        <Column width="7rem"><Text text="Role ID"/></Column>
+                        <Column><Text text="Description"/></Column>
+                        <Column width="9rem"><Text text="Master Data Type"/></Column>
+                    </columns>
+                    <items>
+                        <ColumnListItem>
+                            <cells>
+                                <Text text="{rdlg>role_id}" wrapping="false"/>
+                                <Text text="{rdlg>description}" wrapping="false"/>
+                                <Text text="{rdlg>mdt}" wrapping="false"/>
+                            </cells>
+                        </ColumnListItem>
+                    </items>
+                </Table>
+            </VBox>
+        </content>
+
+        <beginButton>
+            <Button text="Add Selected" type="Emphasized" press=".onAddPrereqRoleConfirm"/>
+        </beginButton>
+        <endButton>
+            <Button text="Cancel" press=".onAddPrereqRoleCancel"/>
+        </endButton>
+    </Dialog>
+</core:FragmentDefinition>

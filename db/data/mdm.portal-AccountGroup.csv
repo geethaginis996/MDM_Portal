@@ -1,0 +1,9 @@
+account_group_id,description,type,number_range_id,assignment_mode,one_time,active
+0001,Sold-to Party,CUSTOMER,01,INTERNAL,false,true
+0002,Ship-to Party,CUSTOMER,01,INTERNAL,false,true
+0003,Payer,CUSTOMER,01,INTERNAL,false,true
+0004,Bill-to Party,CUSTOMER,01,INTERNAL,false,true
+ZCUS,Domestic Customer,CUSTOMER,02,EXTERNAL,false,true
+VEN1,Vendors (External),VENDOR,01,INTERNAL,false,true
+0100,Employees,VENDOR,01,INTERNAL,false,true
+ZVEN,One-Time Vendor,VENDOR,02,EXTERNAL,true,true

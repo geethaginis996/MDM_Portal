@@ -9,7 +9,7 @@
     displayBlock="true">
 
     <f:DynamicPage id="validationRulesPage" fitContent="true"
-        toggleHeaderOnTitleClick="true" preserveHeaderStateOnScroll="false"
+        toggleHeaderOnTitleClick="false" headerExpanded="true" preserveHeaderStateOnScroll="false"
         class="sapUiSizeCondensed sapMDMFieldMasterPage">
 
         <f:title>
@@ -42,7 +42,8 @@
         </f:title>
 
         <f:header>
-            <f:DynamicPageHeader pinnable="true" backgroundDesign="Translucent">
+            <f:DynamicPageHeader pinnable="false" backgroundDesign="Translucent">
+                <VBox>
                 <l:Grid defaultSpan="XL3 L3 M6 S12" hSpacing="1" vSpacing="0.5"
                         class="sapUiSmallMarginBeginEnd sapUiSmallMarginTopBottom">
                     <l:content>
@@ -72,16 +73,13 @@
                             </Select>
                         </VBox>
                     </l:content>
-                    <l:content>
-                        <VBox justifyContent="End" height="100%">
-                            <HBox justifyContent="End" alignItems="Center" class="sapUiTinyMarginTop">
-                                <Button text="Clear" type="Transparent" press=".onClearFilters"
-                                        class="sapUiTinyMarginEnd"/>
-                                <Button text="Go" type="Emphasized" press=".onGo"/>
-                            </HBox>
-                        </VBox>
-                    </l:content>
                 </l:Grid>
+                    <Toolbar style="Clear" class="sapUiSmallMarginTop">
+                        <ToolbarSpacer/>
+                        <Button text="Clear" type="Transparent" press=".onClearFilters"/>
+                        <Button text="Go" type="Emphasized" press=".onGo"/>
+                    </Toolbar>
+                </VBox>
             </f:DynamicPageHeader>
         </f:header>
 

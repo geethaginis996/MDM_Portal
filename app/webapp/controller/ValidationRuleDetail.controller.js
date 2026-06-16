@@ -286,6 +286,7 @@ sap.ui.define([
                 MessageToast.show("No validation rule selected to copy.");
                 return;
             }
+            this.getOwnerComponent().getModel().resetChanges("validationUpdate");
             oCtx.requestObject().then(function (oData) {
                 var oModel = this.getOwnerComponent().getModel();
                 var oListBinding = oModel.bindList("/ValidationRules", null, [], [], {

@@ -5,14 +5,15 @@ sap.ui.define([
     "sap/ui/model/FilterOperator",
     "sap/ui/model/Sorter",
     "sap/m/MessageToast",
-    "sap/m/MessageBox"
+    "sap/m/MessageBox",
+    "mdm/portal/controller/AssignFieldsHelper"
 ], function (
     Controller, JSONModel, Filter, FilterOperator, Sorter,
-    MessageToast, MessageBox
+    MessageToast, MessageBox, AssignFieldsHelper
 ) {
     "use strict";
 
-    return Controller.extend("mdm.portal.controller.BPRoleDetail", {
+    return Controller.extend("mdm.portal.controller.BPRoleDetail", Object.assign({}, AssignFieldsHelper, {
 
         onInit: function () {
             this._oViewModel = new JSONModel({
@@ -72,6 +73,7 @@ sap.ui.define([
             this.getView().bindObject({
                 path      : sPath,
                 parameters: {
+                    $select        : "role_id,description,initial_bp_required,sequence,active,master_data_type_master_data_type_id",
                     $expand        : "master_data_type($select=master_data_type_id,description)",
                     $$updateGroupId: "bpRoleUpdate"
                 },
@@ -292,6 +294,7 @@ sap.ui.define([
                 new Filter("entity_name", FilterOperator.EQ, "BPRole"),
                 new Filter("entity_key",  FilterOperator.EQ, sRole)
             ]);
+            oBinding.sort(new Sorter("acted_at", true));
             oBinding.resume();
         },
 
@@ -318,9 +321,150 @@ sap.ui.define([
         },
 
         // ── Add actions (stubs that point to where dialogs would go) ─
-        onAssignFields: function () { MessageToast.show("Assign Fields dialog — to be wired to a field picker."); },
-        onAddPrereq: function ()    { MessageToast.show("Add Prerequisite dialog — to be wired."); },
-        onAddPrereqRole: function () { MessageToast.show("Add Prerequisite Role dialog — to be wired."); },
+        onAssignFields: function () {
+            var sRole = this._roleId();
+            if (!sRole) { MessageToast.show("Save the role first."); return; }
+            var aItems = this.getView().getModel("assigned").getProperty("/items") || [];
+            var iMaxSeq = aItems.reduce(function (m, o) {
+                return Math.max(m, parseInt(o.sequence, 10) || 0);
+            }, 0);
+            this._openAssignFields({
+                collection   : "/BPRoleFields",
+                fkName       : "role_role_id",
+                fkValue      : sRole,
+                updateGroupId: "bpRoleUpdate",
+                assignedIds  : aItems.map(function (o) { return o.field_id; }),
+                maxSequence  : iMaxSeq,
+                includeStatus: true,
+                dialogTitle  : "Assign Fields",
+                extraProps   : function () { return { read_only: false }; },
+                onDone       : this._loadAssignedFields.bind(this)
+            });
+        },
+        onAddPrereq: function () {
+            var sRole = this._roleId();
+            if (!sRole) { MessageToast.show("Save the role first."); return; }
+            var aItems = this.getView().getModel("prereq").getProperty("/items") || [];
+            var iMaxSeq = aItems.reduce(function (m, o) {
+                return Math.max(m, parseInt(o.sequence, 10) || 0);
+            }, 0);
+            this._openAssignFields({
+                collection   : "/BPRolePrereqFields",
+                fkName        : "role_role_id",
+                fkValue       : sRole,
+                updateGroupId : "bpRoleUpdate",
+                assignedIds   : aItems.map(function (o) { return o.field_id; }),
+                maxSequence   : iMaxSeq,
+                includeStatus : false,
+                dialogTitle   : "Add Prerequisite Fields",
+                onDone        : this._loadPrereqFields.bind(this)
+            });
+        },
+        onAddPrereqRole: function () {
+            var sRole = this._roleId();
+            if (!sRole) { MessageToast.show("Save the role first."); return; }
+
+            var fnAfterLoad = function () {
+                this._loadAvailablePrereqRoles().then(function () {
+                    this._oPrereqRoleDialog.open();
+                }.bind(this));
+            }.bind(this);
+
+            if (this._oPrereqRoleDialog) { fnAfterLoad(); return; }
+
+            sap.ui.require(["sap/ui/core/Fragment"], function (Fragment) {
+                Fragment.load({
+                    id        : this.getView().getId(),
+                    name      : "mdm.portal.view.fragment.AddPrereqRoleDialog",
+                    controller: this
+                }).then(function (oDialog) {
+                    this._oPrereqRoleDialog = oDialog;
+                    this.getView().addDependent(oDialog);
+                    if (!this.getView().getModel("rdlg")) {
+                        this.getView().setModel(new JSONModel({ availableRoles: [], allRoles: [] }), "rdlg");
+                    }
+                    fnAfterLoad();
+                }.bind(this));
+            }.bind(this));
+        },
+
+        // Load all active roles except the current one and already-added prereqs
+        _loadAvailablePrereqRoles: function () {
+            var oModel = this.getOwnerComponent().getModel();
+            var sCurrent = this._roleId();
+            var aExisting = this.getView().getModel("prereqroles").getProperty("/items") || [];
+            var oExclude = {};
+            oExclude[sCurrent] = true;
+            aExisting.forEach(function (o) { oExclude[o.role_id] = true; });
+
+            return oModel.bindList("/BPRoles", null, [new Sorter("role_id")], [
+                new Filter("active", FilterOperator.EQ, true)
+            ], {
+                $select: "role_id,description,master_data_type_master_data_type_id"
+            }).requestContexts(0, Infinity).then(function (aCtx) {
+                var aAll = aCtx
+                    .filter(function (c) { return !oExclude[c.getProperty("role_id")]; })
+                    .map(function (c) {
+                        return {
+                            role_id    : c.getProperty("role_id"),
+                            description: c.getProperty("description") || "",
+                            mdt        : c.getProperty("master_data_type_master_data_type_id") || ""
+                        };
+                    });
+                var oRdlg = this.getView().getModel("rdlg");
+                oRdlg.setProperty("/allRoles", aAll);
+                oRdlg.setProperty("/availableRoles", aAll);
+            }.bind(this)).catch(function (e) {
+                MessageBox.error("Could not load roles: " + e.message);
+            });
+        },
+
+        onRoleDialogSearch: function (oEvent) {
+            var sQuery = (oEvent.getParameter("newValue") || "").toLowerCase();
+            var oRdlg = this.getView().getModel("rdlg");
+            var aAll = oRdlg.getProperty("/allRoles") || [];
+            if (!sQuery) { oRdlg.setProperty("/availableRoles", aAll); return; }
+            oRdlg.setProperty("/availableRoles", aAll.filter(function (o) {
+                return o.role_id.toLowerCase().indexOf(sQuery) !== -1 ||
+                       o.description.toLowerCase().indexOf(sQuery) !== -1;
+            }));
+        },
+
+        onAddPrereqRoleConfirm: function () {
+            var oTable = this.byId("dlgRolesTable");
+            var aSelected = oTable ? oTable.getSelectedItems() : [];
+            if (!aSelected.length) { MessageToast.show("Select at least one role."); return; }
+
+            var bAutoPull = this.byId("dlgAutoPull").getSelected();
+            var sRole     = this._roleId();
+            var oModel    = this.getOwnerComponent().getModel();
+            var oListBinding = oModel.bindList("/BPRoleDependencies", null, [], [], {
+                $$updateGroupId: "bpRoleUpdate"
+            });
+
+            aSelected.forEach(function (oItem) {
+                var sPreId = oItem.getBindingContext("rdlg").getProperty("role_id");
+                oListBinding.create({
+                    role_role_id                 : sRole,
+                    prerequisite_role_role_id    : sPreId,
+                    auto_pull                    : bAutoPull
+                });
+            });
+
+            oModel.submitBatch("bpRoleUpdate")
+                .then(function () {
+                    MessageToast.show(aSelected.length + " prerequisite role(s) added.");
+                    this._oPrereqRoleDialog.close();
+                    this._loadPrereqRoles();
+                }.bind(this))
+                .catch(function (e) {
+                    MessageBox.error("Could not add prerequisite roles: " + (e.message || "Unknown error"));
+                }.bind(this));
+        },
+
+        onAddPrereqRoleCancel: function () {
+            if (this._oPrereqRoleDialog) { this._oPrereqRoleDialog.close(); }
+        },
 
         // ── Save ─────────────────────────────────────────────────────
         onSave: function () {
@@ -351,8 +495,12 @@ sap.ui.define([
             var oModel = this.getOwnerComponent().getModel();
             oModel.submitBatch("bpRoleUpdate")
                 .then(function () {
-                    if (bIsNew && oCtx && oCtx.created) {
-                        return oCtx.created().then(function () { return true; });
+                    if (bIsNew && oCtx && typeof oCtx.created === "function") {
+                        var pCreated = oCtx.created();
+                        if (pCreated && typeof pCreated.then === "function") {
+                            return pCreated.then(function () { return true; });
+                        }
+                        return true;
                     }
                     return false;
                 })
@@ -393,6 +541,7 @@ sap.ui.define([
         onCopy: function () {
             var oCtx = this.getView().getBindingContext();
             if (!oCtx) { MessageToast.show("No role selected to copy."); return; }
+            this.getOwnerComponent().getModel().resetChanges("bpRoleUpdate");
             oCtx.requestObject().then(function (oData) {
                 var oModel = this.getOwnerComponent().getModel();
                 var oListBinding = oModel.bindList("/BPRoles", null, [], [], { $$updateGroupId: "bpRoleUpdate" });
@@ -418,5 +567,5 @@ sap.ui.define([
         onNavBack: function () {
             this.getOwnerComponent().getRouter().navTo("bpRoles");
         }
-    });
+    }));
 });

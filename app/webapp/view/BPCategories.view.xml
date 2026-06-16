@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mvc:View
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:f="sap.f"
+    xmlns:core="sap.ui.core"
+    xmlns:l="sap.ui.layout"
+    controllerName="mdm.portal.controller.BPCategories"
+    displayBlock="true">
+
+    <f:DynamicPage id="bpCategoriesPage" fitContent="true"
+        toggleHeaderOnTitleClick="false" headerExpanded="true" preserveHeaderStateOnScroll="false"
+        class="sapUiSizeCondensed sapMDMFieldMasterPage">
+
+        <f:title>
+            <f:DynamicPageTitle>
+                <f:heading>
+                    <VBox>
+                        <Title text="BP Categories" level="H2" wrapping="false"/>
+                        <HBox class="sapUiTinyMarginTop">
+                            <ObjectStatus id="countTotal" text="{ui>/totalCount} system categories"
+                                          state="Information" class="sapUiTinyMarginEnd"/>
+                            <ObjectStatus text="Person · Organization · Group" state="None"/>
+                        </HBox>
+                    </VBox>
+                </f:heading>
+                <f:snappedHeading>
+                    <Title text="BP Categories" level="H3" wrapping="false"/>
+                </f:snappedHeading>
+                <f:actions>
+                    <OverflowToolbar style="Clear">
+                        <Button id="exportBtn" text="Export" icon="sap-icon://download"
+                                type="Transparent" press=".onExport">
+                            <layoutData><OverflowToolbarLayoutData priority="Low" overflowText="Export"/></layoutData>
+                        </Button>
+                        <Button id="addBtn" text="New Category" icon="sap-icon://add"
+                                type="Default" enabled="false"
+                                tooltip="BP categories are system-defined and cannot be created">
+                            <layoutData><OverflowToolbarLayoutData priority="NeverOverflow"/></layoutData>
+                        </Button>
+                    </OverflowToolbar>
+                </f:actions>
+            </f:DynamicPageTitle>
+        </f:title>
+
+        <f:header>
+            <f:DynamicPageHeader pinnable="false" backgroundDesign="Translucent">
+                <VBox>
+                    <l:Grid defaultSpan="XL4 L4 M6 S12" hSpacing="1" vSpacing="0.5"
+                            class="sapUiSmallMarginTopBottom">
+                        <l:content>
+                            <VBox>
+                                <Label text="Category" labelFor="filterCategory" design="Bold"/>
+                                <Select id="filterCategory" width="100%" change=".onFilterChange" forceSelection="false">
+                                    <core:Item key="" text="All"/>
+                                    <core:Item key="Person" text="Person"/>
+                                    <core:Item key="Organization" text="Organization"/>
+                                    <core:Item key="Group" text="Group"/>
+                                </Select>
+                            </VBox>
+                        </l:content>
+                        <l:content>
+                            <VBox>
+                                <Label text="Status" labelFor="filterStatus" design="Bold"/>
+                                <Select id="filterStatus" width="100%" change=".onFilterChange" forceSelection="false">
+                                    <core:Item key="" text="All"/>
+                                    <core:Item key="true" text="Active"/>
+                                    <core:Item key="false" text="Inactive"/>
+                                </Select>
+                            </VBox>
+                        </l:content>
+                    </l:Grid>
+                    <Toolbar style="Clear" class="sapUiSmallMarginTop">
+                        <ToolbarSpacer/>
+                        <Button text="Clear" type="Transparent" press=".onClearFilters"/>
+                        <Button text="Go" type="Emphasized" press=".onGo"/>
+                    </Toolbar>
+                </VBox>
+            </f:DynamicPageHeader>
+        </f:header>
+
+        <f:content>
+            <VBox>
+                <Table id="catTable"
+                    items="{
+                        path: '/BPCategories',
+                        parameters: {
+                            $count: true,
+                            $select: 'category_id,description,icon,sequence,active',
+                            $orderby: 'sequence asc,category_id asc'
+                        }
+                    }"
+                    growing="true" growingThreshold="50"
+                    noDataText="No BP categories found"
+                    fixedLayout="true" alternateRowColors="true"
+                    sticky="ColumnHeaders,HeaderToolbar"
+                    class="sapMDMFormalTable">
+
+                    <headerToolbar>
+                        <OverflowToolbar id="tableToolbar" style="Clear">
+                            <Title id="tableTitle" text="BP Categories" level="H3"/>
+                            <ToolbarSpacer/>
+                        </OverflowToolbar>
+                    </headerToolbar>
+
+                    <columns>
+                        <Column id="colId"        width="8rem"  vAlign="Middle" importance="High">
+                            <Label text="Category ID" design="Bold"/></Column>
+                        <Column id="colDesc"      width="12rem" vAlign="Middle" importance="High">
+                            <Label text="Description" design="Bold"/></Column>
+                        <Column id="colIcon"      width="5rem"  vAlign="Middle" hAlign="Center" importance="Low">
+                            <Label text="Icon" design="Bold"/></Column>
+                        <Column id="colApplic"    width="10rem" vAlign="Middle" importance="Medium">
+                            <Label text="Applicable To" design="Bold"/></Column>
+                        <Column id="colFields"    width="7rem"  vAlign="Middle" hAlign="Center" importance="Medium">
+                            <Label text="Additional Fields" design="Bold"/></Column>
+                        <Column id="colStatus"    width="5rem"  vAlign="Middle" hAlign="Center" importance="High">
+                            <Label text="Status" design="Bold"/></Column>
+                        <Column id="colActions"   width="3rem"  vAlign="Middle" hAlign="End" importance="High"/>
+                    </columns>
+
+                    <items>
+                        <ColumnListItem type="Active" press=".onRowPress">
+                            <cells>
+                                <Link text="{category_id}" press=".onLinkPress" wrapping="false"/>
+                                <Text text="{description}" wrapping="false" maxLines="1"/>
+                                <core:Icon src="{path: 'icon', formatter: '.formatIcon'}" size="1rem" color="Default"/>
+                                <Text text="Customer · Vendor · Both" wrapping="false"/>
+                                <ObjectStatus
+                                    text="{parts: [{path: 'category_id'}, {path: 'ui>/fieldCounts'}], formatter: '.formatCount'}"
+                                    state="None"/>
+                                <ObjectStatus
+                                    text="{path: 'active', formatter: '.formatActiveText'}"
+                                    state="{path: 'active', formatter: '.formatActiveState'}"/>
+                                <Button icon="sap-icon://slim-arrow-right" type="Transparent"
+                                        tooltip="Open details" press=".onRowPress"/>
+                            </cells>
+                        </ColumnListItem>
+                    </items>
+                </Table>
+            </VBox>
+        </f:content>
+    </f:DynamicPage>
+</mvc:View>

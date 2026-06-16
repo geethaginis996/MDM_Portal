@@ -95,6 +95,26 @@ body, .sapUiBody {
     max-height: none !important;
 }
 
+/* SAP 1.120 puts the scrollable header inside a wrapper with a measured
+   pixel height, which produces the stray vertical scrollbar in the filter
+   area. Neutralise every variant of that scroll container so the header
+   simply grows to fit its filters. */
+.sapFDynamicPageHeaderPinnable,
+.sapFDynamicPageHeaderInContent,
+.sapFDynamicPageHeaderContent,
+.sapFDynamicPageHeaderContentSticky,
+.sapFDynamicPageHeader > .sapFDynamicPageHeaderContent {
+    overflow: visible !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+}
+/* The collapse-arrow / pin button visual button row sits centered under the
+   header; keep it but ensure it never forces extra height/scroll. */
+.sapFDynamicPageHeaderCollapseButton {
+    overflow: visible !important;
+}
+
 /* Keep the filter Grid (search + dropdowns + Clear/Go) fully inside the
    page so the trailing "Go" button is never clipped at the right edge. */
 .sapFDynamicPageHeader .sapUiRespGrid {

@@ -31,12 +31,12 @@
             <VBox class="sapUiMediumMarginBeginEnd sapUiSmallMarginTop">
 
                 <HBox alignItems="Center">
-                    <core:Icon id="groupIcon" src="{path: 'icon', mode: 'OneWay'}" size="2rem"
-                               color="Accent8" class="sapUiSmallMarginEnd"/>
+                    <core:Icon id="groupIcon" src="{path: 'icon', mode: 'OneWay', formatter: '.formatIcon'}" size="2rem"
+                               color="Default" class="sapUiSmallMarginEnd"/>
                     <VBox>
                         <Title id="pageTitle" text="" level="H2" wrapping="false"/>
                         <Text id="pageSubtitle" text="" class="sapUiTinyMarginTop"
-                              style="color: var(--sapContent_LabelColor); font-size: 0.875rem;"/>
+/>
                     </VBox>
                 </HBox>
 
@@ -44,16 +44,16 @@
                 <HBox wrap="Wrap" class="sapUiSmallMarginTop" alignItems="Center">
                     <ObjectStatus id="attrStatus"   text="Active"  state="Success"/>
                     <Text text="·" class="sapUiTinyMarginBegin sapUiTinyMarginEnd"
-                          style="color: var(--sapContent_LabelColor);"/>
+/>
                     <ObjectAttribute id="attrType"     title="Type"     text="Main group"/>
                     <Text text="·" class="sapUiTinyMarginBegin sapUiTinyMarginEnd"
-                          style="color: var(--sapContent_LabelColor);"/>
+/>
                     <ObjectAttribute id="attrParent"   title="Parent"   text="— (Main Group)"/>
                     <Text text="·" class="sapUiTinyMarginBegin sapUiTinyMarginEnd"
-                          style="color: var(--sapContent_LabelColor);"/>
+/>
                     <ObjectAttribute id="attrSequence" title="Sequence" text=""/>
                     <Text text="·" class="sapUiTinyMarginBegin sapUiTinyMarginEnd"
-                          style="color: var(--sapContent_LabelColor);"/>
+/>
                     <ObjectAttribute id="attrSubCount" title="Sub Groups" text=""/>
                 </HBox>
             </VBox>
@@ -98,7 +98,7 @@
                                                maxLength="20"
                                                liveChange=".onFieldChange"/>
                                         <Text text="Unique. Uppercase. Prefix GRP_ for main, SUB_ for sub."
-                                              style="font-size:0.75rem; color:var(--sapContent_LabelColor);"
+
                                               class="sapUiTinyMarginTop"/>
                                     </VBox>
 
@@ -116,8 +116,8 @@
                                     <VBox>
                                         <Label text="Icon" labelFor="inIcon"/>
                                         <HBox alignItems="Center">
-                                            <core:Icon id="iconPreview" src="{path: 'icon', mode: 'OneWay'}"
-                                                       size="1.5rem" color="Accent8"
+                                            <core:Icon id="iconPreview" src="{path: 'icon', mode: 'OneWay', formatter: '.formatIcon'}"
+                                                       size="1.5rem" color="Default"
                                                        class="sapUiSmallMarginEnd"/>
                                             <Input id="inIcon"
                                                    value="{icon}"
@@ -138,7 +138,7 @@
                                         </Select>
                                         <Text id="parentGroupHint"
                                               text="Leave blank to create a Main Group."
-                                              style="font-size:0.75rem; color:var(--sapContent_LabelColor);"
+
                                               class="sapUiTinyMarginTop"/>
                                     </VBox>
 

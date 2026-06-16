@@ -18,6 +18,14 @@ sap.ui.define([
     return Controller.extend("mdm.portal.controller.FieldGroupDetail", {
 
         // ── Lifecycle ────────────────────────────────────────────────
+        // ── Formatter: safe icon src ─────────────────────────────────
+        formatIcon: function (sIcon) {
+            if (sIcon && typeof sIcon === "string" && sIcon.indexOf("sap-icon://") === 0) {
+                return sIcon;
+            }
+            return "sap-icon://folder";
+        },
+
         onInit: function () {
             this._oViewModel = new JSONModel({
                 busy            : false,
@@ -84,6 +92,10 @@ sap.ui.define([
         _onRouteMatched: function (oEvent) {
             var sGroupId = decodeURIComponent(oEvent.getParameter("arguments").groupId);
 
+            // Clear any pending/retrying create or patch left over from a previous
+            // failed save or copy, so a stuck row cannot keep colliding on the key.
+            try { this.getOwnerComponent().getModel().resetChanges("fieldGroupUpdate"); } catch (e) { /* no pending */ }
+
             // Reset state
             this._oViewModel.setProperty("/isDirty", false);
             this._oViewModel.setProperty("/selectedTab", "general");
@@ -111,6 +123,11 @@ sap.ui.define([
             this.getView().bindObject({
                 path      : sPath,
                 parameters: {
+                    // $select must include every property the form writes back, or
+                    // OData v4 rejects the write ("Must not change a property before
+                    // it has been read"). FK scalars are listed explicitly.
+                    $select        : "group_id,description,icon,sequence,active," +
+                                     "master_data_type_master_data_type_id,parent_group_id_group_id",
                     // Only expand master_data_type. parent_group_id is read from
                     // the FK field (parent_group_id_group_id) directly — expanding a
                     // null association breaks the bind for Main Groups.
@@ -164,18 +181,23 @@ sap.ui.define([
             var oListBinding = oModel.bindList("/FieldGroups", null, [], [], {
                 $$updateGroupId: "fieldGroupUpdate"
             });
+            // Default the required Master Data Type to the first loaded lookup so
+            // the record never carries an empty NOT NULL field before the user picks.
+            var aMDT = this.getView().getModel("lookups").getProperty("/masterDataTypes") || [];
+            var sDefaultMDT = aMDT.length ? aMDT[0].key : "";
             var oContext = oListBinding.create({
                 group_id                        : "",
                 description                     : "",
                 icon                            : "sap-icon://group",
                 sequence                        : 1,
                 active                          : true,
-                master_data_type_master_data_type_id: "",
+                master_data_type_master_data_type_id: sDefaultMDT,
                 parent_group_id_group_id        : sPresetParentId || null
             });
             // Keep a reference so onSave can detect create vs edit
             this._oCreateListBinding = oListBinding;
             this.getView().setBindingContext(oContext);
+            if (sDefaultMDT) { this.byId("selMasterDataType").setSelectedKey(sDefaultMDT); }
             this._refreshHeader({
                 group_id                : "",
                 description             : "",
@@ -457,23 +479,40 @@ sap.ui.define([
                 // group_id, description, sequence, icon are TWO-WAY bound in the
                 // view, so their edits are already pending — do NOT set them here.
                 // Only the two Select controls are unbound and must be written back.
-                if (bIsNew) {
-                    // group_id is the key — only settable on a new (transient) record
+                //
+                // group_id is the KEY: it may only be set on a TRANSIENT context
+                // (a pending create that has not yet been POSTed). Writing it on a
+                // persisted record tries to change its primary key → UNIQUE error.
+                var bTransient = (typeof oCtx.isTransient === "function") && oCtx.isTransient();
+                if (bIsNew && bTransient) {
                     oCtx.setProperty("group_id", sGroupId);
                 }
-                oCtx.setProperty("master_data_type_master_data_type_id", sMDT);
-                oCtx.setProperty("parent_group_id_group_id",
-                    this.byId("selParentGroup").getSelectedKey() || null);
+                // master_data_type is NOT NULL — only write a non-empty value so we
+                // never accidentally clear it on an existing record.
+                if (sMDT) {
+                    oCtx.setProperty("master_data_type_master_data_type_id", sMDT);
+                }
+                // parent is nullable (main groups have none). Only write it on a
+                // transient create or when it actually changed, to avoid issuing a
+                // key-touching PATCH on a persisted row.
+                if (bTransient) {
+                    oCtx.setProperty("parent_group_id_group_id",
+                        this.byId("selParentGroup").getSelectedKey() || null);
+                }
             }
 
             var oModel = this.getOwnerComponent().getModel();
             oModel.submitBatch("fieldGroupUpdate")
                 .then(function () {
-                    // For a new record, wait for the server to confirm creation
-                    if (bIsNew && oCtx && oCtx.created) {
-                        return oCtx.created().then(function () {
-                            return true; // created flag
-                        });
+                    // For a new record, wait for the server to confirm creation.
+                    // oCtx.created() returns a Promise only on a transient context;
+                    // guard against it being undefined (already settled / plain ctx).
+                    if (bIsNew && oCtx && typeof oCtx.created === "function") {
+                        var pCreated = oCtx.created();
+                        if (pCreated && typeof pCreated.then === "function") {
+                            return pCreated.then(function () { return true; });
+                        }
+                        return true;
                     }
                     return false;
                 })
@@ -526,25 +565,29 @@ sap.ui.define([
                 MessageToast.show("No group selected to copy.");
                 return;
             }
+            // Clear any stale pending create/patch from a previous copy attempt.
+            this.getOwnerComponent().getModel().resetChanges("fieldGroupUpdate");
             oCtx.requestObject().then(function (oData) {
-                var oModel    = this.getOwnerComponent().getModel();
-                var oNewCtx   = oModel.bindList("/FieldGroups").create({
-                    group_id                        : "",
-                    description                     : oData.description + " (Copy)",
-                    icon                            : oData.icon,
-                    sequence                        : oData.sequence + 1,
-                    active                          : false,
-                    master_data_type_master_data_type_id: oData.master_data_type_master_data_type_id,
-                    parent_group_id_group_id        : oData.parent_group_id_group_id || null
-                });
-                this.getView().setBindingContext(oNewCtx);
-                this._oViewModel.setProperty("/isNew",   true);
-                this._oViewModel.setProperty("/isDirty", true);
-                this.byId("inGroupId").setEditable(true);
+                // Reuse the standard new-record flow (which defers the create to
+                // the fieldGroupUpdate batch — no premature blank-ID POST), then
+                // pre-fill it with the copied values.
+                this._createNew(oData.parent_group_id_group_id || null);
 
-                // Restore Select values
-                this.byId("selMasterDataType").setSelectedKey(oData.master_data_type_master_data_type_id);
+                var oNewCtx = this.getView().getBindingContext();
+                if (oNewCtx) {
+                    oNewCtx.setProperty("description", oData.description + " (Copy)");
+                    oNewCtx.setProperty("icon", oData.icon || "sap-icon://group");
+                    oNewCtx.setProperty("sequence", (oData.sequence || 0) + 1);
+                    oNewCtx.setProperty("active", false);
+                    if (oData.master_data_type_master_data_type_id) {
+                        oNewCtx.setProperty("master_data_type_master_data_type_id",
+                            oData.master_data_type_master_data_type_id);
+                    }
+                }
+
+                this.byId("selMasterDataType").setSelectedKey(oData.master_data_type_master_data_type_id || "");
                 this.byId("selParentGroup").setSelectedKey(oData.parent_group_id_group_id || "");
+                this._oViewModel.setProperty("/isDirty", true);
 
                 this._refreshHeader({
                     group_id   : "",
@@ -553,7 +596,6 @@ sap.ui.define([
                     parent_group_id_group_id: oData.parent_group_id_group_id
                 });
 
-                // Go to General tab so user sees Group ID input first
                 this.byId("detailTabs").setSelectedKey("general");
                 MessageToast.show("Group copied — enter a new Group ID and press Save.");
             }.bind(this));

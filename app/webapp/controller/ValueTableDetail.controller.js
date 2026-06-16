@@ -331,6 +331,7 @@ sap.ui.define([
                 MessageToast.show("No value table selected to copy.");
                 return;
             }
+            this.getOwnerComponent().getModel().resetChanges("valueTableUpdate");
             oCtx.requestObject().then(function (oData) {
                 var oModel = this.getOwnerComponent().getModel();
                 var oListBinding = oModel.bindList("/ValueTables", null, [], [], {
