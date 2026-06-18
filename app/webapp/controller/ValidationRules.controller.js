@@ -226,7 +226,7 @@ sap.ui.define([
             oBinding.requestContexts(0, oBinding.getLength()).then(function (aCtx) {
                 var aData = aCtx.map(function (oCtx) {
                     return {
-                        "Validation ID": oCtx.getProperty("validation_id"),
+                        "Validation Name": oCtx.getProperty("validation_id"),
                         "Function Name": oCtx.getProperty("function_name"),
                         "Description"  : oCtx.getProperty("description"),
                         "Input Param 1": oCtx.getProperty("input_param_1") || "",

@@ -80,7 +80,7 @@
                         class="sapUiSmallMarginBeginEnd sapUiSmallMarginTopBottom">
                     <l:content>
                         <VBox>
-                            <Label text="Group ID / Description" labelFor="filterSearch" design="Bold"/>
+                            <Label text="Field Group Name / Description" labelFor="filterSearch" design="Bold"/>
                             <Input id="filterSearch" placeholder="Search…"
                                    showClearIcon="true" width="100%"
                                    liveChange=".onFilterLiveChange"/>
@@ -181,7 +181,7 @@
 
                     <columns>
                         <Column id="colGroupId"    width="8rem"  vAlign="Middle" importance="High">
-                            <Label text="Group ID" design="Bold"/>
+                            <Label text="Field Group Name" design="Bold"/>
                         </Column>
                         <Column id="colDescription" width="12rem" vAlign="Middle" importance="High">
                             <Label text="Description" design="Bold"/>

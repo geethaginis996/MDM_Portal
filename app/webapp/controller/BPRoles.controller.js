@@ -34,16 +34,17 @@ sap.ui.define([
         },
 
         _loadMasterDataTypes: function (oFiltersModel) {
-            var oModel = this.getOwnerComponent().getModel();
-            oModel.bindList("/MasterDataTypes", null, [new Sorter("sequence")])
-                .requestContexts(0, 50)
-                .then(function (aCtx) {
-                    var aItems = [{ key: "", text: "All types" }];
-                    aCtx.forEach(function (c) {
-                        aItems.push({ key: c.getProperty("master_data_type_id"), text: c.getProperty("description") });
-                    });
-                    oFiltersModel.setProperty("/masterDataTypes", aItems);
-                });
+            // BP role "Master Data Type" is the Customer/Vendor/Both scope.
+            oFiltersModel.setProperty("/masterDataTypes", [
+                { key: "",         text: "All types" },
+                { key: "CUSTOMER", text: "Customer" },
+                { key: "VENDOR",   text: "Vendor" },
+                { key: "BOTH",     text: "Both" }
+            ]);
+        },
+
+        formatScope: function (sKey) {
+            return ({ CUSTOMER: "Customer", VENDOR: "Vendor", BOTH: "Both" })[sKey] || "";
         },
 
         _loadCounts: function () {
@@ -104,6 +105,12 @@ sap.ui.define([
         formatYesNo: function (vVal) {
             return this._truthy(vVal) ? "Yes" : "No";
         },
+
+        // ValueState for a Yes/No flag (for ObjectStatus.state, which must be a
+        // ValueState — never the "Yes"/"No" text itself).
+        formatYesNoState: function (vVal) {
+            return this._truthy(vVal) ? "Information" : "None";
+        },
         formatActiveText: function (vActive) {
             return this._truthy(vActive) ? "Active" : "Inactive";
         },
@@ -143,7 +150,7 @@ sap.ui.define([
                 }));
             }
             if (sMDT) {
-                aFilters.push(new Filter("master_data_type_master_data_type_id", FilterOperator.EQ, sMDT));
+                aFilters.push(new Filter("account_scope", FilterOperator.EQ, sMDT));
             }
             if (sStatus !== "") {
                 aFilters.push(new Filter("active", FilterOperator.EQ, sStatus === "true"));
@@ -258,14 +265,14 @@ sap.ui.define([
             oBinding.requestContexts(0, oBinding.getLength()).then(function (aCtx) {
                 var aData = aCtx.map(function (oCtx) {
                     return {
-                        "Role ID"            : oCtx.getProperty("role_id"),
+                        "Role Name"          : oCtx.getProperty("role_id"),
                         "Description"        : oCtx.getProperty("description"),
-                        "Master Data Type"   : oCtx.getProperty("master_data_type/description"),
+                        "Master Data Type"   : this.formatScope(oCtx.getProperty("account_scope")),
                         "Initial BP Required": oCtx.getProperty("initial_bp_required") ? "Yes" : "No",
                         "Sequence"           : oCtx.getProperty("sequence"),
                         "Active"             : oCtx.getProperty("active") ? "Yes" : "No"
                     };
-                });
+                }.bind(this));
                 this._downloadCSV(aData, "bp-roles.csv");
             }.bind(this)).catch(function (e) { MessageBox.error("Export failed: " + e.message); });
         },

@@ -397,7 +397,7 @@ sap.ui.define([
             oBinding.requestContexts(0, oBinding.getLength()).then(function (aCtx) {
                 var aData = aCtx.map(function (oCtx) {
                     return {
-                        "Group ID"    : oCtx.getProperty("group_id"),
+                        "Field Group Name" : oCtx.getProperty("group_id"),
                         "Description" : oCtx.getProperty("description"),
                         "Type"        : oCtx.getProperty("parent_group_id_group_id") ? "Sub Group" : "Main Group",
                         "Parent"      : oCtx.getProperty("parent_group_id_group_id") || "—",

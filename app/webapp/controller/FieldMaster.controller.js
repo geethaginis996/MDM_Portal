@@ -174,14 +174,14 @@ sap.ui.define([
                 .catch(function () {
                     var aFallback = [
                         { key: "",            text: "All displays" },
-                        { key: "FREE_INPUT",  text: "Free Input"   },
+                        { key: "INPUT",        text: "Input"        },
                         { key: "DROPDOWN",    text: "Dropdown"     },
                         { key: "SEARCH_HELP", text: "Search Help"  },
                         { key: "CHECKBOX",    text: "Checkbox"     },
                         { key: "DATEPICKER",  text: "Date Picker"  }
                     ];
                     var oFallbackMap = {
-                        FREE_INPUT  : "Free Input",
+                        INPUT       : "Input",
                         DROPDOWN    : "Dropdown",
                         SEARCH_HELP : "Search Help",
                         CHECKBOX    : "Checkbox",
@@ -402,7 +402,7 @@ _applyFilters: function () {
                 .then(function (aContexts) {
                     var aData = aContexts.map(function (oCtx) {
                         return {
-                            "Field ID"    : oCtx.getProperty("field_id"),
+                            "Field Name"  : oCtx.getProperty("field_id"),
                             "Description" : oCtx.getProperty("description"),
                             "Data Type"   : oCtx.getProperty("data_type"),
                             "Main Group"  : oCtx.getProperty("main_group/description"),

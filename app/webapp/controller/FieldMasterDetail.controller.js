@@ -237,9 +237,13 @@ sap.ui.define(
                 ? aResults[1][0].getProperty("display_type_id")
                 : "";
 
-              var oContext = oModel.bindList("/FieldMasters", null, [], [], {
+              var oListBinding = oModel.bindList("/FieldMasters", null, [], [], {
                 $$updateGroupId: "fieldMasterUpdate"
-              }).create({
+              });
+              // Keep a reference so the transient row is not discarded by the
+              // OData V4 model before submitBatch sends its POST.
+              this._oCreateListBinding = oListBinding;
+              var oContext = oListBinding.create({
                 field_id: "",
                 description: "",
                 data_type: sDefaultDataType,
@@ -250,6 +254,13 @@ sap.ui.define(
                 source_table: "",
                 source_field: "",
               });
+              // If the previous page was an existing field, the view still
+              // carries the object binding _bindField set up via bindObject().
+              // An object binding's context takes precedence over
+              // setBindingContext, so without unbinding it first the form
+              // keeps showing that old record's data instead of a blank one —
+              // the same issue already fixed in onCopy below.
+              this.getView().unbindObject();
               this.getView().setBindingContext(oContext);
               this._updateHeader({ field_id: "New Field", description: "" });
               this._oViewModel.setProperty("/busy", false);
@@ -257,9 +268,11 @@ sap.ui.define(
           )
           .catch(
             function () {
-              var oContext = oModel.bindList("/FieldMasters", null, [], [], {
+              var oListBinding = oModel.bindList("/FieldMasters", null, [], [], {
                 $$updateGroupId: "fieldMasterUpdate"
-              }).create({
+              });
+              this._oCreateListBinding = oListBinding;
+              var oContext = oListBinding.create({
                 field_id: "",
                 description: "",
                 data_type: "",
@@ -270,6 +283,7 @@ sap.ui.define(
                 source_table: "",
                 source_field: "",
               });
+              this.getView().unbindObject();
               this.getView().setBindingContext(oContext);
               this._updateHeader({ field_id: "New Field", description: "" });
               this._oViewModel.setProperty("/busy", false);
@@ -313,8 +327,11 @@ sap.ui.define(
         if (!sMainGroupId) {
           return;
         }
-        var oModel = this.getView().getModel();
         var oSubSel = this.byId("selSubGroup");
+        if (!oSubSel) {
+          return; // Grouping tab removed — nothing to populate
+        }
+        var oModel = this.getView().getModel();
         oModel
           .bindList("/FieldGroups", null, null, [
             new Filter(
@@ -443,11 +460,22 @@ sap.ui.define(
         var sDesc = this.byId("inDescription").getValue().trim();
 
         if (!sFieldId) {
-          MessageBox.error("Field ID is required.");
+          MessageBox.error("Field Name is required.");
           return;
         }
         if (!sDesc) {
           MessageBox.error("Description is required.");
+          return;
+        }
+
+        // A Dropdown or Search Help display type renders a value list — without a
+        // Value Table mapped, it would show with nothing to select. Require one
+        // before saving so the field is actually usable once created.
+        var sDisplayType = this.byId("selDisplayType").getSelectedKey();
+        var sValueTable  = this.byId("selValueTable").getSelectedKey();
+        if ((sDisplayType === "DROPDOWN" || sDisplayType === "SEARCH_HELP") && !sValueTable) {
+          MessageBox.error("A Value Table is required when Display Type is Dropdown or Search Help. Select one on the Value Help tab before saving.");
+          this.byId("detailTabs").setSelectedKey("valuehelp");
           return;
         }
 
@@ -483,8 +511,12 @@ sap.ui.define(
               MessageToast.show("Field saved successfully.");
 
               if (bWasCreated) {
-                // Return to the list so it reloads with the new row
-                this.onNavBack();
+                // Showing the toast and navigating away in the same tick lets the
+                // route change tear the page down before the toast has actually
+                // painted, so it never becomes visible. A short delay lets it
+                // render first; the toast itself still floats above the list
+                // once we're there.
+                setTimeout(this.onNavBack.bind(this), 300);
               } else {
                 var oCtx2 = this.getView().getBindingContext();
                 if (oCtx2) {
@@ -500,6 +532,11 @@ sap.ui.define(
           .catch(
             function (oErr) {
               this._oViewModel.setProperty("/busy", false);
+              // A failed create is kept by OData V4 and retried on every later
+              // submitBatch, which jams the group. Roll back the pending change
+              // so the app stays usable; the user can correct and save again.
+              try { this.getView().getModel().resetChanges("fieldMasterUpdate"); } catch (e) { /* nothing pending */ }
+              if (bIsNew) { this._oCreateListBinding = null; }
               MessageBox.error(
                 "Save failed: " + (oErr.message || "Unknown error"),
               );
@@ -548,9 +585,10 @@ sap.ui.define(
             // Field ID is cleared — user must enter a unique one.
             // Bound to the deferred update group so it is NOT auto-posted
             // (with $auto, a groupless create posts immediately with empty id).
-            var oNewContext = oModel.bindList("/FieldMasters", null, [], [], {
+            var oListBinding = oModel.bindList("/FieldMasters", null, [], [], {
               $$updateGroupId: "fieldMasterUpdate"
-            }).create({
+            });
+            var oNewContext = oListBinding.create({
               field_id: "",
               description: oData.description + " (Copy)",
               data_type: oData.data_type,
@@ -565,9 +603,22 @@ sap.ui.define(
               value_table_value_table_id: oData.value_table_value_table_id,
               validation_validation_id: oData.validation_validation_id,
             });
+            // Keep a reference so the transient list binding is not garbage-collected.
+            this._oCreateListBinding = oListBinding;
+
+            // The view still carries the object binding from the record we copied
+            // FROM (set by _bindField via bindObject). An object binding's context
+            // takes precedence over setBindingContext, so without unbinding it the
+            // form keeps showing the original record and the copy appears to do
+            // nothing. Unbind first, THEN point the view at the new transient row.
+            this.getView().unbindObject();
 
             // Switch view to the new context
             this.getView().setBindingContext(oNewContext);
+
+            // Field ID was made read-only while viewing the source record; the
+            // copy needs a brand-new key, so re-enable the input.
+            this.byId("inFieldId").setEditable(true);
 
             // Reset state flags
             this._oViewModel.setProperty("/isNew", true);
@@ -594,7 +645,7 @@ sap.ui.define(
             this.byId("detailTabs").setSelectedKey("general");
 
             MessageToast.show(
-              "Field copied — enter a new Field ID and press Save.",
+              "Field copied — enter a new Field Name and press Save.",
             );
           }.bind(this),
         );

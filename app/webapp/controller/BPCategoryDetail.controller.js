@@ -6,13 +6,14 @@ sap.ui.define([
     "sap/ui/model/Sorter",
     "sap/m/MessageToast",
     "sap/m/MessageBox",
-    "mdm/portal/controller/AssignFieldsHelper"
+    "mdm/portal/controller/AssignFieldsHelper",
+    "mdm/portal/controller/FieldAssignmentEditHelper"
 ], function (
-    Controller, JSONModel, Filter, FilterOperator, Sorter, MessageToast, MessageBox, AssignFieldsHelper
+    Controller, JSONModel, Filter, FilterOperator, Sorter, MessageToast, MessageBox, AssignFieldsHelper, FieldAssignmentEditHelper
 ) {
     "use strict";
 
-    return Controller.extend("mdm.portal.controller.BPCategoryDetail", Object.assign({}, AssignFieldsHelper, {
+    return Controller.extend("mdm.portal.controller.BPCategoryDetail", Object.assign({}, AssignFieldsHelper, FieldAssignmentEditHelper, {
 
         onInit: function () {
             this._oViewModel = new JSONModel({
@@ -150,6 +151,36 @@ sap.ui.define([
             });
         },
 
+        // ── Removal: Field Assignments tab ──────────────────────────────
+        // The row is addressed by its composite key directly (no need to have
+        // it loaded as a list-binding context first), then deleted and the
+        // tab reloaded — same pattern used for BP Role's three field/role tabs.
+        _deleteAssignedField: function (sFieldId) {
+            var oModel = this.getOwnerComponent().getModel();
+            var sPath = "/BPCategoryFields(category_category_id='" + this._categoryId() +
+                "',field_field_id='" + sFieldId + "')";
+            var oCtx = oModel.bindContext(sPath, null).getBoundContext();
+
+            oCtx.delete().then(function () {
+                MessageToast.show("Removed.");
+                this._loadFields();
+            }.bind(this)).catch(function (e) {
+                MessageBox.error("Could not remove: " + (e && e.message || "Unknown error"));
+            });
+        },
+
+        onRemoveAssignedField: function (oEvent) {
+            var oCtx     = oEvent.getSource().getBindingContext("assigned");
+            var sFieldId = oCtx.getProperty("field_id");
+            MessageBox.confirm("Remove \u201c" + sFieldId + "\u201d from this category's Field Assignments?", {
+                title  : "Remove Field",
+                onClose: function (sAction) {
+                    if (sAction !== MessageBox.Action.OK) { return; }
+                    this._deleteAssignedField(sFieldId);
+                }.bind(this)
+            });
+        },
+
         _loadChangeLog: function () {
             var sCat = this._categoryId();
             if (!sCat) { return; }
@@ -164,7 +195,15 @@ sap.ui.define([
 
         onFieldRowPress: function (oEvent) {
             var sFieldId = oEvent.getSource().getBindingContext("assigned").getProperty("field_id");
-            this.getOwnerComponent().getRouter().navTo("fieldMasterDetail", { fieldId: encodeURIComponent(sFieldId) });
+            this._openFieldAssignmentEdit({
+                collection   : "/BPCategoryFields",
+                fkName       : "category_category_id",
+                fkValue      : this._categoryId(),
+                fieldId      : sFieldId,
+                updateGroupId: "bpCategoryUpdate",
+                showReadOnly : false,
+                onDone       : this._loadFields.bind(this)
+            });
         },
         onFieldLinkPress: function (oEvent) {
             var sFieldId = oEvent.getSource().getBindingContext("assigned").getProperty("field_id");

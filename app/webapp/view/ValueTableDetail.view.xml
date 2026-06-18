@@ -7,7 +7,7 @@
     controllerName="mdm.portal.controller.ValueTableDetail"
     displayBlock="true">
 
-    <Page id="detailPage" showHeader="false">
+    <Page busy="{view>/busy}" busyIndicatorDelay="0" id="detailPage" showHeader="false">
 
         <content>
             <!-- Top bar with breadcrumb -->
@@ -64,13 +64,10 @@
                             <l:Grid defaultSpan="L6 M6 S12" hSpacing="2">
                                 <l:content>
                                     <VBox>
-                                        <Label text="Value Table ID" required="true" labelFor="inId"/>
+                                        <Label text="Value Table Name" required="true" labelFor="inId"/>
                                         <Input id="inId" value="{value_table_id}" placeholder="e.g. VT001"
                                                editable="{view>/isNew}"
                                                maxLength="20" liveChange=".onFieldChange"/>
-                                        <Text text="Unique ID across the value table registry."
-                                              style="font-size:0.75rem; color:var(--sapContent_LabelColor);"
-                                              class="sapUiTinyMarginTop"/>
                                     </VBox>
                                     <VBox>
                                         <Label text="Description" required="true" labelFor="inDescription"/>
@@ -82,9 +79,7 @@
                                         <Input id="inSourceTable" value="{source_table}" placeholder="e.g. T001"
                                                maxLength="60" liveChange=".onFieldChange"
                                                showValueHelp="true" valueHelpRequest=".onSourceTableValueHelp"/>
-                                        <Text text="ABAP table or CDS view name in the source system."
-                                              style="font-size:0.75rem; color:var(--sapContent_LabelColor);"
-                                              class="sapUiTinyMarginTop"/>
+                                    
                                     </VBox>
                                     <VBox>
                                         <Label text="Status" labelFor="swStatus"/>
@@ -102,9 +97,6 @@
                         <VBox class="sapUiMediumMarginBeginEnd">
                             <HBox alignItems="Center" class="sapUiSmallMarginTop sapUiSmallMarginBottom">
                                 <Title text="Input Filter Parameters" level="H4"/>
-                                <Text text="Optional - up to 3 filter inputs passed to the backend query"
-                                      class="sapUiSmallMarginBegin"
-                                      style="font-size:0.75rem; color:var(--sapContent_LabelColor);"/>
                             </HBox>
 
                             <!-- Param row 1 -->
@@ -141,10 +133,7 @@
                                 </VBox>
                             </HBox>
 
-                            <MessageStrip
-                                text="Input parameters are used to filter results at runtime. When the value help is invoked, the parameter values are read from the fields currently in scope (same BP, sales area, company code, etc.)."
-                                type="Information" showIcon="true"
-                                class="sapUiMediumMarginTop"/>
+
                         </VBox>
                     </IconTabFilter>
 
@@ -159,24 +148,17 @@
                                         <Label text="Output Key" required="true" labelFor="inOutputKey"/>
                                         <Input id="inOutputKey" value="{output_key}" placeholder="e.g. BUKRS"
                                                maxLength="40" liveChange=".onFieldChange"/>
-                                        <Text text="Column written back to the field value when a row is picked."
-                                              style="font-size:0.75rem; color:var(--sapContent_LabelColor);"
-                                              class="sapUiTinyMarginTop"/>
+                                        
                                     </VBox>
                                     <VBox>
                                         <Label text="Output Description" required="true" labelFor="inOutputDesc"/>
                                         <Input id="inOutputDesc" value="{output_desc}" placeholder="e.g. BUTXT"
                                                maxLength="40" liveChange=".onFieldChange"/>
-                                        <Text text="Column shown to the user alongside the key in the picker."
-                                              style="font-size:0.75rem; color:var(--sapContent_LabelColor);"
-                                              class="sapUiTinyMarginTop"/>
+                                        
                                     </VBox>
                                 </l:content>
                             </l:Grid>
-                            <MessageStrip
-                                text="Live Preview: On save, the system runs a sample query against the backend. Failed validations (missing table, missing column) block activation."
-                                type="Information" showIcon="true"
-                                class="sapUiMediumMarginTop"/>
+                            
                         </VBox>
                     </IconTabFilter>
 

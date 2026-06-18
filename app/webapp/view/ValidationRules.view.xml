@@ -48,7 +48,7 @@
                         class="sapUiSmallMarginBeginEnd sapUiSmallMarginTopBottom">
                     <l:content>
                         <VBox>
-                            <Label text="Validation ID / Function Name" labelFor="filterSearch" design="Bold"/>
+                            <Label text="Validation Name / Function Name" labelFor="filterSearch" design="Bold"/>
                             <Input id="filterSearch" placeholder="Search…" showClearIcon="true"
                                    width="100%" liveChange=".onFilterLiveChange"/>
                         </VBox>
@@ -119,7 +119,7 @@
 
                     <columns>
                         <Column id="colId"        width="9rem"  vAlign="Middle" importance="High">
-                            <Label text="Validation ID" design="Bold"/></Column>
+                            <Label text="Validation Name" design="Bold"/></Column>
                         <Column id="colFunction"  width="11rem" vAlign="Middle" importance="High">
                             <Label text="Function Name" design="Bold"/></Column>
                         <Column id="colP1"        width="7rem"  vAlign="Middle" importance="Low">

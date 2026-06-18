@@ -7,7 +7,7 @@
     controllerName="mdm.portal.controller.AccountGroupDetail"
     displayBlock="true">
 
-    <Page id="detailPage" showHeader="false">
+    <Page busy="{view>/busy}" busyIndicatorDelay="0" id="detailPage" showHeader="false">
         <content>
             <VBox>
                 <Bar class="sapMPageHeader">
@@ -27,12 +27,11 @@
                                class="sapUiSmallMarginEnd"/>
                     <VBox>
                         <Title id="pageTitle" text="" level="H2" wrapping="false"/>
-                        <Text id="pageSubtitle" text="" class="sapUiTinyMarginTop"
-                              style="color: var(--sapContent_LabelColor); font-size: 0.875rem;"/>
+                        
                     </VBox>
                 </HBox>
                 <HBox wrap="Wrap" class="sapUiSmallMarginTop" alignItems="Center">
-                    <ObjectStatus id="attrStatus" text="Active" state="Success"/>
+                    
                     <Text text="·" class="sapUiTinyMarginBegin sapUiTinyMarginEnd"
                           style="color: var(--sapContent_LabelColor);"/>
                     <ObjectAttribute id="attrType" title="Type" text=""/>
@@ -71,9 +70,7 @@
                                             <RadioButton id="rbCustomer" text="Customer"/>
                                             <RadioButton id="rbVendor"   text="Vendor"/>
                                         </RadioButtonGroup>
-                                        <Text text="Determines which BP roles can use this account group."
-                                              style="font-size:0.75rem; color:var(--sapContent_LabelColor);"
-                                              class="sapUiTinyMarginTop"/>
+                                      
                                     </VBox>
                                     <VBox>
                                         <Label text="Number Range" labelFor="selNumberRange"/>
@@ -81,9 +78,18 @@
                                             <core:Item key="INTERNAL" text="Internal — 1–999999"/>
                                             <core:Item key="EXTERNAL" text="External — A–Z"/>
                                         </Select>
-                                        <Text text="The actual number-range assignment is also reflected on the BP role."
-                                              style="font-size:0.75rem; color:var(--sapContent_LabelColor);"
-                                              class="sapUiTinyMarginTop"/>
+                                        
+                                    </VBox>
+                                </l:content>
+                            </l:Grid>
+
+                            <l:Grid defaultSpan="L6 M6 S12" hSpacing="2">
+                                <l:content>
+                                    <VBox>
+                                        <Label text="Active" labelFor="swActive"/>
+                                        <Switch id="swActive" state="{active}"
+                                                customTextOn="Yes" customTextOff="No"
+                                                change=".onFieldChange"/>
                                     </VBox>
                                     <VBox>
                                         <Label text="One-Time Account" labelFor="swOneTime"/>
@@ -91,19 +97,10 @@
                                                 customTextOn="Yes" customTextOff="No"
                                                 change=".onFieldChange"/>
                                     </VBox>
-                                    <VBox>
-                                        <Label text="Active" labelFor="swActive"/>
-                                        <Switch id="swActive" state="{active}"
-                                                customTextOn="Yes" customTextOff="No"
-                                                change=".onFieldChange"/>
-                                    </VBox>
                                 </l:content>
                             </l:Grid>
 
-                            <MessageStrip
-                                text="Account groups are not linked to BP roles directly. Any BP role with matching Master Data Type and Account Group Required = Yes will automatically show this account group to the user."
-                                type="Information" showIcon="true"
-                                class="sapUiMediumMarginTop"/>
+                           
                         </VBox>
                     </IconTabFilter>
 
@@ -147,9 +144,7 @@
                                 </items>
                             </Table>
                             <VBox class="sapUiSmallMargin">
-                                <MessageStrip
-                                    text="Precedence rule: When the same field is assigned at both BP role and account group level, the account-group-level field status takes precedence."
-                                    type="Information" showIcon="true"/>
+                            
                             </VBox>
                         </VBox>
                     </IconTabFilter>

@@ -234,11 +234,11 @@ sap.ui.define([
 
             // Validation
             if (!sId) {
-                MessageBox.error("Table ID is required.");
+                MessageBox.error("Value Table Name is required.");
                 return;
             }
             if (!/^[A-Z0-9_]+$/.test(sId)) {
-                MessageBox.error("Table ID must be uppercase letters, numbers, and underscores only.");
+                MessageBox.error("Value Table Name must be uppercase letters, numbers, and underscores only.");
                 return;
             }
             if (!sDesc) {
@@ -290,8 +290,10 @@ sap.ui.define([
                     MessageToast.show("Value table saved successfully.");
 
                     if (bWasCreated) {
+                        // Delay slightly so the toast actually paints before the
+                        // route change tears the page down.
                         this._oCreateListBinding = null;
-                        this.onNavBack();
+                        setTimeout(this.onNavBack.bind(this), 300);
                     } else if (oCtx) {
                         oCtx.requestObject().then(function (oData) {
                             if (oData) { this._refreshHeader(oData); }
@@ -349,6 +351,10 @@ sap.ui.define([
                     status        : "INACTIVE"
                 });
                 this._oCreateListBinding = oListBinding;
+                // Unbind the source record's object binding (set by the _bind* view
+                // binding) before switching context; an object binding overrides
+                // setBindingContext, otherwise the copy never appears.
+                this.getView().unbindObject();
                 this.getView().setBindingContext(oNewCtx);
                 this._oViewModel.setProperty("/isNew",   true);
                 this._oViewModel.setProperty("/isDirty", true);
@@ -362,7 +368,7 @@ sap.ui.define([
                 });
 
                 this.byId("detailTabs").setSelectedKey("general");
-                MessageToast.show("Value table copied — enter a new Table ID and press Save.");
+                MessageToast.show("Value table copied — enter a new Value Table Name and press Save.");
             }.bind(this));
         },
 

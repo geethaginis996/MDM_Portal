@@ -105,7 +105,7 @@
 
                     <columns>
                         <Column id="colId"        width="8rem"  vAlign="Middle" importance="High">
-                            <Label text="Category ID" design="Bold"/></Column>
+                            <Label text="Category Name" design="Bold"/></Column>
                         <Column id="colDesc"      width="12rem" vAlign="Middle" importance="High">
                             <Label text="Description" design="Bold"/></Column>
                         <Column id="colIcon"      width="5rem"  vAlign="Middle" hAlign="Center" importance="Low">

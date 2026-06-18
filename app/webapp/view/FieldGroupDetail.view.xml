@@ -8,7 +8,7 @@
     controllerName="mdm.portal.controller.FieldGroupDetail"
     displayBlock="true">
 
-    <Page id="detailPage" showHeader="false">
+    <Page busy="{view>/busy}" busyIndicatorDelay="0" id="detailPage" showHeader="false">
 
         <content>
             <!-- ── Shell-style top bar with breadcrumb ──────────────── -->
@@ -90,16 +90,13 @@
 
                                     <!-- Group ID -->
                                     <VBox>
-                                        <Label text="Group ID" required="true" labelFor="inGroupId"/>
+                                        <Label text="Field Group Name" required="true" labelFor="inGroupId"/>
                                         <Input id="inGroupId"
                                                value="{group_id}"
                                                placeholder="e.g. GRP_COCD"
                                                editable="{view>/isNew}"
                                                maxLength="20"
                                                liveChange=".onFieldChange"/>
-                                        <Text text="Unique. Uppercase. Prefix GRP_ for main, SUB_ for sub."
-
-                                              class="sapUiTinyMarginTop"/>
                                     </VBox>
 
                                     <!-- Description -->
@@ -136,10 +133,7 @@
                                                 items="{path: 'lookups>/parentGroups'}">
                                             <core:Item key="{lookups>key}" text="{lookups>text}"/>
                                         </Select>
-                                        <Text id="parentGroupHint"
-                                              text="Leave blank to create a Main Group."
-
-                                              class="sapUiTinyMarginTop"/>
+                        
                                     </VBox>
 
                                     <!-- Sequence -->
@@ -189,7 +183,7 @@
                                    items="{subGroups>/items}">
                                 <columns>
                                     <Column width="7rem">
-                                        <Label text="Group ID" design="Bold"/>
+                                        <Label text="Field Group Name" design="Bold"/>
                                     </Column>
                                     <Column>
                                         <Label text="Description" design="Bold"/>

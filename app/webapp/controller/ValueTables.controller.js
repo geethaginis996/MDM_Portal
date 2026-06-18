@@ -243,7 +243,7 @@ sap.ui.define([
             oBinding.requestContexts(0, oBinding.getLength()).then(function (aCtx) {
                 var aData = aCtx.map(function (oCtx) {
                     return {
-                        "Table ID"    : oCtx.getProperty("value_table_id"),
+                        "Value Table Name" : oCtx.getProperty("value_table_id"),
                         "Description" : oCtx.getProperty("description"),
                         "Source Table": oCtx.getProperty("source_table"),
                         "Output Key"  : oCtx.getProperty("output_key"),

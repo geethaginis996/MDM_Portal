@@ -7,7 +7,7 @@
     controllerName="mdm.portal.controller.BPCategoryDetail"
     displayBlock="true">
 
-    <Page id="detailPage" showHeader="false">
+    <Page busy="{view>/busy}" busyIndicatorDelay="0" id="detailPage" showHeader="false">
         <content>
             <VBox>
                 <Bar class="sapMPageHeader">
@@ -27,9 +27,7 @@
                                class="sapUiSmallMarginEnd"/>
                     <VBox>
                         <Title id="pageTitle" text="" level="H2" wrapping="false"/>
-                        <Text id="pageSubtitle" text="BP Category · system-defined · category-specific field assignments"
-                              class="sapUiTinyMarginTop"
-                              style="color: var(--sapContent_LabelColor); font-size: 0.875rem;"/>
+                        
                     </VBox>
                 </HBox>
                 <HBox wrap="Wrap" class="sapUiSmallMarginTop" alignItems="Center">
@@ -56,11 +54,9 @@
                             <l:Grid defaultSpan="L6 M6 S12" hSpacing="2">
                                 <l:content>
                                     <VBox>
-                                        <Label text="Category ID" labelFor="inId"/>
+                                        <Label text="Category Name" labelFor="inId"/>
                                         <Input id="inId" value="{category_id}" editable="false"/>
-                                        <Text text="System-defined; cannot be changed."
-                                              style="font-size:0.75rem; color:var(--sapContent_LabelColor);"
-                                              class="sapUiTinyMarginTop"/>
+                                      
                                     </VBox>
                                     <VBox>
                                         <Label text="Description" required="true" labelFor="inDescription"/>
@@ -81,16 +77,11 @@
                                     <VBox class="sapUiSmallMarginTop">
                                         <Label text="Applicable To" labelFor="inApplicable"/>
                                         <Input id="inApplicable" value="Customer · Vendor · Both" editable="false"/>
-                                        <Text text="BP categories apply regardless of master data type."
-                                              style="font-size:0.75rem; color:var(--sapContent_LabelColor);"
-                                              class="sapUiTinyMarginTop"/>
+                                      
                                     </VBox>
                                 </l:content>
                             </l:Grid>
-                            <MessageStrip
-                                text="How this works: Fields assigned to a BP category appear on the Create BP screen in addition to fields from the BP roles and account groups. They are typically identity-level attributes like first/last name for a Person, or registration number for an Organization."
-                                type="Information" showIcon="true"
-                                class="sapUiMediumMarginTop"/>
+                           
                         </VBox>
                     </IconTabFilter>
 
@@ -115,6 +106,7 @@
                                     <Column width="6rem"><Label text="Data Type" design="Bold"/></Column>
                                     <Column width="6rem" hAlign="Center"><Label text="Field Status" design="Bold"/></Column>
                                     <Column width="4rem" hAlign="End"><Label text="Seq" design="Bold"/></Column>
+                                    <Column width="3rem" hAlign="End"/>
                                 </columns>
                                 <items>
                                     <ColumnListItem type="Active" press=".onFieldRowPress">
@@ -128,14 +120,15 @@
                                                 text="{path: 'assigned>field_status', formatter: '.formatStatusText'}"
                                                 state="{path: 'assigned>field_status', formatter: '.formatStatusState'}"/>
                                             <Text text="{assigned>sequence}" wrapping="false"/>
+                                            <Button icon="sap-icon://decline" type="Transparent"
+                                                    tooltip="Remove from this category"
+                                                    press=".onRemoveAssignedField"/>
                                         </cells>
                                     </ColumnListItem>
                                 </items>
                             </Table>
                             <VBox class="sapUiSmallMargin">
-                                <MessageStrip
-                                    text="Precedence: If a field is assigned at multiple layers (BP role / Account group / Category), the strongest field status wins. A field suppressed by the category will not appear on the Create BP screen."
-                                    type="Information" showIcon="true"/>
+                               
                             </VBox>
                         </VBox>
                     </IconTabFilter>

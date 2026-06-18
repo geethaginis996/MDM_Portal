@@ -6,14 +6,15 @@ sap.ui.define([
     "sap/ui/model/Sorter",
     "sap/m/MessageToast",
     "sap/m/MessageBox",
-    "mdm/portal/controller/AssignFieldsHelper"
+    "mdm/portal/controller/AssignFieldsHelper",
+    "mdm/portal/controller/FieldAssignmentEditHelper"
 ], function (
     Controller, JSONModel, Filter, FilterOperator, Sorter,
-    MessageToast, MessageBox, AssignFieldsHelper
+    MessageToast, MessageBox, AssignFieldsHelper, FieldAssignmentEditHelper
 ) {
     "use strict";
 
-    return Controller.extend("mdm.portal.controller.AccountGroupDetail", Object.assign({}, AssignFieldsHelper, {
+    return Controller.extend("mdm.portal.controller.AccountGroupDetail", Object.assign({}, AssignFieldsHelper, FieldAssignmentEditHelper, {
 
         onInit: function () {
             this._oViewModel = new JSONModel({
@@ -213,7 +214,15 @@ sap.ui.define([
         // ── Row navigation ───────────────────────────────────────────
         onFieldRowPress: function (oEvent) {
             var sFieldId = oEvent.getSource().getBindingContext("assigned").getProperty("field_id");
-            this.getOwnerComponent().getRouter().navTo("fieldMasterDetail", { fieldId: encodeURIComponent(sFieldId) });
+            this._openFieldAssignmentEdit({
+                collection   : "/AccountGroupFields",
+                fkName       : "account_group_account_group_id",
+                fkValue      : this._groupId(),
+                fieldId      : sFieldId,
+                updateGroupId: "accountGroupUpdate",
+                showReadOnly : false,
+                onDone       : this._loadFields.bind(this)
+            });
         },
         onFieldLinkPress: function (oEvent) {
             var sFieldId = oEvent.getSource().getBindingContext("assigned").getProperty("field_id");
@@ -282,8 +291,10 @@ sap.ui.define([
                     this._oViewModel.setProperty("/isDirty", false);
                     MessageToast.show("Account group saved successfully.");
                     if (bWasCreated) {
+                        // Delay slightly so the toast actually paints before the
+                        // route change tears the page down.
                         this._oCreateListBinding = null;
-                        this.onNavBack();
+                        setTimeout(this.onNavBack.bind(this), 300);
                     } else if (oCtx) {
                         oCtx.requestObject().then(function (oData) {
                             if (oData) { this._refreshHeader(oData); }
@@ -328,6 +339,10 @@ sap.ui.define([
                     active          : false
                 });
                 this._oCreateListBinding = oListBinding;
+                // Unbind the source record's object binding (set by the _bind* view
+                // binding) before switching context; an object binding overrides
+                // setBindingContext, otherwise the copy never appears.
+                this.getView().unbindObject();
                 this.getView().setBindingContext(oNewCtx);
                 this._oViewModel.setProperty("/isNew",   true);
                 this._oViewModel.setProperty("/isDirty", true);

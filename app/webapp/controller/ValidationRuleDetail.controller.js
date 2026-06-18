@@ -197,11 +197,11 @@ sap.ui.define([
             var sTrigger = this.byId("selTrigger").getSelectedKey();
 
             if (!sId) {
-                MessageBox.error("Validation ID is required.");
+                MessageBox.error("Validation Name is required.");
                 return;
             }
             if (!/^[A-Z0-9_]+$/.test(sId)) {
-                MessageBox.error("Validation ID must be uppercase letters, numbers, and underscores only.");
+                MessageBox.error("Validation Name must be uppercase letters, numbers, and underscores only.");
                 return;
             }
             if (!sFn) {
@@ -245,8 +245,10 @@ sap.ui.define([
                     MessageToast.show("Validation rule saved successfully.");
 
                     if (bWasCreated) {
+                        // Delay slightly so the toast actually paints before the
+                        // route change tears the page down.
                         this._oCreateListBinding = null;
-                        this.onNavBack();
+                        setTimeout(this.onNavBack.bind(this), 300);
                     } else if (oCtx) {
                         oCtx.requestObject().then(function (oData) {
                             if (oData) { this._refreshHeader(oData); }
@@ -303,6 +305,10 @@ sap.ui.define([
                     error_message : oData.error_message
                 });
                 this._oCreateListBinding = oListBinding;
+                // Unbind the source record's object binding (set by the _bind* view
+                // binding) before switching context; an object binding overrides
+                // setBindingContext, otherwise the copy never appears.
+                this.getView().unbindObject();
                 this.getView().setBindingContext(oNewCtx);
                 this._oViewModel.setProperty("/isNew",   true);
                 this._oViewModel.setProperty("/isDirty", true);
@@ -316,7 +322,7 @@ sap.ui.define([
                 });
 
                 this.byId("detailTabs").setSelectedKey("general");
-                MessageToast.show("Rule copied — enter a new Validation ID and press Save.");
+                MessageToast.show("Rule copied — enter a new Validation Name and press Save.");
             }.bind(this));
         },
 

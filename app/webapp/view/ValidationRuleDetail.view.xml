@@ -7,7 +7,7 @@
     controllerName="mdm.portal.controller.ValidationRuleDetail"
     displayBlock="true">
 
-    <Page id="detailPage" showHeader="false">
+    <Page busy="{view>/busy}" busyIndicatorDelay="0" id="detailPage" showHeader="false">
 
         <content>
             <!-- Top bar with breadcrumb -->
@@ -60,22 +60,17 @@
                             <l:Grid defaultSpan="L6 M6 S12" hSpacing="2">
                                 <l:content>
                                     <VBox>
-                                        <Label text="Validation ID" required="true" labelFor="inId"/>
+                                        <Label text="Validation Name" required="true" labelFor="inId"/>
                                         <Input id="inId" value="{validation_id}" placeholder="e.g. VAL002"
                                                editable="{view>/isNew}"
                                                maxLength="20" liveChange=".onFieldChange"/>
-                                        <Text text="Unique ID in the validation registry."
-                                              style="font-size:0.75rem; color:var(--sapContent_LabelColor);"
-                                              class="sapUiTinyMarginTop"/>
                                     </VBox>
                                     <VBox>
                                         <Label text="Function Name" required="true" labelFor="inFunction"/>
                                         <Input id="inFunction" value="{function_name}" placeholder="e.g. validateBankDetails"
                                                maxLength="80" liveChange=".onFieldChange"
                                                showValueHelp="true" valueHelpRequest=".onFunctionValueHelp"/>
-                                        <Text text="Published function in the CAP service layer (srv/validation-service.js)."
-                                              style="font-size:0.75rem; color:var(--sapContent_LabelColor);"
-                                              class="sapUiTinyMarginTop"/>
+
                                     </VBox>
                                     <VBox class="sapUiMediumMarginTop">
                                         <Label text="Description" labelFor="inDescription"/>
@@ -90,9 +85,7 @@
                                             <core:Item key="FIELD" text="On Field Change"/>
                                             <core:Item key="SAVE"  text="On Save"/>
                                         </Select>
-                                        <Text text="When this rule runs once attached to a field."
-                                              style="font-size:0.75rem; color:var(--sapContent_LabelColor);"
-                                              class="sapUiTinyMarginTop"/>
+                                     
                                     </VBox>
                                     <VBox>
                                         <Label text="Error Message" required="true" labelFor="inErrorMessage"/>
@@ -110,9 +103,7 @@
                         <VBox class="sapUiMediumMarginBeginEnd">
                             <HBox alignItems="Center" class="sapUiSmallMarginTop sapUiSmallMarginBottom">
                                 <Title text="Input Parameters" level="H4"/>
-                                <Text text="Up to 3 parameters mapped to fields at runtime"
-                                      class="sapUiSmallMarginBegin"
-                                      style="font-size:0.75rem; color:var(--sapContent_LabelColor);"/>
+                                
                             </HBox>
 
                             <HBox alignItems="End" class="sapUiTinyMarginBottom" wrap="Wrap">
@@ -146,10 +137,7 @@
                                 </VBox>
                             </HBox>
 
-                            <MessageStrip
-                                text="Parameter names must match the signature of the CAP function. Source fields are resolved from the BP/Material being edited when the validation runs."
-                                type="Information" showIcon="true"
-                                class="sapUiMediumMarginTop"/>
+
                         </VBox>
                     </IconTabFilter>
 

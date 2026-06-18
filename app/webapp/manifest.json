@@ -46,7 +46,8 @@
                 "sap.f": {},
                 "sap.tnt": {},
                 "sap.ui.core": {},
-                "sap.ui.layout": {}
+                "sap.ui.layout": {},
+                "sap.ui.unified": {}
             }
         },
         "rootView": {
@@ -158,6 +159,11 @@
                     "name": "accountGroupDetail",
                     "pattern": "accountgroups/{accountGroupId}",
                     "target": "accountGroupDetail"
+                },
+                {
+                    "name": "createBP",
+                    "pattern": "createbp",
+                    "target": "createBP"
                 }
             ],
             "targets": {
@@ -232,6 +238,10 @@
                 "accountGroupDetail": {
                     "viewName": "AccountGroupDetail",
                     "viewLevel": 2
+                },
+                "createBP": {
+                    "viewName": "CreateBP",
+                    "viewLevel": 1
                 }
             }
         }

@@ -175,6 +175,12 @@ sap.ui.define([
             this._oViewModel.setProperty("/isNew",  true);
             this._oViewModel.setProperty("/busy",   false);
 
+            // If we arrived here from Copy, the view still has the object binding
+            // of the source record (set by _bindGroup via bindObject). That binding
+            // wins over setBindingContext, so unbind it before pointing the view at
+            // the new transient row. No-op (safe) on the plain "New" route.
+            this.getView().unbindObject();
+
             var oModel   = this.getOwnerComponent().getModel();
             // Bind the list to the SAME update group used by onSave's submitBatch,
             // otherwise the new record is never flushed by submitBatch("fieldGroupUpdate").
@@ -450,11 +456,11 @@ sap.ui.define([
 
             // Basic validation
             if (!sGroupId) {
-                MessageBox.error("Group ID is required.");
+                MessageBox.error("Field Group Name is required.");
                 return;
             }
             if (!/^[A-Z0-9_]+$/.test(sGroupId)) {
-                MessageBox.error("Group ID must be uppercase letters, numbers, and underscores only.");
+                MessageBox.error("Field Group Name must be uppercase letters, numbers, and underscores only.");
                 return;
             }
             if (!sDesc) {
@@ -522,9 +528,11 @@ sap.ui.define([
                     MessageToast.show("Group saved successfully.");
 
                     if (bWasCreated) {
-                        // Navigate back to the list so it reloads with the new row
+                        // Navigate back to the list so it reloads with the new row.
+                        // Delay slightly so the toast actually paints before the
+                        // route change tears the page down.
                         this._oCreateListBinding = null;
-                        this.onNavBack();
+                        setTimeout(this.onNavBack.bind(this), 300);
                     } else if (oCtx) {
                         // Edit — refresh header from the saved data
                         oCtx.requestObject().then(function (oData) {
@@ -597,7 +605,7 @@ sap.ui.define([
                 });
 
                 this.byId("detailTabs").setSelectedKey("general");
-                MessageToast.show("Group copied — enter a new Group ID and press Save.");
+                MessageToast.show("Group copied — enter a new Field Group Name and press Save.");
             }.bind(this));
         },
 

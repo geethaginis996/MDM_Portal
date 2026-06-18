@@ -60,6 +60,7 @@ type FieldStatus            : String(10) @assert.range enum { REQUIRED; OPTIONAL
 type ActiveStatus           : String(10) @assert.range enum { ACTIVE; INACTIVE; };
 type TriggerOn              : String(10) @assert.range enum { FIELD; SAVE; };
 type AccountType            : String(10) @assert.range enum { CUSTOMER; VENDOR; };
+type AccountScope           : String(10) @assert.range enum { CUSTOMER; VENDOR; BOTH; };
 type AssignmentMode         : String(10) @assert.range enum { INTERNAL; EXTERNAL; };
 type AssignmentType         : String(10) @assert.range enum { USER; GROUP; };
 type ScopeType              : String(20) @assert.range enum { BP_ROLE; MATERIAL_VIEW; FIELD_GROUP; };
@@ -128,8 +129,8 @@ entity FieldMaster : managed {
         data_type       : DataType     not null;
         length          : Integer;
         decimals        : Integer;
-        main_group      : Association to FieldGroup not null;
-        sub_group       : Association to FieldGroup not null;
+        main_group      : Association to FieldGroup;
+        sub_group       : Association to FieldGroup;
         value_table     : Association to ValueTable;
         display_type    : DisplayType  not null;
         validation      : Association to ValidationRule;
@@ -159,6 +160,7 @@ entity BPRole : managed {
     key role_id             : String(10);
         description         : String(100) not null;
         master_data_type    : Association to MasterDataType not null;
+        account_scope       : AccountScope not null default 'CUSTOMER';
         initial_bp_required : Boolean     not null default false;
         sequence            : Integer     not null;
         active              : Boolean     not null default true;

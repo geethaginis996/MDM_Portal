@@ -5,7 +5,7 @@
           controllerName="mdm.portal.controller.FieldMasterDetail"
           displayBlock="true">
 
-    <Page id="detailPage" showNavButton="true" navButtonPress=".onNavBack">
+    <Page busy="{view>/busy}" busyIndicatorDelay="0" id="detailPage" showNavButton="true" navButtonPress=".onNavBack">
 
         <customHeader>
             <Bar>
@@ -42,7 +42,7 @@
                             <layout:Grid defaultSpan="L6 M6 S12" hSpacing="2">
                                 <layout:content>
                                     <VBox>
-                                        <Label text="Field ID" required="true"/>
+                                        <Label text="Field Name" required="true"/>
                                         <Input id="inFieldId"
                                                value="{field_id}"
                                                placeholder="e.g. BUKRS"
@@ -115,8 +115,7 @@
                         </VBox>
                     </IconTabFilter>
 
-                    <!-- ── TAB 2 · Grouping ── -->
-                    <!-- ── TAB 3 · Value Help ── -->
+                    <!-- ── TAB 2 · Value Help ── -->
                     <IconTabFilter text="Value Help" key="valuehelp" icon="sap-icon://value-help">
                         <VBox class="sapUiMediumMarginBeginEnd">
                             <Title text="Value Help &amp; Display" level="H4"
@@ -134,7 +133,8 @@
                                         </Select>
                                     </VBox>
                                     <VBox>
-                                        <Label text="Value Table"/>
+                                        <Label text="Value Table" labelFor="selValueTable"
+                                               required="{= ${display_type} === 'DROPDOWN' || ${display_type} === 'SEARCH_HELP' }"/>
                                         <Select id="selValueTable"
                                                 selectedKey="{value_table_value_table_id}"
                                                 change=".onValueTableChange"
@@ -143,6 +143,7 @@
                                                 items="{path: 'lookups>/valueTables'}">
                                             <core:Item key="{lookups>key}" text="{lookups>text}"/>
                                         </Select>
+                                        
                                     </VBox>
                                 </layout:content>
                             </layout:Grid>

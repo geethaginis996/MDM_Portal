@@ -2,23 +2,34 @@ sap.ui.define([
     "sap/ui/core/mvc/Controller",
     "sap/ui/model/json/JSONModel",
     "sap/ui/model/Filter",
-    "sap/ui/model/FilterOperator"
-], function (Controller, JSONModel, Filter, FilterOperator) {
+    "sap/ui/model/FilterOperator",
+    "sap/m/MessageToast"
+], function (Controller, JSONModel, Filter, FilterOperator, MessageToast) {
     "use strict";
 
     // Maps route key → breadcrumb text shown in ShellBar secondTitle
     var mRouteLabels = {
-        fieldMaster: "Configuration \u203a Field Master",
-        fieldGroups: "Configuration \u203a Field Groups",
-        valueTables: "Configuration \u203a Value Tables",
-        validationRules: "Configuration \u203a Validation Rules",
-        bpRoles: "BP Configuration \u203a BP Roles",
-        bpCategories: "BP Configuration \u203a BP Categories",
-        accountGroups: "BP Configuration \u203a Account Groups",
-        releaseCodes: "Release Management \u203a Release Codes",
-        releaseStrategies: "Release Management \u203a Release Strategies",
-        myRequests: "Change Requests \u203a My Requests",
-        approvalInbox: "Change Requests \u203a Approval Inbox",
+        fieldMaster: "Fields \u203a Field Master",
+        fieldMasterDetail: "Fields \u203a Field Master",
+        validationRules: "Fields \u203a Validation Rules",
+        validationRuleDetail: "Fields \u203a Validation Rules",
+        valueTables: "Fields \u203a Value Tables",
+        valueTableDetail: "Fields \u203a Value Tables",
+        fieldGroups: "Fields \u203a Field Groups",
+        fieldGroupDetail: "Fields \u203a Field Groups",
+        bpCategories: "Business Partner \u203a BP Categories",
+        bpCategoryDetail: "Business Partner \u203a BP Categories",
+        bpRoles: "Business Partner \u203a BP Roles",
+        bpRoleDetail: "Business Partner \u203a BP Roles",
+        accountGroups: "Business Partner \u203a Account Groups",
+        accountGroupDetail: "Business Partner \u203a Account Groups",
+        releaseCriteria: "Release Strategy \u203a Release Criteria",
+        releaseCodes: "Release Strategy \u203a Release Codes",
+        releaseStrategies: "Release Strategy \u203a Release Strategies",
+        createBP: "Runtime Preview \u203a Create BP",
+        myApprovals: "Runtime Preview \u203a My Approvals",
+        authRoles: "Authorizations \u203a Authorization Roles",
+        users: "Authorizations \u203a Users",
         help: "Help",
         appSettings: "Settings"
     };
@@ -28,10 +39,19 @@ sap.ui.define([
         onInit: function () {
             var oUiModel = new JSONModel({
                 pendingApprovals: 0,
-                shellBreadcrumb: "Configuration \u203a Field Master"
+                shellBreadcrumb: mRouteLabels.fieldMaster
             });
             this.getView().setModel(oUiModel, "ui");
             this._loadPendingApprovalCount();
+
+            // The breadcrumb was previously only updated from onNavItemSelect,
+            // so it only changed when a side-nav item was clicked directly.
+            // Any other navigation — opening a row from a list, a link inside a
+            // detail page, browser back/forward, a deep link — left it stuck on
+            // whatever it was last set to. Hooking the router's own
+            // routeMatched event covers every navigation path uniformly.
+            this.getOwnerComponent().getRouter()
+                .attachRouteMatched(this._onAnyRouteMatched, this);
 
             // Correct the content margin after initial render
             setTimeout(function () {
@@ -102,6 +122,14 @@ sap.ui.define([
 
         // ── Pending approval count (OData v4 safe) ─────────────────────
         _loadPendingApprovalCount: function () {
+            // The approval runtime (CRReleaseStep / approval inbox) isn't built
+            // yet, and there is no /ApprovalItems entity in the service. Binding
+            // to it threw "no metadata for path /ApprovalItems/status" on every
+            // page. Until the approval module exists, report zero.
+            this.getView().getModel("ui").setProperty("/pendingApprovals", 0);
+        },
+
+        _loadPendingApprovalCount_DISABLED: function () {
             var oModel = this.getOwnerComponent().getModel();
 
             var oBinding = oModel.bindList("/ApprovalItems", null, null, null, {
@@ -123,6 +151,9 @@ sap.ui.define([
         },
 
         // ── ShellBar breadcrumb helper ──────────────────────────────────
+        _onAnyRouteMatched: function (oEvent) {
+            this._setShellBreadcrumb(oEvent.getParameter("name"));
+        },
         _setShellBreadcrumb: function (sKey) {
             var sLabel = mRouteLabels[sKey] || sKey;
             this.getView().getModel("ui").setProperty("/shellBreadcrumb", sLabel);
@@ -134,8 +165,15 @@ sap.ui.define([
 
             var sKey = oItem.getKey();
             if (sKey) {
-                this._setShellBreadcrumb(sKey);
-                this.getOwnerComponent().getRouter().navTo(sKey);
+                // Only navigate if a route is actually defined; menu items for
+                // screens that aren't built yet (Release Criteria, Create BP,
+                // Authorizations, etc.) show a notice instead of throwing.
+                var oRouter = this.getOwnerComponent().getRouter();
+                if (oRouter.getRoute(sKey)) {
+                    oRouter.navTo(sKey);
+                } else {
+                    MessageToast.show(oItem.getText() + " — coming soon");
+                }
             }
 
             // Auto-collapse on Phone after selection

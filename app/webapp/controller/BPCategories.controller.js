@@ -141,7 +141,7 @@ sap.ui.define([
             oBinding.requestContexts(0, oBinding.getLength()).then(function (aCtx) {
                 var aData = aCtx.map(function (oCtx) {
                     return {
-                        "Category ID": oCtx.getProperty("category_id"),
+                        "Category Name": oCtx.getProperty("category_id"),
                         "Description": oCtx.getProperty("description"),
                         "Sequence"   : oCtx.getProperty("sequence"),
                         "Active"     : oCtx.getProperty("active") ? "Yes" : "No"

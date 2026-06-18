@@ -48,7 +48,7 @@
                             class="sapUiSmallMarginTopBottom">
                         <l:content>
                             <VBox>
-                                <Label text="Role ID / Description" labelFor="filterSearch" design="Bold"/>
+                                <Label text="Role Name / Description" labelFor="filterSearch" design="Bold"/>
                                 <Input id="filterSearch" placeholder="Search…" showClearIcon="true"
                                        width="100%" liveChange=".onFilterLiveChange"/>
                             </VBox>
@@ -89,9 +89,7 @@
 
         <f:content>
             <VBox>
-                <MessageStrip id="pageMessageStrip" text="" type="Information"
-                              showCloseButton="true" visible="false"
-                              class="sapUiSmallMarginBegin sapUiSmallMarginEnd sapUiSmallMarginTop"/>
+             
 
                 <Table id="roleTable"
                     items="{
@@ -99,7 +97,7 @@
                         parameters: {
                             $count: true,
                             $expand: 'master_data_type($select=master_data_type_id,description)',
-                            $select: 'role_id,description,initial_bp_required,sequence,active,master_data_type_master_data_type_id',
+                            $select: 'role_id,description,initial_bp_required,sequence,active,account_scope,master_data_type_master_data_type_id',
                             $orderby: 'sequence asc,role_id asc'
                         }
                     }"
@@ -128,7 +126,7 @@
 
                     <columns>
                         <Column id="colId"        width="7rem"  vAlign="Middle" importance="High">
-                            <Label text="BP Role ID" design="Bold"/></Column>
+                            <Label text="BP Role Name" design="Bold"/></Column>
                         <Column id="colDesc"      width="11rem" vAlign="Middle" importance="High">
                             <Label text="Description" design="Bold"/></Column>
                         <Column id="colMDT"       width="8rem"  vAlign="Middle" importance="Medium">
@@ -149,10 +147,10 @@
                             <cells>
                                 <Link text="{role_id}" press=".onLinkPress" wrapping="false"/>
                                 <Text text="{description}" wrapping="false" maxLines="1"/>
-                                <Text text="{master_data_type/description}" wrapping="false"/>
+                                <Text text="{path: 'account_scope', formatter: '.formatScope'}" wrapping="false"/>
                                 <ObjectStatus
                                     text="{path: 'initial_bp_required', formatter: '.formatYesNo'}"
-                                    state="None"/>
+                                    state="{path: 'initial_bp_required', formatter: '.formatYesNoState'}"/>
                                 <ObjectStatus
                                     text="{parts: [{path: 'role_id'}, {path: 'ui>/prereqCounts'}], formatter: '.formatCount'}"
                                     state="None"/>
