@@ -18,6 +18,7 @@
                 secondTitle="{ui>/shellBreadcrumb}"
                 homeIcon="sap-icon://home"
                 homeIconTooltip="MDM Portal Home"
+                homeIconPressed=".onHomePress"
                 showMenuButton="true"
                 menuButtonPressed=".onSideNavToggle"
                 showSearch="true"
@@ -51,6 +52,8 @@
                 <tnt:item>
                     <tnt:NavigationList>
 
+                        <tnt:NavigationListItem text="Home" icon="sap-icon://home" key="home"/>
+
                         <tnt:NavigationListItem text="Fields" icon="sap-icon://settings" expanded="true">
                             <tnt:NavigationListItem text="Field Master"     icon="sap-icon://form"       key="fieldMaster"/>
                             <tnt:NavigationListItem text="Validation Rules" icon="sap-icon://validate"   key="validationRules"/>
@@ -64,16 +67,18 @@
                             <tnt:NavigationListItem text="Account Groups" icon="sap-icon://accounts" key="accountGroups"/>
                         </tnt:NavigationListItem>
 
+                         <tnt:NavigationListItem text="BP Maintenance" icon="sap-icon://request" expanded="false">
+                            <tnt:NavigationListItem text="Create BP"    icon="sap-icon://add-contact" key="createBP"/>
+                            <tnt:NavigationListItem text="My Approvals" icon="sap-icon://inbox"       key="myApprovals"/>
+                        </tnt:NavigationListItem>
+
                         <tnt:NavigationListItem text="Release Strategy" icon="sap-icon://workflow-tasks" expanded="false">
                             <tnt:NavigationListItem text="Release Criteria"   icon="sap-icon://filter-fields" key="releaseCriteria"/>
                             <tnt:NavigationListItem text="Release Codes"      icon="sap-icon://unlocked"      key="releaseCodes"/>
                             <tnt:NavigationListItem text="Release Strategies" icon="sap-icon://decision"      key="releaseStrategies"/>
                         </tnt:NavigationListItem>
 
-                        <tnt:NavigationListItem text="Runtime Preview" icon="sap-icon://request" expanded="false">
-                            <tnt:NavigationListItem text="Create BP"    icon="sap-icon://add-contact" key="createBP"/>
-                            <tnt:NavigationListItem text="My Approvals" icon="sap-icon://inbox"       key="myApprovals"/>
-                        </tnt:NavigationListItem>
+                       
 
                         <tnt:NavigationListItem text="Authorizations" icon="sap-icon://shield" expanded="false">
                             <tnt:NavigationListItem text="Authorization Roles" icon="sap-icon://permission" key="authRoles"/>

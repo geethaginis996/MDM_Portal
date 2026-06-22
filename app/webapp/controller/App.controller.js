@@ -9,6 +9,7 @@ sap.ui.define([
 
     // Maps route key → breadcrumb text shown in ShellBar secondTitle
     var mRouteLabels = {
+        home: "Home",
         fieldMaster: "Fields \u203a Field Master",
         fieldMasterDetail: "Fields \u203a Field Master",
         validationRules: "Fields \u203a Validation Rules",
@@ -180,6 +181,9 @@ sap.ui.define([
             if (sap.ui.Device.system.phone) {
                 this.byId("toolPage").setSideExpanded(false);
             }
+        },
+        onHomePress: function () {
+            this.getOwnerComponent().getRouter().navTo("home");
         },
         onSideNavToggle: function () {
             var oToolPage = this.byId("toolPage");

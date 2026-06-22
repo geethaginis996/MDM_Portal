@@ -86,13 +86,18 @@
                 "controlId": "appPages",
                 "controlAggregation": "pages",
                 "bypassed": {
-                    "target": "fieldMaster"
+                    "target": "home"
                 }
             },
             "routes": [
                 {
-                    "name": "fieldMaster",
+                    "name": "home",
                     "pattern": "",
+                    "target": "home"
+                },
+                {
+                    "name": "fieldMaster",
+                    "pattern": "fieldmaster",
                     "target": "fieldMaster"
                 },
                 {
@@ -167,6 +172,10 @@
                 }
             ],
             "targets": {
+                "home": {
+                    "viewName": "Welcome",
+                    "viewLevel": 0
+                },
                 "fieldMaster": {
                     "viewName": "FieldMaster",
                     "viewLevel": 1

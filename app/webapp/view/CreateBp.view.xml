@@ -29,7 +29,8 @@
                                class="sapUiSmallMarginEnd"/>
                     <VBox>
                         <Title text="Create Business Partner" level="H2" wrapping="false"/>
-                        
+                        <Text text="{rt>/subtitle}" class="sapUiTinyMarginTop"
+                              style="color: var(--sapContent_LabelColor); font-size: 0.875rem;"/>
                     </VBox>
                 </HBox>
                 <HBox wrap="Wrap" class="sapUiSmallMarginTop" alignItems="Center">
@@ -47,7 +48,7 @@
             </HBox>
 
             <!-- ── STEP 0: Create (pick category) OR Extend (pick BP) ─── -->
-            <Panel class="sapUiMediumMarginBeginEnd sapUiSmallMarginTop" backgroundDesign="Transparent">
+            <VBox class="sapUiMediumMarginBeginEnd sapUiSmallMarginTop">
                 <HBox alignItems="End">
                     <VBox width="42%">
                         <Label text="BP Category" required="true" labelFor="selCategory"/>
@@ -113,7 +114,7 @@
                                         ? ('BP Number set: ' + ${rt>/bpNumber} + '. You may proceed with the other tabs.')
                                         : 'BP Number required. This account group uses external numbering — enter the BP number above to continue.' }"/>
                 </VBox>
-            </Panel>
+            </VBox>
 
             <!-- ── Empty state (no roles yet) ─────────────────────────── -->
             <IllustratedMessage id="cbpEmpty" visible="{= !${rt>/hasRoles} }"
@@ -121,9 +122,17 @@
                                 title="Select a BP Role to begin"
                                 description="Pick a category and one or more BP roles above. The portal generates the input form from the field configuration assigned to those roles."/>
 
+            <!-- ── Active Role switcher — shows one role's fields at a time
+                 when multiple roles are selected ─────────────────────── -->
+            <VBox visible="{rt>/hasRoles}" class="sapUiMediumMarginBeginEnd sapUiSmallMarginTop sapUiTinyMarginBottom">
+                <Label text="ACTIVE ROLE" class="sapUiTinyMarginBottom"
+                       style="font-size:0.7rem; font-weight:600; letter-spacing:0.04em; color:var(--sapContent_LabelColor);"/>
+                <SegmentedButton id="cbpRoleBar" width="100%" select=".onActiveRoleChange"/>
+            </VBox>
+
             <!-- ── Dynamic tabs (built in controller from selected roles) ── -->
             <IconTabBar id="cbpTabs" visible="{rt>/hasRoles}" expanded="true"
-                        class="sapUiResponsiveContentPadding">
+                        class="sapUiMediumMarginBeginEnd sapUiResponsiveContentPadding">
                 <items/>
             </IconTabBar>
         </content>

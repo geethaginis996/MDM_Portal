@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mvc:View
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core"
+    controllerName="mdm.portal.controller.Welcome"
+    displayBlock="true">
+
+    <Page id="welcomePage" showHeader="false">
+        <content>
+            <VBox alignItems="Center" class="sapUiLargeMargin">
+
+                <VBox alignItems="Center" width="42rem" class="sapUiLargeMarginTop sapUiLargeMarginBottom">
+                    <Title text="MDM Portal — Configuration" level="H1" textAlign="Center"
+                           class="sapUiTinyMarginBottom"/>
+                    <Text text="Central configuration hub for the MDM Portal. Pick a module below to get started."
+                          textAlign="Center"/>
+                </VBox>
+
+                <FlexBox wrap="Wrap" justifyContent="Center" width="56rem">
+
+                    <GenericTile frameType="TwoByOne" class="sapUiTinyMargin" press=".onTilePress"
+                                 header="Field Master"
+                                 subheader="Central registry of all fields across master data types.">
+                        <customData>
+                            <core:CustomData key="route" value="fieldMaster"/>
+                        </customData>
+                        <TileContent><core:Icon src="sap-icon://form" size="1.5rem"/></TileContent>
+                    </GenericTile>
+
+                    <GenericTile frameType="TwoByOne" class="sapUiTinyMargin" press=".onTilePress"
+                                 header="Field Groups"
+                                 subheader="Two-level hierarchy for organizing fields on screen.">
+                        <customData>
+                            <core:CustomData key="route" value="fieldGroups"/>
+                        </customData>
+                        <TileContent><core:Icon src="sap-icon://group" size="1.5rem"/></TileContent>
+                    </GenericTile>
+
+                    <GenericTile frameType="TwoByOne" class="sapUiTinyMargin" press=".onTilePress"
+                                 header="Validation Rules"
+                                 subheader="Reusable validation functions with configurable parameters.">
+                        <customData>
+                            <core:CustomData key="route" value="validationRules"/>
+                        </customData>
+                        <TileContent><core:Icon src="sap-icon://validate" size="1.5rem"/></TileContent>
+                    </GenericTile>
+
+                    <GenericTile frameType="TwoByOne" class="sapUiTinyMargin" press=".onTilePress"
+                                 header="Value Tables"
+                                 subheader="Data source for dropdowns and search helps.">
+                        <customData>
+                            <core:CustomData key="route" value="valueTables"/>
+                        </customData>
+                        <TileContent><core:Icon src="sap-icon://table-view" size="1.5rem"/></TileContent>
+                    </GenericTile>
+
+                    <GenericTile frameType="TwoByOne" class="sapUiTinyMargin" press=".onTilePress"
+                                 header="BP Categories"
+                                 subheader="Classify Business Partners as Person, Organization, or Group.">
+                        <customData>
+                            <core:CustomData key="route" value="bpCategories"/>
+                        </customData>
+                        <TileContent><core:Icon src="sap-icon://customer" size="1.5rem"/></TileContent>
+                    </GenericTile>
+
+                    <GenericTile frameType="TwoByOne" class="sapUiTinyMargin" press=".onTilePress"
+                                 header="BP Roles"
+                                 subheader="Assign fields and prerequisites to each BP role.">
+                        <customData>
+                            <core:CustomData key="route" value="bpRoles"/>
+                        </customData>
+                        <TileContent><core:Icon src="sap-icon://role" size="1.5rem"/></TileContent>
+                    </GenericTile>
+
+                    <GenericTile frameType="TwoByOne" class="sapUiTinyMargin" press=".onTilePress"
+                                 header="Account Groups"
+                                 subheader="Number ranges and field overrides per account group.">
+                        <customData>
+                            <core:CustomData key="route" value="accountGroups"/>
+                        </customData>
+                        <TileContent><core:Icon src="sap-icon://accounts" size="1.5rem"/></TileContent>
+                    </GenericTile>
+
+                    <GenericTile frameType="TwoByOne" class="sapUiTinyMargin" press=".onTilePress"
+                                 header="Create Business Partner"
+                                 subheader="Pick a category and roles — fields merge across both, live.">
+                        <customData>
+                            <core:CustomData key="route" value="createBP"/>
+                        </customData>
+                        <TileContent><core:Icon src="sap-icon://add-contact" size="1.5rem"/></TileContent>
+                    </GenericTile>
+
+                </FlexBox>
+            </VBox>
+        </content>
+    </Page>
+</mvc:View>
