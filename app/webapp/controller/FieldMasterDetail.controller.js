@@ -151,9 +151,8 @@ sap.ui.define(
       // ── Route matched ────────────────────────────────────────────
 
       _onRouteMatched: function (oEvent) {
-        var sFieldId = decodeURIComponent(
-          oEvent.getParameter("arguments").fieldId,
-        );
+        var sRaw     = decodeURIComponent(oEvent.getParameter("arguments").fieldId);
+        var sFieldId = sRaw === "NEW" ? "NEW" : sRaw.toUpperCase();
         // Reset dirty flag on every navigation
         this._oViewModel.setProperty("/isDirty", false);
 
@@ -448,7 +447,7 @@ sap.ui.define(
           this.getOwnerComponent()
             .getRouter()
             .navTo("bpRoleDetail", {
-              roleId: encodeURIComponent(sRoleId),
+              roleId: encodeURIComponent(sRoleId.toLowerCase()),
             });
         }
       },

@@ -33,10 +33,10 @@
                 </HBox>
                 <HBox wrap="Wrap" class="sapUiSmallMarginTop" alignItems="Center">
                     <ObjectStatus id="attrStatus" text="Active" state="Success"/>
-                    <Text text="\u00b7" class="sapUiTinyMarginBegin sapUiTinyMarginEnd"
+                    <Text text="·" class="sapUiTinyMarginBegin sapUiTinyMarginEnd"
                           style="color: var(--sapContent_LabelColor);"/>
                     <ObjectAttribute id="attrMDT" title="Master Data Type" text=""/>
-                    <Text text="\u00b7" class="sapUiTinyMarginBegin sapUiTinyMarginEnd"
+                    <Text text="·" class="sapUiTinyMarginBegin sapUiTinyMarginEnd"
                           style="color: var(--sapContent_LabelColor);"/>
                     <ObjectAttribute id="attrFields" title="Assigned fields" text=""/>
                 </HBox>

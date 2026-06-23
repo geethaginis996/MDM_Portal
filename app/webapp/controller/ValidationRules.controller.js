@@ -102,8 +102,8 @@ sap.ui.define([
             if (sSearch) {
                 aFilters.push(new Filter({
                     filters: [
-                        new Filter("validation_id",  FilterOperator.Contains, sSearch),
-                        new Filter("function_name",  FilterOperator.Contains, sSearch)
+                        new Filter({ path: "validation_id", operator: FilterOperator.Contains, value1: sSearch, caseSensitive: false }),
+                        new Filter({ path: "function_name", operator: FilterOperator.Contains, value1: sSearch, caseSensitive: false })
                     ],
                     and: false
                 }));
@@ -183,7 +183,7 @@ sap.ui.define([
         _onMenuEdit: function () {
             var sId = this._oMenuCtx.getProperty("validation_id");
             this.getOwnerComponent().getRouter().navTo("validationRuleDetail", {
-                validationId: encodeURIComponent(sId)
+                validationId: encodeURIComponent(sId.toLowerCase())
             });
         },
 
@@ -204,14 +204,14 @@ sap.ui.define([
         onLinkPress: function (oEvent) {
             var sId = oEvent.getSource().getBindingContext().getProperty("validation_id");
             this.getOwnerComponent().getRouter().navTo("validationRuleDetail", {
-                validationId: encodeURIComponent(sId)
+                validationId: encodeURIComponent(sId.toLowerCase())
             });
         },
 
         onRowPress: function (oEvent) {
             var sId = oEvent.getSource().getBindingContext().getProperty("validation_id");
             this.getOwnerComponent().getRouter().navTo("validationRuleDetail", {
-                validationId: encodeURIComponent(sId)
+                validationId: encodeURIComponent(sId.toLowerCase())
             });
         },
 

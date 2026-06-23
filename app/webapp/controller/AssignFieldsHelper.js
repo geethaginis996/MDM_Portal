@@ -135,6 +135,9 @@ sap.ui.define([
                 oRow.field_field_id    = sFieldId;
                 oRow.sequence          = iSeq;
                 if (bStatus) { oRow.field_status = sStatus; }
+                if (oCfg.collection === "/BPCategoryFields") {
+                    oRow.multiple_values = false;   // default; user can toggle via row press
+                }
                 if (typeof oCfg.extraProps === "function") {
                     var oExtra = oCfg.extraProps(sFieldId, sStatus, iSeq) || {};
                     Object.keys(oExtra).forEach(function (k) { oRow[k] = oExtra[k]; });

@@ -14,6 +14,7 @@ sap.ui.define([
     "sap/m/Label",
     "sap/m/Panel",
     "sap/m/VBox",
+    "sap/m/HBox",
     "sap/m/Text",
     "sap/m/Table",
     "sap/m/Column",
@@ -23,12 +24,14 @@ sap.ui.define([
     "sap/m/SegmentedButtonItem",
     "sap/ui/unified/FileUploader",
     "sap/ui/core/Item",
-    "sap/ui/layout/form/SimpleForm"
+    "sap/ui/core/Icon",
+    "sap/ui/layout/form/SimpleForm",
+    "sap/ui/core/Fragment"
 ], function (
     Controller, JSONModel, Filter, FilterOperator, Sorter,
     MessageToast, MessageBox, IconTabFilter, Input, ComboBox, CheckBox, DatePicker,
-    Label, Panel, VBox, Text, Table, Column, ColumnListItem, Button, SegmentedButton, SegmentedButtonItem,
-    FileUploader, Item, SimpleForm
+    Label, Panel, VBox, HBox, Text, Table, Column, ColumnListItem, Button, SegmentedButton, SegmentedButtonItem,
+    FileUploader, Item, CoreIcon, SimpleForm, Fragment
 ) {
     "use strict";
 
@@ -89,14 +92,20 @@ sap.ui.define([
 
         _freshState: function () {
             return {
-                mode             : "CREATE",
+                mode             : "CREATE",   // "CREATE" | "EXTEND"
                 status           : "New",
                 subtitle         : "Select a BP role to generate the input form",
-                started          : false,   // a category or existing BP has been chosen
-                hasRoles         : false,   // at least one role selected -> tabs visible
+                started          : false,
+                hasRoles         : false,
                 canSave          : false,
                 categoryId       : "",
                 extendBp         : "",
+                // Extend-mode: the selected existing BP record
+                extendBpData     : null,
+                // role_id -> "new" | <instance_no> | undefined
+                roleInstance     : {},
+                // role_id -> "edit" | "copy"
+                roleInstanceMode : {},
                 roleKeys         : [],
                 activeRole       : "",
                 bpAgId           : "",
@@ -108,26 +117,27 @@ sap.ui.define([
                 // header strip
                 catDisp          : "\u2014",
                 roleDisp         : "\u2014",
-                bpAgDisp         : "\u2014",
+                bpAgDisp         : "",
                 nrDisp           : "\u2014",
                 preqDisp         : "\u2014"
             };
         },
 
         _onRouteMatched: function () {
-            // Start every visit with a clean form.
             this._oRt.setData(this._freshState());
             this._aAllAssignments = [];
-            this._mRolePrereqs = {};
             this._mRolePrereqFields = {};
+            this._mRoleInstances = {};
             this._aMainTabItems = [];
             this.getView().getModel("form").setProperty("/values", {});
             var oTabs = this.byId("cbpTabs");
             if (oTabs) { oTabs.destroyItems(); }
             var oRoleBar = this.byId("cbpRoleBar");
             if (oRoleBar) { oRoleBar.destroyItems(); }
-            var oMcb = this.byId("mcbRoles");
-            if (oMcb) { oMcb.setSelectedKeys([]); }
+            if (this._oBpSearchDialog) { this._oBpSearchDialog.destroy(); this._oBpSearchDialog = null; }
+            if (this._oRoleInstDialog)  { this._oRoleInstDialog.destroy();  this._oRoleInstDialog  = null; }
+            if (this._oAgVHDialog)      { this._oAgVHDialog.destroy();      this._oAgVHDialog      = null; }
+            if (this._oRoleVHDialog)    { this._oRoleVHDialog.destroy();    this._oRoleVHDialog    = null; }
         },
 
         // ── Load configuration lookups from the service ──────────────
@@ -148,15 +158,40 @@ sap.ui.define([
                 new Filter("active", FilterOperator.EQ, true)
             ]).requestContexts(0, 500).then(function (aCtx) {
                 this._mRoleMeta = {};
-                this.getView().getModel("roles").setProperty("/items", aCtx.map(function (c) {
-                    var sId   = c.getProperty("role_id");
-                    var sDesc = c.getProperty("description") || "";
-                    this._mRoleMeta[sId] = {
-                        description  : sDesc,
-                        account_scope: c.getProperty("account_scope")
+                var aItems = aCtx.map(function (c) {
+                    var sId    = c.getProperty("role_id");
+                    var sDesc  = c.getProperty("description") || "";
+                    var sScope = c.getProperty("account_scope") || "";
+                    var bPrereq= false; // will be updated after dependency load if needed
+                    this._mRoleMeta[sId] = { description: sDesc, account_scope: sScope };
+                    var sScopeDisp = sScope === "CUSTOMER" ? "Customer"
+                                   : sScope === "VENDOR"   ? "Vendor"
+                                   : sScope === "Both"     ? "Both"
+                                   : sScope || "\u2014";
+                    return {
+                        key        : sId,
+                        text       : sId + " \u2014 " + sDesc,
+                        description: sDesc,
+                        scopeDisp  : sScopeDisp,
+                        hasPrereq  : false,
+                        selected   : false
                     };
-                    return { key: sId, text: sId + " — " + sDesc };
-                }.bind(this)));
+                }.bind(this));
+                this.getView().getModel("roles").setProperty("/items", aItems);
+
+                // Mark roles that have prerequisites defined
+                oModel.bindList("/BPRoleDependencies")
+                    .requestContexts(0, 500).then(function (aDeps) {
+                        var aRolesWithPrereq = new Set(
+                            aDeps.map(function (d) { return d.getProperty("role_role_id"); })
+                        );
+                        var aUpdated = this.getView().getModel("roles").getProperty("/items");
+                        aUpdated.forEach(function (item) {
+                            item.hasPrereq = aRolesWithPrereq.has(item.key);
+                        });
+                        this.getView().getModel("roles").setProperty("/items", aUpdated);
+                    }.bind(this)).catch(function () { /* non-fatal */ });
+
             }.bind(this)).catch(this._loadError("roles"));
 
             // Account Groups
@@ -165,13 +200,23 @@ sap.ui.define([
             ]).requestContexts(0, 500).then(function (aCtx) {
                 var aItems = [];
                 aCtx.forEach(function (c) {
-                    var sId = c.getProperty("account_group_id");
+                    var sId   = c.getProperty("account_group_id");
+                    var sDesc = c.getProperty("description") || "";
+                    var sNr   = c.getProperty("number_range_id") || "";
+                    var sMode = c.getProperty("assignment_mode") || "";
+                    var sType = c.getProperty("type") || "";
                     this._mAccountGroups[sId] = {
-                        number_range_id: c.getProperty("number_range_id"),
-                        assignment_mode: c.getProperty("assignment_mode"),
-                        type           : c.getProperty("type")
+                        number_range_id: sNr,
+                        assignment_mode: sMode,
+                        type           : sType
                     };
-                    aItems.push({ key: sId, text: sId + " — " + (c.getProperty("description") || "") });
+                    aItems.push({
+                        key        : sId,
+                        text       : sId + " \u2014 " + sDesc,
+                        description: sDesc,
+                        type       : sType,
+                        numberRange: sNr + (sMode ? " (" + sMode + ")" : "")
+                    });
                 }.bind(this));
                 this.getView().getModel("ag").setProperty("/items", aItems);
             }.bind(this)).catch(this._loadError("account groups"));
@@ -224,52 +269,284 @@ sap.ui.define([
         },
 
         onExtendSearch: function () {
-            // The query-existing-extensions picker (BR-C17/C18) is a later module.
-            MessageToast.show("Existing-BP search — coming soon");
+            this._openBpSearchDialog();
         },
 
-        onRolesChange: function (oEvent) {
-            var aKeys = oEvent.getSource().getSelectedKeys() || [];
+        // ── Existing-BP search dialog ────────────────────────────────
+        _openBpSearchDialog: function () {
+            var oView = this.getView();
+            if (!this._oBpSearchDialog) {
+                this._oBpSearchModel = new JSONModel({ items: [], busy: false, query: "", country: "", category: "" });
+                this._oBpSearchDialog = new sap.m.Dialog({
+                    title       : "Search — Existing Business Partner",
+                    contentWidth: "50rem",
+                    content     : [
+                        new VBox({ items: [
+                            new HBox({ alignItems: "End", items: [
+                                new VBox({ width: "50%", class: "sapUiSmallMarginEnd", items: [
+                                    new Label({ text: "Search (BP number / name)" }),
+                                    new Input({ value: "{bpSearch>/query}", width: "100%",
+                                        liveChange: this._refreshBpSearch.bind(this) })
+                                ]}),
+                                new VBox({ width: "25%", class: "sapUiSmallMarginEnd", items: [
+                                    new Label({ text: "Country" }),
+                                    new Input({ value: "{bpSearch>/country}", width: "100%",
+                                        liveChange: this._refreshBpSearch.bind(this) })
+                                ]}),
+                                new Button({ text: "Search", type: "Emphasized",
+                                    press: this._refreshBpSearch.bind(this) })
+                            ]}),
+                            new Table({
+                                id         : "bpSearchTable",
+                                noDataText : "No matching business partners found.",
+                                busy       : "{bpSearch>/busy}",
+                                columns    : [
+                                    new Column({ header: new Label({ text: "BP Number" }) }),
+                                    new Column({ header: new Label({ text: "Name" }) }),
+                                    new Column({ header: new Label({ text: "Category" }) }),
+                                    new Column({ header: new Label({ text: "Status" }) })
+                                ],
+                                items : {
+                                    path    : "bpSearch>/items",
+                                    template: new ColumnListItem({
+                                        type : "Active",
+                                        press: this._onBpSearchRowPress.bind(this),
+                                        cells: [
+                                            new Text({ text: "{bpSearch>bp_number}" }),
+                                            new Text({ text: "{bpSearch>name}" }),
+                                            new Text({ text: "{bpSearch>category}" }),
+                                            new Text({ text: "{bpSearch>status}" })
+                                        ]
+                                    })
+                                }
+                            })
+                        ]}).addStyleClass("sapUiSmallMargin")
+                    ],
+                    endButton: new Button({
+                        text : "Cancel",
+                        press: function () { this._oBpSearchDialog.close(); }.bind(this)
+                    })
+                });
+                this._oBpSearchDialog.setModel(this._oBpSearchModel, "bpSearch");
+                oView.addDependent(this._oBpSearchDialog);
+            }
+            this._oBpSearchModel.setProperty("/items", []);
+            this._oBpSearchModel.setProperty("/query", "");
+            this._oBpSearchModel.setProperty("/country", "");
+            this._oBpSearchDialog.open();
+        },
+
+        _refreshBpSearch: function () {
+            var oModel   = this.getOwnerComponent().getModel();
+            var sQuery   = this._oBpSearchModel.getProperty("/query")   || "";
+            var sCountry = this._oBpSearchModel.getProperty("/country") || "";
+            this._oBpSearchModel.setProperty("/busy", true);
+            oModel.bindContext("/SearchExistingBPs(...)")
+                .setParameter("query",   sQuery)
+                .setParameter("country", sCountry)
+                .setParameter("category","")
+                .execute()
+                .then(function (oCtx) {
+                    var aItems = oCtx ? (Array.isArray(oCtx) ? oCtx : []) : [];
+                    this._oBpSearchModel.setProperty("/items", aItems);
+                }.bind(this))
+                .catch(function () {
+                    // Fallback: return empty list rather than crash
+                    this._oBpSearchModel.setProperty("/items", []);
+                }.bind(this))
+                .finally(function () {
+                    this._oBpSearchModel.setProperty("/busy", false);
+                }.bind(this));
+        },
+
+        _onBpSearchRowPress: function (oEvent) {
+            var oCtx    = oEvent.getSource().getBindingContext("bpSearch");
+            var sBpNum  = oCtx.getProperty("bp_number");
+            var sName   = oCtx.getProperty("name");
+            var sCat    = oCtx.getProperty("category");
+            var sAg     = oCtx.getProperty("account_group");
+            this._oBpSearchDialog.close();
+            this._activateExtendMode(sBpNum, sName, sCat, sAg);
+        },
+
+        // Switch the form into EXTEND mode for the chosen existing BP.
+        _activateExtendMode: function (sBpNum, sName, sCat, sAg) {
+            var oRt = this._oRt;
+            oRt.setProperty("/mode",      "EXTEND");
+            oRt.setProperty("/started",   true);
+            oRt.setProperty("/extendBp",  sBpNum + " \u2014 " + sName);
+            oRt.setProperty("/catDisp",   sCat || "\u2014");
+            oRt.setProperty("/bpAgDisp",  sAg  || "\u2014");
+            oRt.setProperty("/subtitle",  "Extending BP " + sBpNum + " \u00b7 " + sName);
+            oRt.setProperty("/status",    "Extend");
+
+            // Store the minimal data we have; also fetch the full header
+            oRt.setProperty("/extendBpData", { bp_number: sBpNum, name: sName, category: sCat, account_group: sAg });
+
+            // Fetch the full data (for pre-filling fields)
+            this._fetchExistingBpData(sBpNum);
+            this._recomputeCanSave();
+        },
+
+        _fetchExistingBpData: function (sBpNum) {
+            var oModel = this.getOwnerComponent().getModel();
+            oModel.bindContext("/GetExistingBPData(...)")
+                .setParameter("bp_number", sBpNum)
+                .execute()
+                .then(function (oResult) {
+                    if (!oResult) return;
+                    this._oRt.setProperty("/extendBpData", oResult);
+                    // Pre-fill form values with existing BP data
+                    this._prefillExtendValues(oResult);
+                    // If roles are already selected, refresh the tabs (now with real data)
+                    if ((this._oRt.getProperty("/roleKeys") || []).length) {
+                        this._renderTabsForActiveRole();
+                    }
+                }.bind(this))
+                .catch(function () { /* non-fatal — form still works without pre-fill */ });
+        },
+
+        // Pre-fill form values from the existing BP response.
+        // Called in EXTEND mode so the user sees existing data in every field.
+        _prefillExtendValues: function (oBpData) {
+            if (!oBpData) return;
+            var oFormModel = this.getView().getModel("form");
+            var mCurrent   = oFormModel.getProperty("/values") || {};
+            var mFill = {
+                NAME1    : oBpData.name      || "",
+                NAME2    : oBpData.name2     || "",
+                COUNTRY  : oBpData.country   || "",
+                CITY     : oBpData.city      || "",
+                STREET   : oBpData.street    || "",
+                TELEPHONE: oBpData.telephone || "",
+                EMAIL    : oBpData.email     || ""
+            };
+            // Merge: only set if not already entered by the user
+            Object.keys(mFill).forEach(function (k) {
+                if (!mCurrent[k] && mFill[k]) { mCurrent[k] = mFill[k]; }
+            });
+            oFormModel.setProperty("/values", mCurrent);
+        },
+
+        // ── BP Role Value Help ────────────────────────────────────────
+        onBpRoleValueHelp: function () {
+            var oView = this.getView();
+            if (!this._oRoleVHModel) {
+                this._oRoleVHModel = new JSONModel({ items: [], selectedCount: 0 });
+            }
+            this._syncRoleVHItems();
+
+            if (!this._oRoleVHDialog) {
+                Fragment.load({
+                    id        : oView.getId(),
+                    name      : "mdm.portal.view.Fragment.BPRoleVHDialog",
+                    controller: this
+                }).then(function (oDialog) {
+                    this._oRoleVHDialog = oDialog;
+                    oView.addDependent(oDialog);
+                    oDialog.setModel(this._oRoleVHModel, "roleVH");
+                    oDialog.open();
+                }.bind(this));
+            } else {
+                this._oRoleVHDialog.setModel(this._oRoleVHModel, "roleVH");
+                var oSearch = this._oRoleVHDialog.getSubHeader().getContentMiddle()[0];
+                if (oSearch) { oSearch.setValue(""); }
+                this._syncRoleVHItems();
+                this._oRoleVHDialog.open();
+            }
+        },
+
+        _syncRoleVHItems: function () {
+            var aAllItems = this.getView().getModel("roles").getProperty("/items") || [];
+            var aKeys     = this._oRt.getProperty("/roleKeys") || [];
+            var aItems    = aAllItems.map(function (item) {
+                return Object.assign({}, item, { selected: aKeys.indexOf(item.key) >= 0 });
+            });
+            this._oRoleVHModel.setProperty("/items", aItems);
+            this._oRoleVHModel.setProperty("/selectedCount", aKeys.length);
+        },
+
+        onRoleVHSearch: function (oEvent) {
+            var sQuery    = (oEvent.getParameter("newValue") || "").toLowerCase();
+            var aAllItems = this.getView().getModel("roles").getProperty("/items") || [];
+            var aKeys     = this._oRt.getProperty("/roleKeys") || [];
+            var aFiltered = (sQuery
+                ? aAllItems.filter(function (o) {
+                    return o.key.toLowerCase().includes(sQuery) ||
+                           o.description.toLowerCase().includes(sQuery) ||
+                           (o.scopeDisp || "").toLowerCase().includes(sQuery);
+                  })
+                : aAllItems
+            ).map(function (item) {
+                return Object.assign({}, item, { selected: aKeys.indexOf(item.key) >= 0 });
+            });
+            this._oRoleVHModel.setProperty("/items", aFiltered);
+        },
+
+        onRoleVHSelectionChange: function (oEvent) {
+            var oListItem = oEvent.getParameter("listItem");
+            var bSelected = oEvent.getParameter("selected");
+            var sKey      = oListItem.getBindingContext("roleVH").getProperty("key");
+            var aItems    = this._oRoleVHModel.getProperty("/items");
+            var oItem     = aItems.find(function (i) { return i.key === sKey; });
+            if (oItem) { oItem.selected = bSelected; }
+            this._oRoleVHModel.setProperty("/items", aItems);
+            this._oRoleVHModel.setProperty("/selectedCount",
+                aItems.filter(function (i) { return i.selected; }).length);
+        },
+
+        onRoleVHRowPress: function (oEvent) {
+            var oListItem = oEvent.getSource();
+            var sKey      = oListItem.getBindingContext("roleVH").getProperty("key");
+            var aItems    = this._oRoleVHModel.getProperty("/items");
+            var oItem     = aItems.find(function (i) { return i.key === sKey; });
+            if (oItem) {
+                oItem.selected = !oItem.selected;
+                this._oRoleVHModel.setProperty("/items", aItems);
+                this._oRoleVHModel.setProperty("/selectedCount",
+                    aItems.filter(function (i) { return i.selected; }).length);
+            }
+        },
+
+        onRoleVHConfirm: function () {
+            var aItems    = this._oRoleVHModel.getProperty("/items") || [];
+            var aKeys     = aItems.filter(function (i) { return i.selected; })
+                                  .map(function (i) { return i.key; });
+            // Persist selected state to master roles model
+            var aAllItems = this.getView().getModel("roles").getProperty("/items");
+            aAllItems.forEach(function (item) {
+                item.selected = aKeys.indexOf(item.key) >= 0;
+            });
+            this.getView().getModel("roles").setProperty("/items", aAllItems);
+            this._oRoleVHDialog.close();
+            this._onRoleKeysChanged(aKeys);
+        },
+
+        onRoleVHCancel: function () {
+            this._oRoleVHDialog.close();
+        },
+
+        _onRoleKeysChanged: function (aKeys) {
             this._oRt.setProperty("/roleKeys", aKeys);
 
             if (!aKeys.length) {
                 this._oRt.setProperty("/roleDisp", "\u2014");
-                this._mRolePrereqs = {};
                 this._buildTabs([], []);
                 this._recomputeCanSave();
                 return;
             }
 
-            // Pull in prerequisite roles (auto_pull = true) per picked role,
-            // mirroring the wireframe ("Customer roles include BUP001 General") —
-            // but fold each prerequisite's fields into the role that needed it
-            // rather than giving the prerequisite its own Active Role button, so
-            // the bar only ever shows roles you actually picked.
             this._resolvePrereqRoles(aKeys).then(function (aPairs) {
-                this._mRolePrereqs = {};
-                aKeys.forEach(function (k) { this._mRolePrereqs[k] = []; }.bind(this));
-
-                var aPrereqKeys = [];
+                var aResolved = aKeys.slice();
                 aPairs.forEach(function (p) {
-                    this._mRolePrereqs[p.role].push(p.prerequisite);
-                    if (aPrereqKeys.indexOf(p.prerequisite) < 0) { aPrereqKeys.push(p.prerequisite); }
-                }.bind(this));
-
+                    if (aResolved.indexOf(p.prerequisite) < 0) { aResolved.push(p.prerequisite); }
+                });
                 var aDisp = aKeys.slice();
-                aPrereqKeys.forEach(function (k) {
+                aResolved.forEach(function (k) {
                     if (aKeys.indexOf(k) < 0) { aDisp.push(k + " (prereq)"); }
                 });
                 this._oRt.setProperty("/roleDisp", aDisp.join(", "));
-
-                // The OData query still needs every role's fields — picked roles
-                // plus whichever prerequisites they pulled in — even though only
-                // the picked roles get their own button in the Active Role bar.
-                var aQueryRoles = aKeys.slice();
-                aPrereqKeys.forEach(function (k) {
-                    if (aQueryRoles.indexOf(k) < 0) { aQueryRoles.push(k); }
-                });
-
-                this._buildTabs(aQueryRoles, aKeys);
+                this._buildTabs(aResolved, aKeys);
                 this._recomputeCanSave();
             }.bind(this));
         },
@@ -301,51 +578,119 @@ sap.ui.define([
             }).catch(function () { return []; });
         },
 
-        onBpAgChange: function (oEvent) {
-            var oItem = oEvent.getParameter("selectedItem");
-            var sKey  = oItem ? oItem.getKey() : "";
-            this._oRt.setProperty("/bpAgId", sKey);
-            this._oRt.setProperty("/bpAgDisp", oItem ? oItem.getText() : "\u2014");
+        // ── Account Group Value Help ──────────────────────────────────
+        onBpAgValueHelp: function () {
+            var oView = this.getView();
+            if (!this._oAgVHModel) {
+                this._oAgVHModel = new JSONModel({ items: [] });
+            }
+            // Seed the VH list with all items (unfiltered)
+            this._oAgVHModel.setProperty("/items",
+                this.getView().getModel("ag").getProperty("/items"));
 
-            var oAg = this._mAccountGroups[sKey];
+            if (!this._oAgVHDialog) {
+                Fragment.load({
+                    id         : oView.getId(),
+                    name       : "mdm.portal.view.Fragment.AccountGroupVHDialog",
+                    controller : this
+                }).then(function (oDialog) {
+                    this._oAgVHDialog = oDialog;
+                    oView.addDependent(oDialog);
+                    oDialog.setModel(this._oAgVHModel, "agVH");
+                    oDialog.open();
+                }.bind(this));
+            } else {
+                this._oAgVHDialog.setModel(this._oAgVHModel, "agVH");
+                // Reset search field
+                var oSearch = this._oAgVHDialog.getSubHeader().getContentMiddle()[0];
+                if (oSearch) { oSearch.setValue(""); }
+                this._oAgVHModel.setProperty("/items",
+                    this.getView().getModel("ag").getProperty("/items"));
+                this._oAgVHDialog.open();
+            }
+        },
+
+        onAgVHSearch: function (oEvent) {
+            var sQuery   = oEvent.getParameter("newValue").toLowerCase();
+            var aAllItems = this.getView().getModel("ag").getProperty("/items") || [];
+            var aFiltered = sQuery
+                ? aAllItems.filter(function (o) {
+                    return o.key.toLowerCase().includes(sQuery) ||
+                           o.description.toLowerCase().includes(sQuery) ||
+                           (o.type || "").toLowerCase().includes(sQuery);
+                  })
+                : aAllItems;
+            this._oAgVHModel.setProperty("/items", aFiltered);
+        },
+
+        onAgVHSelect: function (oEvent) {
+            // Fired either by table selectionChange or ColumnListItem press
+            var oItem;
+            var oSource = oEvent.getSource();
+            if (oSource.isA("sap.m.Table")) {
+                var oListItem = oEvent.getParameter("listItem");
+                oItem = oListItem ? oListItem.getBindingContext("agVH").getObject() : null;
+            } else {
+                // ColumnListItem press
+                oItem = oSource.getBindingContext("agVH")
+                    ? oSource.getBindingContext("agVH").getObject()
+                    : null;
+            }
+            if (!oItem) { return; }
+            this._applyAgSelection(oItem.key);
+            this._oAgVHDialog.close();
+        },
+
+        onAgVHCancel: function () {
+            this._oAgVHDialog.close();
+        },
+
+        _applyAgSelection: function (sKey) {
+            var oAg    = this._mAccountGroups[sKey];
+            var aItems = this.getView().getModel("ag").getProperty("/items") || [];
+            var oItem  = aItems.find(function (i) { return i.key === sKey; });
+            var sDisp  = oItem ? oItem.text : sKey;
+
+            this._oRt.setProperty("/bpAgId",   sKey);
+            this._oRt.setProperty("/bpAgDisp",  sDisp);
+
             if (oAg) {
-                var sNr = oAg.number_range_id + " (" + oAg.assignment_mode + ")";
-                this._oRt.setProperty("/numberRange", sNr);
-                this._oRt.setProperty("/nrDisp", sNr);
-                // External numbering -> requester types the number; internal -> generated on save.
+                var sNr      = oAg.number_range_id + " (" + oAg.assignment_mode + ")";
                 var bExternal = oAg.assignment_mode === "EXTERNAL";
-                this._oRt.setProperty("/bpNumberEditable", bExternal);
-                this._oRt.setProperty("/bpNumberPlaceholder", bExternal ? "Enter BP number" : "Generated on save");
-                this._oRt.setProperty("/bpNumberHelp", bExternal
+                this._oRt.setProperty("/numberRange",           sNr);
+                this._oRt.setProperty("/nrDisp",                sNr);
+                this._oRt.setProperty("/bpNumberEditable",      bExternal);
+                this._oRt.setProperty("/bpNumberPlaceholder",   bExternal ? "Enter BP number" : "Generated on save");
+                this._oRt.setProperty("/bpNumberHelp",          bExternal
                     ? "External numbering — enter the BP number."
                     : "Internal numbering — generated on save.");
             } else {
                 this._oRt.setProperty("/numberRange", "\u2014");
-                this._oRt.setProperty("/nrDisp", "\u2014");
+                this._oRt.setProperty("/nrDisp",      "\u2014");
             }
             this._recomputeCanSave();
         },
 
         // ── Dynamic tab generation from the selected roles' fields ───
-        // aQueryRoles: every role whose fields must be fetched (picked + their
-        //   resolved prerequisites) — used only for the OData query.
-        // aPickedRoles: roles the user actually selected — used for the Active
-        //   Role bar, so prerequisites never get their own button.
-        _buildTabs: function (aQueryRoles, aPickedRoles) {
+        // aResolvedRoles: picked roles + their auto-pulled prereq roles.
+        //   All of these get their fields fetched and appear in the toggle bar.
+        // aPickedRoles: only what the user explicitly selected — used to
+        //   mark which bar buttons are "user-picked" vs "prereq".
+        _buildTabs: function (aResolvedRoles, aPickedRoles) {
             var oTabs = this.byId("cbpTabs");
             oTabs.destroyItems();
 
-            if (!aQueryRoles.length) {
+            if (!aResolvedRoles.length) {
                 this._oRt.setProperty("/hasRoles", false);
                 this._oRt.setProperty("/activeRole", "");
                 this._aAllAssignments = [];
-                this._renderRoleBar([]);
+                this._renderRoleBar([], []);
                 return;
             }
             this._oRt.setProperty("/hasRoles", true);
 
             var oModel = this.getOwnerComponent().getModel();
-            var aRoleFilters = aQueryRoles.map(function (k) {
+            var aRoleFilters = aResolvedRoles.map(function (k) {
                 return new Filter("role_role_id", FilterOperator.EQ, k);
             });
             var oFilter = aRoleFilters.length === 1
@@ -356,8 +701,6 @@ sap.ui.define([
                 $expand: "field($select=field_id,description,data_type,display_type,length,source_table,main_group_group_id,sub_group_group_id;$expand=validation($select=validation_id,function_name,trigger_on,error_message,input_param_1,input_param_2,input_param_3))",
                 $select: "role_role_id,field_field_id,field_status,sequence,read_only,default_value"
             }).requestContexts(0, Infinity).then(function (aCtx) {
-                // Cache as plain objects tagged with their source role, so switching
-                // the Active Role re-filters in memory instead of re-querying.
                 this._aAllAssignments = aCtx.map(function (c) {
                     return {
                         role       : c.getProperty("role_role_id"),
@@ -372,7 +715,6 @@ sap.ui.define([
                         readOnly   : c.getProperty("read_only") === true,
                         defaultVal : c.getProperty("default_value") || "",
                         sequence   : c.getProperty("sequence") || 0,
-                        // Validation rule linked on Field Master (may be null)
                         valFn      : c.getProperty("field/validation/function_name") || "",
                         valTrigger : c.getProperty("field/validation/trigger_on") || "",
                         valMsg     : c.getProperty("field/validation/error_message") || "",
@@ -380,12 +722,10 @@ sap.ui.define([
                         valParam2  : c.getProperty("field/validation/input_param_2") || ""
                     };
                 });
-                // Fetch prereq fields for all involved roles before rendering,
-                // so both datasets are ready when the tab structure is built.
-                return this._fetchPrereqFields(aQueryRoles);
+                return this._fetchPrereqFields(aResolvedRoles);
             }.bind(this)).then(function () {
-                this._setupActiveRole(aPickedRoles);
-                this._renderRoleBar(aPickedRoles);
+                this._setupActiveRole(aResolvedRoles);
+                this._renderRoleBar(aResolvedRoles, aPickedRoles);
                 this._renderTabsForActiveRole();
             }.bind(this)).catch(function (oErr) {
                 MessageBox.error("Could not load fields for the selected roles: " +
@@ -457,18 +797,27 @@ sap.ui.define([
             }.bind(this));
         },
 
-        // Segmented-button row for switching which role's fields are shown —
-        // one button per role the user actually picked. Prerequisites never get
-        // their own button; their fields are folded into whichever picked role
-        // needed them (see _renderTabsForActiveRole).
-        _renderRoleBar: function (aRoleKeys) {
-            var oBar = this.byId("cbpRoleBar");
+        // Role toggle bar — one button per resolved role (picked + auto-pulled prereqs).
+        // Wireframe rule: hide the bar entirely when there is only one resolved role
+        // (no need to switch). Auto-pulled prereq roles get a "prereq" visual tag.
+        _renderRoleBar: function (aResolvedRoles, aPickedRoles) {
+            var oBar    = this.byId("cbpRoleBar");
+            var oLabel  = this.byId("cbpRoleBarLabel");
             oBar.destroyItems();
-            aRoleKeys.forEach(function (k) {
-                var oMeta = this._mRoleMeta[k] || {};
+
+            // Hide bar if 0 or 1 resolved roles — nothing to switch between
+            var bVisible = aResolvedRoles.length > 1;
+            oBar.setVisible(bVisible);
+            if (oLabel) { oLabel.setVisible(bVisible); }
+
+            if (!bVisible) { return; }
+
+            aResolvedRoles.forEach(function (k) {
+                var oMeta    = this._mRoleMeta[k] || {};
+                var bIsPrereq = aPickedRoles.indexOf(k) < 0;   // in resolved but not picked → auto-pulled
                 oBar.addItem(new SegmentedButtonItem({
                     key : k,
-                    text: k + " — " + (oMeta.description || k)
+                    text: k + " \u2014 " + (oMeta.description || k) + (bIsPrereq ? " (prereq)" : "")
                 }));
             }.bind(this));
             oBar.setSelectedKey(this._oRt.getProperty("/activeRole"));
@@ -485,12 +834,11 @@ sap.ui.define([
             oTabs.destroyItems();
 
             var sActive = this._oRt.getProperty("/activeRole");
-            // Include the active role's own fields plus any prerequisite roles
-            // it pulled in (e.g. FLCU01's view also includes BUP001's fields) —
-            // but not fields belonging only to some other picked role.
-            var aIncludeRoles = [sActive].concat(this._mRolePrereqs[sActive] || []);
+            // Each role in the bar shows only its OWN assigned fields.
+            // Prerequisite roles appear as separate tabs in the role bar —
+            // switching to BUP001 shows BUP001's fields, not FLCU01's fields.
             var aCtx = this._aAllAssignments.filter(function (a) {
-                return aIncludeRoles.indexOf(a.role) >= 0;
+                return a.role === sActive;
             });
 
             // 1) Keep the strongest status per field (within one role each
@@ -510,10 +858,17 @@ sap.ui.define([
                 (mMain[f.mainGroup] = mMain[f.mainGroup] || []).push(f);
             });
 
-            // 3) Seed the form value model with defaults.
+            // 3) Seed the form value model — preserve any values the user has already
+            //    entered when switching role tabs; start new fields blank.
+            //    default_value on the field assignment is stored as metadata only;
+            //    it is NOT auto-populated here so nothing appears pre-filled without
+            //    user action. To apply a default the admin should set it explicitly.
             var oFormModel = this.getView().getModel("form");
-            var mValues = {};
-            Object.keys(mFields).forEach(function (sFid) { mValues[sFid] = mFields[sFid].defaultVal; });
+            var mExisting  = oFormModel.getProperty("/values") || {};
+            var mValues    = {};
+            Object.keys(mFields).forEach(function (sFid) {
+                mValues[sFid] = mExisting[sFid] !== undefined ? mExisting[sFid] : "";
+            });
             oFormModel.setProperty("/values", mValues);
 
             // 4) Order main groups by their configured sequence.
@@ -529,38 +884,49 @@ sap.ui.define([
             // ── Prerequisites tab (always first, when the role has prereq fields) ──
             var aPrereqFields = this._mRolePrereqFields[sActive] || [];
             if (aPrereqFields.length) {
-                var oPrereqForm = new SimpleForm({
-                    editable: true,
-                    layout: "ResponsiveGridLayout",
-                    labelSpanXL: 4, labelSpanL: 4, labelSpanM: 4, labelSpanS: 12,
-                    columnsXL: 2, columnsL: 2, columnsM: 1
-                });
-                aPrereqFields.forEach(function (f) {
-                    oPrereqForm.addContent(new Label({ text: f.description, required: true }));
-                    var oCtrl = this._fieldControl(f);
-                    var fnCheck = function () { setTimeout(this._checkAndGateTabs.bind(this), 0); }.bind(this);
-                    if (oCtrl.attachChange)     { oCtrl.attachChange(fnCheck); }
-                    if (oCtrl.attachLiveChange) { oCtrl.attachLiveChange(fnCheck); }
-                    oPrereqForm.addContent(oCtrl);
-                }.bind(this));
-
-                var oPrereqPanel = new Panel({
-                    headerText: "Required before proceeding (" + aPrereqFields.length +
-                                " field" + (aPrereqFields.length > 1 ? "s" : "") + ")",
-                    expandable: false, expanded: true, content: [oPrereqForm]
-                });
-                oPrereqPanel.addStyleClass("sapUiNoContentPadding");
+                var sMode       = this._oRt.getProperty("/mode");
+                var oBpData     = this._oRt.getProperty("/extendBpData");
+                var bExtend     = sMode === "EXTEND" && !!oBpData;
+                var oPrereqForm = this._buildPrereqForm(sActive, aPrereqFields, bExtend);
 
                 var oPrereqBanner = new sap.m.MessageStrip({
-                    text: "Fill in the prerequisite fields below — the data tabs unlock once all are completed.",
-                    type: "Information", showIcon: true
+                    text     : "Fill in the prerequisite fields below — the data tabs unlock once all are completed.",
+                    type     : "Information",
+                    showIcon : true
                 });
                 oPrereqBanner.addStyleClass("sapUiSmallMarginBottom");
 
+                var oPrereqVBox = new VBox({ items: [oPrereqBanner] });
+
+                if (bExtend) {
+                    // In EXTEND mode, show the existing-instances strip above the form.
+                    // The strip is built asynchronously after the tab renders.
+                    var oExtStrip = new Panel({
+                        id      : "idExtStrip_" + sActive,
+                        visible : false,
+                        content : []
+                    });
+                    oExtStrip.addStyleClass("sapUiSmallMarginBottom");
+                    oPrereqVBox.addItem(oExtStrip);
+
+                    // Async: load instances and populate the strip
+                    this._loadAndRenderExtStrip(sActive, oExtStrip, aPrereqFields, oPrereqForm);
+                }
+
+                oPrereqVBox.addItem(new Panel({
+                    headerText  : "Required before proceeding (" + aPrereqFields.length +
+                                  " field" + (aPrereqFields.length > 1 ? "s" : "") + ")",
+                    expandable  : false,
+                    expanded    : true,
+                    content     : [oPrereqForm]
+                }).addStyleClass("sapUiNoContentPadding"));
+
                 oTabs.addItem(new IconTabFilter({
-                    key: "__prereqs", text: "Prerequisites",
-                    icon: "sap-icon://key", count: String(aPrereqFields.length),
-                    content: [new VBox({ items: [oPrereqBanner, oPrereqPanel] })]
+                    key    : "__prereqs",
+                    text   : "Prerequisites",
+                    icon   : "sap-icon://key",
+                    count  : String(aPrereqFields.length),
+                    content: [oPrereqVBox]
                 }));
             }
 
@@ -621,6 +987,258 @@ sap.ui.define([
             // Gate main tabs on first render — unlock immediately if all prereqs
             // are already filled (e.g. user switched roles and came back).
             this._checkAndGateTabs();
+        },
+
+        // Build the prerequisite SimpleForm with liveChange gating.
+        // In extend+edit mode, prereq fields are rendered read-only (locked).
+        _buildPrereqForm: function (sRoleId, aPrereqFields, bExtend) {
+            var oForm = new SimpleForm({
+                editable: true,
+                layout: "ResponsiveGridLayout",
+                labelSpanXL: 4, labelSpanL: 4, labelSpanM: 4, labelSpanS: 12,
+                columnsXL: 2, columnsL: 2, columnsM: 1
+            });
+            aPrereqFields.forEach(function (f) {
+                // In EXTEND + edit mode, prereq fields are locked (they identify the instance)
+                var bLocked = bExtend
+                    && this._oRt.getProperty("/roleInstanceMode/" + sRoleId) === "edit"
+                    && typeof this._oRt.getProperty("/roleInstance/" + sRoleId) === "number";
+                var fClone  = Object.assign({}, f, { readOnly: bLocked });
+                oForm.addContent(new Label({ text: f.description, required: !bLocked }));
+                var oCtrl = this._fieldControl(fClone);
+                if (!bLocked) {
+                    var fnCheck = function () { setTimeout(this._checkAndGateTabs.bind(this), 0); }.bind(this);
+                    if (oCtrl.attachChange)     { oCtrl.attachChange(fnCheck); }
+                    if (oCtrl.attachLiveChange) { oCtrl.attachLiveChange(fnCheck); }
+                }
+                oForm.addContent(oCtrl);
+            }.bind(this));
+            return oForm;
+        },
+
+        // In EXTEND mode: fetch existing instances for the active role, then
+        // populate the ext-strip panel above the prereq form.
+        _loadAndRenderExtStrip: function (sRoleId, oStripPanel, aPrereqFields, oPrereqForm) {
+            var oModel  = this.getOwnerComponent().getModel();
+            var oBpData = this._oRt.getProperty("/extendBpData");
+            if (!oBpData || !oBpData.bp_number) return;
+
+            oModel.bindContext("/GetBPRoleInstances(...)")
+                .setParameter("bp_number", oBpData.bp_number)
+                .setParameter("role_id",   sRoleId)
+                .execute()
+                .then(function (aInstances) {
+                    var aInst = Array.isArray(aInstances) ? aInstances : [];
+                    this._mRoleInstances = this._mRoleInstances || {};
+                    this._mRoleInstances[sRoleId] = aInst;
+
+                    // If no instances → this is a new combination; default to "new"
+                    if (!aInst.length) {
+                        this._oRt.setProperty("/roleInstance/" + sRoleId, "new");
+                        return;
+                    }
+                    // Show the strip
+                    this._renderExtStrip(sRoleId, aInst, oStripPanel, aPrereqFields, oPrereqForm);
+                }.bind(this))
+                .catch(function () {
+                    // Non-fatal — just treat as a new combination
+                    this._oRt.setProperty("/roleInstance/" + sRoleId, "new");
+                }.bind(this));
+        },
+
+        // Render the strip that shows how many existing combinations the BP already
+        // has for this role, with "Show extensions" and "New combination" buttons.
+        _renderExtStrip: function (sRoleId, aInstances, oStripPanel, aPrereqFields, oPrereqForm) {
+            var oRt      = this._oRt;
+            var iCount   = aInstances.length;
+            var sMeta    = oRt.getProperty("/mRoleMeta/" + sRoleId) || {};
+            var sRoleDesc = (this._mRoleMeta[sRoleId] || {}).description || sRoleId;
+            var iSel     = oRt.getProperty("/roleInstance/" + sRoleId);
+            var sInstMode= oRt.getProperty("/roleInstanceMode/" + sRoleId) || "edit";
+
+            var sStatus;
+            if (iSel === "new") {
+                sStatus = "Creating a new combination. " + iCount + " existing combination(s) on this BP.";
+            } else if (typeof iSel === "number" && sInstMode === "edit") {
+                var oInst = aInstances.find(function (i) { return i.instance_no === iSel; });
+                sStatus = "Editing existing combination: " + ((oInst && oInst.key_label) || "—");
+            } else if (typeof iSel === "number" && sInstMode === "copy") {
+                var oInstC = aInstances.find(function (i) { return i.instance_no === iSel; });
+                sStatus = "Copying as template from: " + ((oInstC && oInstC.key_label) || "—") + ". Change the key field(s) to save as a new combination.";
+            } else {
+                sStatus = iCount + " existing combination(s) for this BP and role. Choose one to edit, copy, or create a new one.";
+            }
+
+            oStripPanel.destroyContent();
+            oStripPanel.addContent(new HBox({
+                alignItems: "Center",
+                items: [
+                    new core.Icon({ src: "sap-icon://detail-view", size: "1rem",
+                        color: "var(--sapInformativeColor)" }).addStyleClass("sapUiSmallMarginEnd"),
+                    new VBox({ items: [
+                        new sap.m.Title({ text: sRoleId + " — " + sRoleDesc, level: "H6" }),
+                        new Text({ text: sStatus })
+                    ]}),
+                    new sap.m.ToolbarSpacer(),
+                    new Button({
+                        text : "Show extensions (" + iCount + ")",
+                        type : "Transparent",
+                        icon : "sap-icon://list",
+                        press: function () {
+                            this._openRoleInstancesDialog(sRoleId, aInstances, aPrereqFields, oPrereqForm, oStripPanel);
+                        }.bind(this)
+                    }),
+                    (typeof iSel === "number" ? new Button({
+                        text : "New combination",
+                        type : "Transparent",
+                        icon : "sap-icon://add",
+                        press: function () {
+                            oRt.setProperty("/roleInstance/" + sRoleId, "new");
+                            oRt.setProperty("/roleInstanceMode/" + sRoleId, "edit");
+                            this._clearPrereqValues(sRoleId, aPrereqFields);
+                            this._refreshPrereqForm(sRoleId, aPrereqFields, oPrereqForm, oStripPanel, aInstances);
+                        }.bind(this)
+                    }) : null)
+                ].filter(Boolean)
+            }).addStyleClass("sapUiSmallMarginBeginEnd sapUiSmallMarginTopBottom"));
+
+            oStripPanel.setVisible(true);
+        },
+
+        // Open the "Existing extensions" dialog for a role — lists all saved
+        // prerequisite combinations with Edit / Copy as Template actions per row.
+        _openRoleInstancesDialog: function (sRoleId, aInstances, aPrereqFields, oPrereqForm, oStripPanel) {
+            var oView = this.getView();
+            if (this._oRoleInstDialog) { this._oRoleInstDialog.destroy(); }
+
+            var oRt       = this._oRt;
+            var oBpData   = oRt.getProperty("/extendBpData");
+            var sRoleDesc = (this._mRoleMeta[sRoleId] || {}).description || sRoleId;
+
+            // Build a table row for each instance
+            var aRows = aInstances.map(function (inst, idx) {
+                var iInstNo  = inst.instance_no;
+                var iSelNow  = oRt.getProperty("/roleInstance/" + sRoleId);
+                var sModNow  = oRt.getProperty("/roleInstanceMode/" + sRoleId) || "edit";
+                var bSelEdit = (iSelNow === iInstNo && sModNow === "edit");
+                var bSelCopy = (iSelNow === iInstNo && sModNow === "copy");
+                return new ColumnListItem({
+                    cells: [
+                        new Text({ text: inst.key_label || "\u2014" }),
+                        new HBox({ items: [
+                            new Button({
+                                text  : bSelEdit ? "Editing \u2713" : "Edit",
+                                type  : bSelEdit ? "Emphasized" : "Default",
+                                press : function () {
+                                    this._pickRoleInstance(sRoleId, iInstNo, "edit", aInstances, aPrereqFields, oPrereqForm, oStripPanel);
+                                    this._oRoleInstDialog.close();
+                                }.bind(this)
+                            }).addStyleClass("sapUiTinyMarginEnd"),
+                            new Button({
+                                text  : bSelCopy ? "Copying \u2713" : "Copy as template",
+                                type  : bSelCopy ? "Emphasized" : "Default",
+                                press : function () {
+                                    this._pickRoleInstance(sRoleId, iInstNo, "copy", aInstances, aPrereqFields, oPrereqForm, oStripPanel);
+                                    this._oRoleInstDialog.close();
+                                }.bind(this)
+                            })
+                        ]})
+                    ]
+                });
+            }.bind(this));
+
+            this._oRoleInstDialog = new sap.m.Dialog({
+                title       : "Existing extensions — " + sRoleId + " on BP " + (oBpData ? oBpData.bp_number : ""),
+                contentWidth: "40rem",
+                content     : [
+                    new sap.m.MessageStrip({
+                        text     : "BP " + (oBpData ? oBpData.bp_number : "") + " has " + aInstances.length +
+                                   " existing extension(s) for " + sRoleDesc + ". " +
+                                   "Edit: load and lock the key fields. Copy: load and leave key fields editable.",
+                        type     : "Information",
+                        showIcon : true
+                    }).addStyleClass("sapUiSmallMargin"),
+                    new Table({
+                        columns: [
+                            new Column({ header: new Label({ text: "Key combination" }) }),
+                            new Column({ header: new Label({ text: "Action" }), hAlign: "End" })
+                        ],
+                        items: aRows
+                    })
+                ],
+                endButton: new Button({
+                    text : "Close",
+                    press: function () { this._oRoleInstDialog.close(); }.bind(this)
+                })
+            });
+            oView.addDependent(this._oRoleInstDialog);
+            this._oRoleInstDialog.open();
+        },
+
+        // Apply an instance selection: load its field values into the form model.
+        // mode = "edit"  → lock prereq fields (they are the identity key).
+        // mode = "copy"  → keep prereq fields editable (user must change them to create a new combo).
+        _pickRoleInstance: function (sRoleId, iInstNo, sMode, aInstances, aPrereqFields, oPrereqForm, oStripPanel) {
+            var oRt = this._oRt;
+            oRt.setProperty("/roleInstance/" + sRoleId, iInstNo);
+            oRt.setProperty("/roleInstanceMode/" + sRoleId, sMode);
+
+            var oInst = aInstances.find(function (i) { return i.instance_no === iInstNo; });
+            if (oInst) {
+                // Load all saved field values into the form model
+                var mLoaded = {};
+                try { mLoaded = JSON.parse(oInst.field_values || "{}"); } catch (e) {}
+                var oFormModel = this.getView().getModel("form");
+                var mCurrent   = oFormModel.getProperty("/values") || {};
+                Object.assign(mCurrent, mLoaded);
+
+                // In copy mode: clear the prereq field values so user enters new ones
+                if (sMode === "copy") {
+                    aPrereqFields.forEach(function (f) { delete mCurrent[f.field_id]; });
+                }
+                oFormModel.setProperty("/values", mCurrent);
+            }
+
+            // Rebuild the prereq form to honour the lock/unlock state
+            this._refreshPrereqForm(sRoleId, aPrereqFields, oPrereqForm, oStripPanel, aInstances);
+            setTimeout(this._checkAndGateTabs.bind(this), 0);
+            MessageToast.show(sMode === "copy"
+                ? "Copied as template — change the key field(s) to save as a new combination."
+                : "Loaded existing combination for editing.");
+        },
+
+        // Clear the prerequisite field values for a role from the form model.
+        _clearPrereqValues: function (sRoleId, aPrereqFields) {
+            var oFormModel = this.getView().getModel("form");
+            var mCurrent   = oFormModel.getProperty("/values") || {};
+            aPrereqFields.forEach(function (f) { delete mCurrent[f.field_id]; });
+            oFormModel.setProperty("/values", mCurrent);
+        },
+
+        // Rebuild only the prereq form content (lock/unlock) and refresh the strip.
+        _refreshPrereqForm: function (sRoleId, aPrereqFields, oPrereqForm, oStripPanel, aInstances) {
+            var bExtend = this._oRt.getProperty("/mode") === "EXTEND"
+                && !!this._oRt.getProperty("/extendBpData");
+            // Rebuild form content with correct lock state
+            oPrereqForm.destroyContent();
+            aPrereqFields.forEach(function (f) {
+                var bLocked = bExtend
+                    && this._oRt.getProperty("/roleInstanceMode/" + sRoleId) === "edit"
+                    && typeof this._oRt.getProperty("/roleInstance/" + sRoleId) === "number";
+                var fClone = Object.assign({}, f, { readOnly: bLocked });
+                oPrereqForm.addContent(new Label({ text: f.description, required: !bLocked }));
+                var oCtrl = this._fieldControl(fClone);
+                if (!bLocked) {
+                    var fnCheck = function () { setTimeout(this._checkAndGateTabs.bind(this), 0); }.bind(this);
+                    if (oCtrl.attachChange)     { oCtrl.attachChange(fnCheck); }
+                    if (oCtrl.attachLiveChange) { oCtrl.attachLiveChange(fnCheck); }
+                }
+                oPrereqForm.addContent(oCtrl);
+            }.bind(this));
+            // Refresh the strip text
+            if (aInstances && aInstances.length) {
+                this._renderExtStrip(sRoleId, aInstances, oStripPanel, aPrereqFields, oPrereqForm);
+            }
         },
 
         // Checks whether every prerequisite field for the active role has a value,
@@ -880,13 +1498,10 @@ sap.ui.define([
             var aErrors = [];
             var oValues = this.getView().getModel("form").getProperty("/values") || {};
 
-            // Build a quick lookup: field_id -> assignment object, for the currently
-            // active role's visible fields (same slice _renderTabsForActiveRole uses).
-            var sActive = this._oRt.getProperty("/activeRole");
-            var aInclude = [sActive].concat(this._mRolePrereqs[sActive] || []);
+            // Validate all assignments across every resolved role (picked + prereqs).
+            // _aAllAssignments already contains fields from all resolved roles.
             var mActive = {};
             this._aAllAssignments.forEach(function (a) {
-                if (aInclude.indexOf(a.role) < 0) { return; }
                 if (a.status === "SUPPRESS") { return; }
                 var oEx = mActive[a.field_id];
                 if (oEx && STATUS_RANK[oEx.status] >= STATUS_RANK[a.status]) { return; }
@@ -894,17 +1509,14 @@ sap.ui.define([
             });
 
             Object.keys(mActive).forEach(function (sFid) {
-                var f   = mActive[sFid];
+                var f    = mActive[sFid];
                 var sVal = oValues[sFid];
                 var sStr = (sVal === undefined || sVal === null) ? "" : String(sVal);
 
-                // 1) Required-status check (always).
                 if (f.status === "REQUIRED" && !sStr.trim()) {
                     aErrors.push("\u2022 " + f.description + " is required.");
-                    return;   // skip further validation if already empty+required
+                    return;
                 }
-
-                // 2) SAVE-trigger validation rule (only if a value exists).
                 if (f.valFn && f.valTrigger === "SAVE" && sStr.trim()) {
                     var sErr = this._runValidation(f, sVal);
                     if (sErr) { aErrors.push("\u2022 " + f.description + ": " + sErr); }

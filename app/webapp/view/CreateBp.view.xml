@@ -72,24 +72,37 @@
                     </VBox>
                 </HBox>
 
+                <!-- ── EXTEND mode context strip ─────────────────────── -->
+                <MessageStrip id="msExtendCtx"
+                              visible="{= ${rt>/mode} === 'EXTEND' &amp;&amp; !!${rt>/extendBp} }"
+                              type="Information"
+                              showIcon="true"
+                              showCloseButton="true"
+                              class="sapUiSmallMarginTop"
+                              text="{= 'Extending BP: ' + ${rt>/extendBp} + '. Existing field values are pre-filled and editable. Prerequisite fields show existing extensions.'}"/>
+
                 <!-- ── BP Roles + Account Group block ─────────────────── -->
                 <VBox id="rolesBlock" visible="{rt>/started}" class="sapUiSmallMarginTop">
-                    <Label text="BP Roles" required="true" labelFor="mcbRoles"/>
-                    <MultiComboBox id="mcbRoles" width="100%"
-                                   placeholder="Select roles…"
-                                   selectionChange=".onRolesChange"
-                                   items="{path: 'roles>/items'}">
-                        <core:Item key="{roles>key}" text="{roles>text}"/>
-                    </MultiComboBox>
+                    <Label text="BP Roles" required="true" labelFor="inRolesDisplay"
+                           class="sapUiTinyMarginBottom"/>
+                    <Input id="inRolesDisplay" width="100%"
+                           placeholder="Click to select BP roles..."
+                           editable="true"
+                           showValueHelp="true"
+                           valueHelpOnly="true"
+                           value="{rt>/roleDisp}"
+                           valueHelpRequest=".onBpRoleValueHelp"/>
 
                     <HBox alignItems="End" class="sapUiSmallMarginTop">
                         <VBox width="33%" class="sapUiTinyMarginEnd">
                             <Label text="BP Account Group" required="true" labelFor="selBpAg"/>
-                            <Select id="selBpAg" width="100%" forceSelection="false"
-                                    selectedKey="{rt>/bpAgId}" change=".onBpAgChange"
-                                    items="{path: 'ag>/items'}">
-                                <core:Item key="{ag>key}" text="{ag>text}"/>
-                            </Select>
+                            <Input id="selBpAg" width="100%"
+                                   placeholder="Click to select account group..."
+                                   value="{rt>/bpAgDisp}"
+                                   editable="true"
+                                   showValueHelp="true"
+                                   valueHelpOnly="true"
+                                   valueHelpRequest=".onBpAgValueHelp"/>
                         </VBox>
                         <VBox width="33%" class="sapUiTinyMarginEnd">
                             <Label text="BP Number" labelFor="inBpNumber"/>
@@ -122,10 +135,10 @@
                                 title="Select a BP Role to begin"
                                 description="Pick a category and one or more BP roles above. The portal generates the input form from the field configuration assigned to those roles."/>
 
-            <!-- ── Active Role switcher — shows one role's fields at a time
-                 when multiple roles are selected ─────────────────────── -->
+            <!-- ── Active Role switcher — only shown when a selected role has
+                 auto-pulled prerequisite roles (wireframe: hidden for single role) ── -->
             <VBox visible="{rt>/hasRoles}" class="sapUiMediumMarginBeginEnd sapUiSmallMarginTop sapUiTinyMarginBottom">
-                <Label text="ACTIVE ROLE" class="sapUiTinyMarginBottom"
+                <Label id="cbpRoleBarLabel" text="ACTIVE ROLE" class="sapUiTinyMarginBottom"
                        style="font-size:0.7rem; font-weight:600; letter-spacing:0.04em; color:var(--sapContent_LabelColor);"/>
                 <SegmentedButton id="cbpRoleBar" width="100%" select=".onActiveRoleChange"/>
             </VBox>

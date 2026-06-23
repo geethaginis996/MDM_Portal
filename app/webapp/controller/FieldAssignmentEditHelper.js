@@ -89,17 +89,19 @@ sap.ui.define([
                 var sMain   = oField.main_group_group_id || "";
                 var sSub    = oField.sub_group_group_id  || "";
                 oFieldEdit.setData({
-                    field_id     : oCfg.fieldId,
-                    description  : oField.description  || "",
-                    data_type    : oField.data_type    || "\u2014",
-                    display_type : oField.display_type || "\u2014",
-                    group_path   : (sMain + (sSub && sSub !== sMain ? " \u25b8 " + sSub : "")) || "\u2014",
-                    field_status : oAssign.field_status,
-                    sequence     : oAssign.sequence,
-                    default_value: oAssign.default_value || "",
-                    read_only    : !!oAssign.read_only,
-                    showReadOnly : !!oCfg.showReadOnly,
-                    busy         : false
+                    field_id        : oCfg.fieldId,
+                    description     : oField.description  || "",
+                    data_type       : oField.data_type    || "\u2014",
+                    display_type    : oField.display_type || "\u2014",
+                    group_path      : (sMain + (sSub && sSub !== sMain ? " \u25b8 " + sSub : "")) || "\u2014",
+                    field_status    : oAssign.field_status,
+                    sequence        : oAssign.sequence,
+                    default_value   : oAssign.default_value || "",
+                    read_only       : !!oAssign.read_only,
+                    multiple_values : !!oAssign.multiple_values,
+                    showReadOnly        : !!oCfg.showReadOnly,
+                    showMultipleValues  : !!oCfg.showMultipleValues,
+                    busy            : false
                 });
             }).catch(function (e) {
                 oFieldEdit.setProperty("/busy", false);
@@ -128,6 +130,9 @@ sap.ui.define([
             oCtx.setProperty("default_value", oData.default_value || null);
             if (oCfg.showReadOnly) {
                 oCtx.setProperty("read_only", !!oData.read_only);
+            }
+            if (oCfg.showMultipleValues) {
+                oCtx.setProperty("multiple_values", !!oData.multiple_values);
             }
 
             oModel.submitBatch(oCfg.updateGroupId)

@@ -37,7 +37,8 @@ sap.ui.define([
 
         // ── Route matched ────────────────────────────────────────────
         _onRouteMatched: function (oEvent) {
-            var sId = decodeURIComponent(oEvent.getParameter("arguments").valueTableId);
+            var sRaw = decodeURIComponent(oEvent.getParameter("arguments").valueTableId);
+            var sId = (sRaw === "NEW") ? sRaw : sRaw.toUpperCase();
 
             this._oViewModel.setProperty("/isDirty", false);
             this._oViewModel.setProperty("/selectedTab", "general");
@@ -196,14 +197,14 @@ sap.ui.define([
         onUsageRowPress: function (oEvent) {
             var sFieldId = oEvent.getSource().getBindingContext("usage").getProperty("field_id");
             this.getOwnerComponent().getRouter().navTo("fieldMasterDetail", {
-                fieldId: encodeURIComponent(sFieldId)
+                fieldId: encodeURIComponent(sFieldId.toLowerCase())
             });
         },
 
         onUsageLinkPress: function (oEvent) {
             var sFieldId = oEvent.getSource().getBindingContext("usage").getProperty("field_id");
             this.getOwnerComponent().getRouter().navTo("fieldMasterDetail", {
-                fieldId: encodeURIComponent(sFieldId)
+                fieldId: encodeURIComponent(sFieldId.toLowerCase())
             });
         },
 

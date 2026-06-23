@@ -138,8 +138,8 @@ sap.ui.define([
             if (sSearch) {
                 aFilters.push(new Filter({
                     filters: [
-                        new Filter("account_group_id", FilterOperator.Contains, sSearch),
-                        new Filter("description",       FilterOperator.Contains, sSearch)
+                        new Filter({ path: "account_group_id", operator: FilterOperator.Contains, value1: sSearch, caseSensitive: false }),
+                        new Filter({ path: "description", operator: FilterOperator.Contains, value1: sSearch, caseSensitive: false })
                     ],
                     and: false
                 }));
@@ -224,7 +224,7 @@ sap.ui.define([
 
         _onMenuEdit: function () {
             var sId = this._oMenuCtx.getProperty("account_group_id");
-            this.getOwnerComponent().getRouter().navTo("accountGroupDetail", { accountGroupId: encodeURIComponent(sId) });
+            this.getOwnerComponent().getRouter().navTo("accountGroupDetail", { accountGroupId: encodeURIComponent(sId.toLowerCase()) });
         },
 
         _onMenuDeactivate: function () {
@@ -237,11 +237,11 @@ sap.ui.define([
         // ── Navigation ───────────────────────────────────────────────
         onLinkPress: function (oEvent) {
             var sId = oEvent.getSource().getBindingContext().getProperty("account_group_id");
-            this.getOwnerComponent().getRouter().navTo("accountGroupDetail", { accountGroupId: encodeURIComponent(sId) });
+            this.getOwnerComponent().getRouter().navTo("accountGroupDetail", { accountGroupId: encodeURIComponent(sId.toLowerCase()) });
         },
         onRowPress: function (oEvent) {
             var sId = oEvent.getSource().getBindingContext().getProperty("account_group_id");
-            this.getOwnerComponent().getRouter().navTo("accountGroupDetail", { accountGroupId: encodeURIComponent(sId) });
+            this.getOwnerComponent().getRouter().navTo("accountGroupDetail", { accountGroupId: encodeURIComponent(sId.toLowerCase()) });
         },
         onAdd: function () {
             this.getOwnerComponent().getRouter().navTo("accountGroupDetail", { accountGroupId: "NEW" });

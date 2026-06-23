@@ -143,8 +143,8 @@ sap.ui.define([
             if (sSearch) {
                 aFilters.push(new Filter({
                     filters: [
-                        new Filter("role_id",     FilterOperator.Contains, sSearch),
-                        new Filter("description", FilterOperator.Contains, sSearch)
+                        new Filter({ path: "role_id", operator: FilterOperator.Contains, value1: sSearch, caseSensitive: false }),
+                        new Filter({ path: "description", operator: FilterOperator.Contains, value1: sSearch, caseSensitive: false })
                     ],
                     and: false
                 }));
@@ -235,7 +235,7 @@ sap.ui.define([
 
         _onMenuEdit: function () {
             var sId = this._oMenuCtx.getProperty("role_id");
-            this.getOwnerComponent().getRouter().navTo("bpRoleDetail", { roleId: encodeURIComponent(sId) });
+            this.getOwnerComponent().getRouter().navTo("bpRoleDetail", { roleId: encodeURIComponent(sId.toLowerCase()) });
         },
 
         _onMenuDeactivate: function () {
@@ -247,12 +247,12 @@ sap.ui.define([
 
         onLinkPress: function (oEvent) {
             var sId = oEvent.getSource().getBindingContext().getProperty("role_id");
-            this.getOwnerComponent().getRouter().navTo("bpRoleDetail", { roleId: encodeURIComponent(sId) });
+            this.getOwnerComponent().getRouter().navTo("bpRoleDetail", { roleId: encodeURIComponent(sId.toLowerCase()) });
         },
 
         onRowPress: function (oEvent) {
             var sId = oEvent.getSource().getBindingContext().getProperty("role_id");
-            this.getOwnerComponent().getRouter().navTo("bpRoleDetail", { roleId: encodeURIComponent(sId) });
+            this.getOwnerComponent().getRouter().navTo("bpRoleDetail", { roleId: encodeURIComponent(sId.toLowerCase()) });
         },
 
         onAdd: function () {

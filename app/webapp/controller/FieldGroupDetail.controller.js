@@ -90,7 +90,11 @@ sap.ui.define([
 
         // ── Route matched ────────────────────────────────────────────
         _onRouteMatched: function (oEvent) {
-            var sGroupId = decodeURIComponent(oEvent.getParameter("arguments").groupId);
+            var sRaw     = decodeURIComponent(oEvent.getParameter("arguments").groupId);
+            // Preserve NEW / NEW_SUB_ prefixes as-is; uppercase only real IDs
+            var sGroupId = (sRaw === "NEW" || sRaw.startsWith("NEW_SUB_"))
+                ? sRaw
+                : sRaw.toUpperCase();
 
             // Clear any pending/retrying create or patch left over from a previous
             // failed save or copy, so a stuck row cannot keep colliding on the key.
@@ -332,14 +336,14 @@ sap.ui.define([
         onSubGroupRowPress: function (oEvent) {
             var sGroupId = oEvent.getSource().getBindingContext("subGroups").getProperty("group_id");
             this.getOwnerComponent().getRouter().navTo("fieldGroupDetail", {
-                groupId: encodeURIComponent(sGroupId)
+                groupId: encodeURIComponent(sGroupId.toLowerCase())
             });
         },
 
         onSubGroupLinkPress: function (oEvent) {
             var sGroupId = oEvent.getSource().getBindingContext("subGroups").getProperty("group_id");
             this.getOwnerComponent().getRouter().navTo("fieldGroupDetail", {
-                groupId: encodeURIComponent(sGroupId)
+                groupId: encodeURIComponent(sGroupId.toLowerCase())
             });
         },
 
@@ -419,14 +423,14 @@ sap.ui.define([
         onFieldRowPress: function (oEvent) {
             var sFieldId = oEvent.getSource().getBindingContext("assignedFields").getProperty("field_id");
             this.getOwnerComponent().getRouter().navTo("fieldMasterDetail", {
-                fieldId: encodeURIComponent(sFieldId)
+                fieldId: encodeURIComponent(sFieldId.toLowerCase())
             });
         },
 
         onFieldLinkPress: function (oEvent) {
             var sFieldId = oEvent.getSource().getBindingContext("assignedFields").getProperty("field_id");
             this.getOwnerComponent().getRouter().navTo("fieldMasterDetail", {
-                fieldId: encodeURIComponent(sFieldId)
+                fieldId: encodeURIComponent(sFieldId.toLowerCase())
             });
         },
 

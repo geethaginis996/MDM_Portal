@@ -105,6 +105,7 @@
                                     <Column width="7rem"><Label text="Sub Group" design="Bold"/></Column>
                                     <Column width="6rem"><Label text="Data Type" design="Bold"/></Column>
                                     <Column width="6rem" hAlign="Center"><Label text="Field Status" design="Bold"/></Column>
+                                    <Column width="7rem" hAlign="Center"><Label text="Is Multiple Value" design="Bold"/></Column>
                                     <Column width="4rem" hAlign="End"><Label text="Seq" design="Bold"/></Column>
                                     <Column width="3rem" hAlign="End"/>
                                 </columns>
@@ -119,6 +120,9 @@
                                             <ObjectStatus
                                                 text="{path: 'assigned>field_status', formatter: '.formatStatusText'}"
                                                 state="{path: 'assigned>field_status', formatter: '.formatStatusState'}"/>
+                                            <ObjectStatus
+                                                text="{path: 'assigned>multiple_values', formatter: '.formatMultipleValues'}"
+                                                state="{path: 'assigned>multiple_values', formatter: '.formatMultipleValuesState'}"/>
                                             <Text text="{assigned>sequence}" wrapping="false"/>
                                             <Button icon="sap-icon://decline" type="Transparent"
                                                     tooltip="Remove from this category"

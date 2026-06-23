@@ -88,7 +88,8 @@ sap.ui.define([
         },
 
         _onRouteMatched: function (oEvent) {
-            var sId = decodeURIComponent(oEvent.getParameter("arguments").roleId);
+            var sRaw = decodeURIComponent(oEvent.getParameter("arguments").roleId);
+            var sId = (sRaw === "NEW") ? sRaw : sRaw.toUpperCase();
             this._oViewModel.setProperty("/isDirty", false);
             this._oViewModel.setProperty("/selectedTab", "general");
             this.byId("detailTabs").setSelectedKey("general");
@@ -165,19 +166,19 @@ sap.ui.define([
         _refreshHeader: function (oData) {
             var sId   = oData.role_id || "";
             var sDesc = oData.description || "";
-            var sTitle = sId ? (sId + (sDesc ? " — " + sDesc : "")) : "New BP Role";
+            var sTitle = sId ? (sId + (sDesc ? " \u2014 " + sDesc : "")) : "New BP Role";
             this.byId("pageTitle").setText(sTitle);
 
             var oBreadcrumb = this.byId("pageBreadcrumb");
             if (oBreadcrumb) { oBreadcrumb.setCurrentLocationText(sId || "New BP Role"); }
 
             var sScope = this._scopeLabel(oData.account_scope);
-            this.byId("pageSubtitle").setText("Role Name: " + (sId || "—") + (sScope ? " · Master Data Type: " + sScope : ""));
+            this.byId("pageSubtitle").setText("Role Name: " + (sId || "\u2014") + (sScope ? " \u00b7 Master Data Type: " + sScope : ""));
 
             var bActive = this._truthy(oData.active);
             this.byId("attrStatus").setText(bActive ? "Active" : "Inactive");
             this.byId("attrStatus").setState(bActive ? "Success" : "Error");
-            this.byId("attrMDT").setText(sMDT || "—");
+            this.byId("attrMDT").setText(sScope || "\u2014");
         },
 
         _truthy: function (v) {
@@ -325,23 +326,36 @@ sap.ui.define([
         },
 
         // ── Removal: Field Assignment / Prerequisite Fields / Prerequisite Roles ──
-        // Shared by all three tabs: each junction row is addressed by its
-        // composite key directly (no need to have it loaded as a list-binding
-        // context first), then deleted and the owning tab reloaded.
+        // Deletes a junction-table row identified by its composite key.
+        // OData V4 composite-key delete: bind a list, request the specific context
+        // by key predicate, then call context.delete() on the resolved context.
         _deleteJunctionRow: function (oConfig) {
             var oModel = this.getOwnerComponent().getModel();
-            var sKeyPart = Object.keys(oConfig.keys).map(function (k) {
-                return k + "='" + oConfig.keys[k] + "'";
-            }).join(",");
-            var oCtx = oModel.bindContext(oConfig.collection + "(" + sKeyPart + ")", null)
-                .getBoundContext();
 
-            oCtx.delete().then(function () {
-                MessageToast.show("Removed.");
-                if (typeof oConfig.reload === "function") { oConfig.reload(); }
-            }).catch(function (e) {
-                MessageBox.error("Could not remove: " + (e && e.message || "Unknown error"));
+            // Build key predicate filters to find the exact row
+            var aFilters = Object.keys(oConfig.keys).map(function (k) {
+                return new Filter(k, FilterOperator.EQ, oConfig.keys[k]);
             });
+            var oFilter = aFilters.length === 1
+                ? aFilters[0]
+                : new Filter({ filters: aFilters, and: true });
+
+            oModel.bindList(oConfig.collection, null, null, [oFilter])
+                .requestContexts(0, 1)
+                .then(function (aCtx) {
+                    if (!aCtx || !aCtx.length) {
+                        MessageToast.show("Row not found — already deleted?");
+                        if (typeof oConfig.reload === "function") { oConfig.reload(); }
+                        return;
+                    }
+                    return aCtx[0].delete("$auto").then(function () {
+                        MessageToast.show("Removed.");
+                        if (typeof oConfig.reload === "function") { oConfig.reload(); }
+                    });
+                })
+                .catch(function (e) {
+                    MessageBox.error("Could not remove: " + (e && e.message || "Unknown error"));
+                });
         },
 
         onRemoveAssignedField: function (oEvent) {
@@ -420,19 +434,19 @@ sap.ui.define([
         },
         onFieldLinkPress: function (oEvent) {
             var sFieldId = oEvent.getSource().getBindingContext("assigned").getProperty("field_id");
-            this.getOwnerComponent().getRouter().navTo("fieldMasterDetail", { fieldId: encodeURIComponent(sFieldId) });
+            this.getOwnerComponent().getRouter().navTo("fieldMasterDetail", { fieldId: encodeURIComponent(sFieldId.toLowerCase()) });
         },
         onPrereqLinkPress: function (oEvent) {
             var sFieldId = oEvent.getSource().getBindingContext("prereq").getProperty("field_id");
-            this.getOwnerComponent().getRouter().navTo("fieldMasterDetail", { fieldId: encodeURIComponent(sFieldId) });
+            this.getOwnerComponent().getRouter().navTo("fieldMasterDetail", { fieldId: encodeURIComponent(sFieldId.toLowerCase()) });
         },
         onPrereqRolePress: function (oEvent) {
             var sId = oEvent.getSource().getBindingContext("prereqroles").getProperty("role_id");
-            this.getOwnerComponent().getRouter().navTo("bpRoleDetail", { roleId: encodeURIComponent(sId) });
+            this.getOwnerComponent().getRouter().navTo("bpRoleDetail", { roleId: encodeURIComponent(sId.toLowerCase()) });
         },
         onPrereqRoleLinkPress: function (oEvent) {
             var sId = oEvent.getSource().getBindingContext("prereqroles").getProperty("role_id");
-            this.getOwnerComponent().getRouter().navTo("bpRoleDetail", { roleId: encodeURIComponent(sId) });
+            this.getOwnerComponent().getRouter().navTo("bpRoleDetail", { roleId: encodeURIComponent(sId.toLowerCase()) });
         },
 
         // ── Add actions (stubs that point to where dialogs would go) ─

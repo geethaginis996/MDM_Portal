@@ -53,6 +53,12 @@
                     <Switch state="{fieldEdit>/read_only}" customTextOn="Yes" customTextOff="No"/>
                 </HBox>
 
+                <HBox alignItems="Center" class="sapUiSmallMarginTop"
+                      visible="{fieldEdit>/showMultipleValues}">
+                    <Label text="Is Multiple Value" class="sapUiTinyMarginEnd" width="8rem"/>
+                    <Switch state="{fieldEdit>/multiple_values}" customTextOn="Yes" customTextOff="No"/>
+                </HBox>
+
             </VBox>
         </content>
 

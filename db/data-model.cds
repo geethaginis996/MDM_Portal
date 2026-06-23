@@ -154,6 +154,7 @@ entity BPCategoryField : managed {
         field_status    : FieldStatus not null;
         sequence        : Integer     not null;
         default_value   : String(200);
+        multiple_values : Boolean     not null default false;
 }
 
 entity BPRole : managed {

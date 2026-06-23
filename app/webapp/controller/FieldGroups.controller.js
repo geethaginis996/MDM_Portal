@@ -238,8 +238,8 @@ sap.ui.define([
             if (sSearch) {
                 aFilters.push(new Filter({
                     filters: [
-                        new Filter("group_id",    FilterOperator.Contains, sSearch),
-                        new Filter("description", FilterOperator.Contains, sSearch)
+                        new Filter({ path: "group_id", operator: FilterOperator.Contains, value1: sSearch, caseSensitive: false }),
+                        new Filter({ path: "description", operator: FilterOperator.Contains, value1: sSearch, caseSensitive: false })
                     ],
                     and: false
                 }));
@@ -353,7 +353,7 @@ sap.ui.define([
         _onMenuEdit: function () {
             var sGroupId = this._oMenuCtx.getProperty("group_id");
             this.getOwnerComponent().getRouter().navTo("fieldGroupDetail", {
-                groupId: encodeURIComponent(sGroupId)
+                groupId: encodeURIComponent(sGroupId.toLowerCase())
             });
         },
 
@@ -375,14 +375,14 @@ sap.ui.define([
         onGroupLinkPress: function (oEvent) {
             var sGroupId = oEvent.getSource().getBindingContext().getProperty("group_id");
             this.getOwnerComponent().getRouter().navTo("fieldGroupDetail", {
-                groupId: encodeURIComponent(sGroupId)
+                groupId: encodeURIComponent(sGroupId.toLowerCase())
             });
         },
 
         onRowPress: function (oEvent) {
             var sGroupId = oEvent.getSource().getBindingContext().getProperty("group_id");
             this.getOwnerComponent().getRouter().navTo("fieldGroupDetail", {
-                groupId: encodeURIComponent(sGroupId)
+                groupId: encodeURIComponent(sGroupId.toLowerCase())
             });
         },
 

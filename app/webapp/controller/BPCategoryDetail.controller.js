@@ -130,17 +130,18 @@ sap.ui.define([
                 new Filter("category_category_id", FilterOperator.EQ, sCat)
             ], {
                 $expand: "field($select=field_id,description,data_type,main_group_group_id,sub_group_group_id)",
-                $select: "category_category_id,field_field_id,field_status,sequence"
+                $select: "category_category_id,field_field_id,field_status,sequence,multiple_values"
             }).requestContexts(0, Infinity).then(function (aCtx) {
                 var aItems = aCtx.map(function (c) {
                     return {
-                        field_id    : c.getProperty("field_field_id"),
-                        description : c.getProperty("field/description") || "",
-                        data_type   : c.getProperty("field/data_type") || "",
-                        main_group  : c.getProperty("field/main_group_group_id") || "—",
-                        sub_group   : c.getProperty("field/sub_group_group_id") || "—",
-                        field_status: c.getProperty("field_status"),
-                        sequence    : c.getProperty("sequence")
+                        field_id       : c.getProperty("field_field_id"),
+                        description    : c.getProperty("field/description") || "",
+                        data_type      : c.getProperty("field/data_type") || "",
+                        main_group     : c.getProperty("field/main_group_group_id") || "\u2014",
+                        sub_group      : c.getProperty("field/sub_group_group_id") || "\u2014",
+                        field_status   : c.getProperty("field_status"),
+                        sequence       : c.getProperty("sequence"),
+                        multiple_values: c.getProperty("multiple_values") === true
                     };
                 });
                 this.getView().getModel("assigned").setProperty("/items", aItems);
@@ -151,19 +152,34 @@ sap.ui.define([
             });
         },
 
-        // ── Removal: Field Assignments tab ──────────────────────────────
-        // The row is addressed by its composite key directly (no need to have
-        // it loaded as a list-binding context first), then deleted and the
-        // tab reloaded — same pattern used for BP Role's three field/role tabs.
-        _deleteAssignedField: function (sFieldId) {
-            var oModel = this.getOwnerComponent().getModel();
-            var sPath = "/BPCategoryFields(category_category_id='" + this._categoryId() +
-                "',field_field_id='" + sFieldId + "')";
-            var oCtx = oModel.bindContext(sPath, null).getBoundContext();
+        formatMultipleValues: function (bVal) {
+            return bVal ? "Yes" : "No";
+        },
+        formatMultipleValuesState: function (bVal) {
+            return bVal ? "Success" : "None";
+        },
 
-            oCtx.delete().then(function () {
-                MessageToast.show("Removed.");
-                this._loadFields();
+        // ── Removal: Field Assignments tab ──────────────────────────────
+        _deleteAssignedField: function (sFieldId) {
+            var oModel  = this.getOwnerComponent().getModel();
+            var Filter2 = sap.ui.model.Filter;
+            var FilterOperator2 = sap.ui.model.FilterOperator;
+            var aFilters = [
+                new Filter("category_category_id", FilterOperator.EQ, this._categoryId()),
+                new Filter("field_field_id",        FilterOperator.EQ, sFieldId)
+            ];
+            oModel.bindList("/BPCategoryFields", null, null, [
+                new Filter({ filters: aFilters, and: true })
+            ]).requestContexts(0, 1).then(function (aCtx) {
+                if (!aCtx || !aCtx.length) {
+                    MessageToast.show("Row not found.");
+                    this._loadFields();
+                    return;
+                }
+                return aCtx[0].delete("$auto").then(function () {
+                    MessageToast.show("Removed.");
+                    this._loadFields();
+                }.bind(this));
             }.bind(this)).catch(function (e) {
                 MessageBox.error("Could not remove: " + (e && e.message || "Unknown error"));
             });
@@ -196,18 +212,19 @@ sap.ui.define([
         onFieldRowPress: function (oEvent) {
             var sFieldId = oEvent.getSource().getBindingContext("assigned").getProperty("field_id");
             this._openFieldAssignmentEdit({
-                collection   : "/BPCategoryFields",
-                fkName       : "category_category_id",
-                fkValue      : this._categoryId(),
-                fieldId      : sFieldId,
-                updateGroupId: "bpCategoryUpdate",
-                showReadOnly : false,
-                onDone       : this._loadFields.bind(this)
+                collection        : "/BPCategoryFields",
+                fkName            : "category_category_id",
+                fkValue           : this._categoryId(),
+                fieldId           : sFieldId,
+                updateGroupId     : "bpCategoryUpdate",
+                showReadOnly      : false,
+                showMultipleValues: true,
+                onDone            : this._loadFields.bind(this)
             });
         },
         onFieldLinkPress: function (oEvent) {
             var sFieldId = oEvent.getSource().getBindingContext("assigned").getProperty("field_id");
-            this.getOwnerComponent().getRouter().navTo("fieldMasterDetail", { fieldId: encodeURIComponent(sFieldId) });
+            this.getOwnerComponent().getRouter().navTo("fieldMasterDetail", { fieldId: encodeURIComponent(sFieldId.toLowerCase()) });
         },
 
         onAssignField: function () {

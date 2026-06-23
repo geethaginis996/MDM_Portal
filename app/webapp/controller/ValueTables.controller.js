@@ -105,14 +105,14 @@ sap.ui.define([
             if (sSearch) {
                 aFilters.push(new Filter({
                     filters: [
-                        new Filter("value_table_id", FilterOperator.Contains, sSearch),
-                        new Filter("description",    FilterOperator.Contains, sSearch)
+                        new Filter({ path: "value_table_id", operator: FilterOperator.Contains, value1: sSearch, caseSensitive: false }),
+                        new Filter({ path: "description", operator: FilterOperator.Contains, value1: sSearch, caseSensitive: false })
                     ],
                     and: false
                 }));
             }
             if (sSource) {
-                aFilters.push(new Filter("source_table", FilterOperator.Contains, sSource));
+                aFilters.push(new Filter({ path: "source_table", operator: FilterOperator.Contains, value1: sSource, caseSensitive: false }));
             }
             if (sStatus) {
                 aFilters.push(new Filter("status", FilterOperator.EQ, sStatus));
@@ -206,7 +206,7 @@ sap.ui.define([
         _onMenuEdit: function () {
             var sId = this._oMenuCtx.getProperty("value_table_id");
             this.getOwnerComponent().getRouter().navTo("valueTableDetail", {
-                valueTableId: encodeURIComponent(sId)
+                valueTableId: encodeURIComponent(sId.toLowerCase())
             });
         },
 
@@ -221,14 +221,14 @@ sap.ui.define([
         onLinkPress: function (oEvent) {
             var sId = oEvent.getSource().getBindingContext().getProperty("value_table_id");
             this.getOwnerComponent().getRouter().navTo("valueTableDetail", {
-                valueTableId: encodeURIComponent(sId)
+                valueTableId: encodeURIComponent(sId.toLowerCase())
             });
         },
 
         onRowPress: function (oEvent) {
             var sId = oEvent.getSource().getBindingContext().getProperty("value_table_id");
             this.getOwnerComponent().getRouter().navTo("valueTableDetail", {
-                valueTableId: encodeURIComponent(sId)
+                valueTableId: encodeURIComponent(sId.toLowerCase())
             });
         },
 

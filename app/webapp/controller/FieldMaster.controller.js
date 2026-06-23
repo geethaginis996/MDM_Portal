@@ -226,8 +226,8 @@ _applyFilters: function () {
     if (sSearch) {
         aFilters.push(new Filter({
             filters: [
-                new Filter("field_id",    FilterOperator.Contains, sSearch),
-                new Filter("description", FilterOperator.Contains, sSearch)
+                new Filter({ path: "field_id", operator: FilterOperator.Contains, value1: sSearch, caseSensitive: false }),
+                new Filter({ path: "description", operator: FilterOperator.Contains, value1: sSearch, caseSensitive: false })
             ],
             and: false
         }));
@@ -358,7 +358,7 @@ _applyFilters: function () {
             }
             if (!oCtx) { return; }
             this.getOwnerComponent().getRouter().navTo("fieldMasterDetail", {
-                fieldId: encodeURIComponent(oCtx.getProperty("field_id"))
+                fieldId: encodeURIComponent(oCtx.getProperty("field_id").toLowerCase())
             });
         },
 
@@ -366,7 +366,7 @@ _applyFilters: function () {
             var oCtx = oEvent.getSource().getBindingContext();
             if (!oCtx) { return; }
             this.getOwnerComponent().getRouter().navTo("fieldMasterDetail", {
-                fieldId: encodeURIComponent(oCtx.getProperty("field_id"))
+                fieldId: encodeURIComponent(oCtx.getProperty("field_id").toLowerCase())
             });
         },
 

@@ -32,7 +32,8 @@ sap.ui.define([
         },
 
         _onRouteMatched: function (oEvent) {
-            var sId = decodeURIComponent(oEvent.getParameter("arguments").accountGroupId);
+            var sRaw = decodeURIComponent(oEvent.getParameter("arguments").accountGroupId);
+            var sId = (sRaw === "NEW") ? sRaw : sRaw.toUpperCase();
             this._oViewModel.setProperty("/isDirty", false);
             this._oViewModel.setProperty("/selectedTab", "general");
             this.byId("detailTabs").setSelectedKey("general");
@@ -114,20 +115,31 @@ sap.ui.define([
         _refreshHeader: function (oData) {
             var sId   = oData.account_group_id || "";
             var sDesc = oData.description || "";
-            var sTitle = sId ? (sId + (sDesc ? " — " + sDesc : "")) : "New Account Group";
-            this.byId("pageTitle").setText(sTitle);
+            var sTitle = sId ? (sId + (sDesc ? " \u2014 " + sDesc : "")) : "New Account Group";
+
+            var oTitle = this.byId("pageTitle");
+            if (oTitle) { oTitle.setText(sTitle); }
 
             var oBreadcrumb = this.byId("pageBreadcrumb");
             if (oBreadcrumb) { oBreadcrumb.setCurrentLocationText(sId || "New Account Group"); }
 
-            var sType = (oData.type === "VENDOR") ? "Vendor" : "Customer";
-            var sRange = (oData.assignment_mode === "EXTERNAL") ? "External number range A–Z" : "Internal number range 1–999999";
-            this.byId("pageSubtitle").setText(sType + " Account Group · " + sRange);
+            var sType  = (oData.type === "VENDOR") ? "Vendor" : "Customer";
+            var sRange = (oData.assignment_mode === "EXTERNAL")
+                ? "External number range A\u2013Z"
+                : "Internal number range 1\u2013999999";
+
+            var oSubtitle = this.byId("pageSubtitle");
+            if (oSubtitle) { oSubtitle.setText(sType + " Account Group \u00b7 " + sRange); }
 
             var bActive = this._truthy(oData.active);
-            this.byId("attrStatus").setText(bActive ? "Active" : "Inactive");
-            this.byId("attrStatus").setState(bActive ? "Success" : "Error");
-            this.byId("attrType").setText(sType);
+            var oStatus = this.byId("attrStatus");
+            if (oStatus) {
+                oStatus.setText(bActive ? "Active" : "Inactive");
+                oStatus.setState(bActive ? "Success" : "Error");
+            }
+
+            var oAttrType = this.byId("attrType");
+            if (oAttrType) { oAttrType.setText(sType); }
         },
 
         _truthy: function (v) {
@@ -226,7 +238,7 @@ sap.ui.define([
         },
         onFieldLinkPress: function (oEvent) {
             var sFieldId = oEvent.getSource().getBindingContext("assigned").getProperty("field_id");
-            this.getOwnerComponent().getRouter().navTo("fieldMasterDetail", { fieldId: encodeURIComponent(sFieldId) });
+            this.getOwnerComponent().getRouter().navTo("fieldMasterDetail", { fieldId: encodeURIComponent(sFieldId.toLowerCase()) });
         },
 
         onAssignFields: function () {
