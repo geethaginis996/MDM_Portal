@@ -41,15 +41,41 @@ sap.ui.define([
     // Maps a field's SAP source table to the replicated reference-list service
     // entity that supplies its dropdown values. Extend as more lists are wired.
     var SOURCE_TO_LOOKUP = {
-        T001  : "CompanyCodes",
-        T001W : "Plants",
-        TVKO  : "SalesOrgs",
-        TVTW  : "DistChannels",
-        TSPA  : "Divisions",
-        T005  : "Countries",
-        TCURC : "Currencies",
-        T052  : "PaymentTerms",
-        T016  : "Industries"
+        // Address / General
+        T005    : "Countries",
+        TCURC   : "Currencies",
+        T016    : "Industries",
+        // Organizational
+        T001    : "CompanyCodes",
+        T001W   : "Plants",
+        TVKO    : "SalesOrgs",
+        TVTW    : "DistChannels",
+        TSPA    : "Divisions",
+        // Payment
+        T052    : "PaymentTerms",
+        // RF02D Sales Area fields — each maps to a different entity
+        // (RF02D is the SAP source table for the sales area block, but
+        //  VKORG=SalesOrgs, VTWEG=DistChannels, SPART=Divisions)
+        RF02D_VKORG : "SalesOrgs",
+        RF02D_VTWEG : "DistChannels",
+        RF02D_SPART : "Divisions",
+        // KNVV-specific field overrides (source_table = KNVV but different entity per field)
+        KNVV_WAERS  : "Currencies",
+        KNVV_KONDA  : "PriceGroups",
+        KNVV_KALKS  : "PriceGroups",
+        KNVV_BZIRK  : "SalesDistricts",
+        KNVV_VWERK  : "Plants",
+        KNVV_INCO1  : "Incoterms",
+        KNVV_ZTERM  : "PaymentTerms",
+        KNVV_KTGRD  : "AcctAssmtGrps",
+        // FI (KNB1 fields)
+        KNB1        : "ReconAccts",
+        KNB1_ZWELS  : "PaymentMethods",
+        KNB1_ZTERM  : "PaymentTerms",
+        // Tax
+        KNVI        : "TaxClasses",
+        // Company code (BS001)
+        BS001       : "CompanyCodes"
     };
 
     return Controller.extend("mdm.portal.controller.CreateBP", {
@@ -84,10 +110,123 @@ sap.ui.define([
             // memory instead of re-querying the service.
             this._aAllAssignments = [];
 
-            this._loadLookups();
+            // _loadLookups() is called in _onRouteMatched on every visit,
+            // so newly created roles and account groups are always picked up.
 
             this.getOwnerComponent().getRouter()
                 .getRoute("createBP").attachPatternMatched(this._onRouteMatched, this);
+            this.getOwnerComponent().getRouter()
+                .getRoute("createBPEdit").attachPatternMatched(this._onRouteMatchedEdit, this);
+        },
+
+        // ── Edit mode: called when navigating from My Requests → Edit Draft ──
+        _onRouteMatchedEdit: function (oEvent) {
+            var sCrId = decodeURIComponent(oEvent.getParameter("arguments").crId || "");
+            // First reset the form (same as new), then load the existing CR data
+            this._onRouteMatched();
+            if (sCrId) {
+                this._loadExistingCR(sCrId);
+            }
+        },
+
+        // Load an existing DRAFT CR back into the Create BP form for editing.
+        _loadExistingCR: function (sCrId) {
+            var oRt = this._oRt;
+            oRt.setProperty("/busy", true);
+            oRt.setProperty("/crId", sCrId);
+            oRt.setProperty("/status", "Draft");
+            oRt.setProperty("/subtitle", "Editing draft \u2014 " + sCrId);
+
+            var sUrl = this.getOwnerComponent().getModel().getServiceUrl().replace(/\/$/, "")
+                + "/ChangeRequests('" + encodeURIComponent(sCrId) + "')"
+                + "?$expand=bp_roles,field_values";
+
+            fetch(sUrl, { headers: { Accept: "application/json" } })
+            .then(function (r) {
+                if (!r.ok) { throw new Error("HTTP " + r.status); }
+                return r.json();
+            })
+            .then(function (oData) {
+                oRt.setProperty("/busy", false);
+
+                // ── 1. Restore header selections ─────────────────────
+                var sCat = oData.bp_category_category_id || "";
+                var sAg  = oData.account_group_account_group_id || "";
+                oRt.setProperty("/categoryId", sCat);
+                oRt.setProperty("/bpAgId",     sAg);
+                oRt.setProperty("/mode",        oData.request_type === "EXTEND" ? "EXTEND" : "CREATE");
+                oRt.setProperty("/started",     true);
+
+                // Display text for category
+                var aCats = this.getView().getModel("cat").getProperty("/items") || [];
+                var oCat  = aCats.find(function (c) { return c.key === sCat; });
+                oRt.setProperty("/catDisp", oCat ? oCat.text : sCat);
+
+                // Display text and number range for account group
+                if (sAg) {
+                    var aAgs  = this.getView().getModel("ag").getProperty("/items") || [];
+                    var oAgItem = aAgs.find(function (a) { return a.key === sAg; });
+                    oRt.setProperty("/bpAgDisp", oAgItem ? oAgItem.text : sAg);
+                    var oAg = this._mAccountGroups[sAg];
+                    if (oAg) {
+                        var sNr = oAg.number_range_id + " (" + oAg.assignment_mode + ")";
+                        oRt.setProperty("/numberRange", sNr);
+                        oRt.setProperty("/nrDisp",      sNr);
+                    }
+                }
+
+                // ── 2. Restore role selections ────────────────────────
+                var aRoles    = (oData.bp_roles || []).filter(function (r) { return !r.auto_pulled; });
+                var aRoleKeys = aRoles.map(function (r) { return r.role_role_id; });
+                oRt.setProperty("/roleKeys", aRoleKeys);
+
+                // Mark selected roles in the roles model
+                var aAllItems = this.getView().getModel("roles").getProperty("/items") || [];
+                aAllItems.forEach(function (item) {
+                    item.selected = aRoleKeys.indexOf(item.key) >= 0;
+                });
+                this.getView().getModel("roles").setProperty("/items", aAllItems);
+
+                // ── 3. Restore field values into the form model ───────
+                var mValues = {};
+                (oData.field_values || []).forEach(function (fv) {
+                    mValues[fv.field_field_id] = fv.new_value || "";
+                });
+                this.getView().getModel("form").setProperty("/values", mValues);
+
+                // ── 4. Restore instance keys (multi-company-code case) ─
+                this._mRoleInstances = {};
+                (oData.bp_roles || []).forEach(function (r) {
+                    if (!this._mRoleInstances[r.role_role_id]) {
+                        this._mRoleInstances[r.role_role_id] = [];
+                    }
+                    // Build instance field values from the stored field_values
+                    var mInstFv = {};
+                    (oData.field_values || []).filter(function (fv) {
+                        return fv.role_id === r.role_role_id && fv.instance_no === r.instance_no;
+                    }).forEach(function (fv) {
+                        mInstFv[fv.field_field_id] = fv.new_value || "";
+                    });
+                    this._mRoleInstances[r.role_role_id].push({
+                        instance_no  : r.instance_no,
+                        instance_key1: r.instance_key_1 || "",
+                        fieldValues  : mInstFv
+                    });
+                }.bind(this));
+
+                // ── 5. Trigger role resolution and form build ─────────
+                if (aRoleKeys.length) {
+                    this._onRoleKeysChanged(aRoleKeys);
+                }
+
+                MessageToast.show("Draft " + sCrId + " loaded \u2014 make your changes and save.");
+
+            }.bind(this))
+            .catch(function (oErr) {
+                oRt.setProperty("/busy", false);
+                MessageBox.error("Could not load change request: " +
+                    ((oErr && oErr.message) || String(oErr)));
+            }.bind(this));
         },
 
         _freshState: function () {
@@ -114,6 +253,8 @@ sap.ui.define([
                 bpNumberEditable : false,
                 bpNumberPlaceholder: "\u2014",
                 bpNumberHelp     : "Will be set based on the selected role(s).",
+                crId             : "",
+                busy             : false,
                 // header strip
                 catDisp          : "\u2014",
                 roleDisp         : "\u2014",
@@ -138,6 +279,11 @@ sap.ui.define([
             if (this._oRoleInstDialog)  { this._oRoleInstDialog.destroy();  this._oRoleInstDialog  = null; }
             if (this._oAgVHDialog)      { this._oAgVHDialog.destroy();      this._oAgVHDialog      = null; }
             if (this._oRoleVHDialog)    { this._oRoleVHDialog.destroy();    this._oRoleVHDialog    = null; }
+            if (this._oFieldVHDialog)   { this._oFieldVHDialog.destroy();   this._oFieldVHDialog   = null; }
+
+            // Reload lookups on every visit so newly created roles/account groups
+            // are picked up without requiring a page refresh
+            this._loadLookups();
         },
 
         // ── Load configuration lookups from the service ──────────────
@@ -1396,52 +1542,80 @@ sap.ui.define([
 
         // Build the right input control for a field's display type.
         _fieldControl: function (f) {
-            var sPath = "{form>/values/" + f.field_id + "}";
+            var sPath    = "{form>/values/" + f.field_id + "}";
             var bEditable = !f.readOnly;
 
+            // Boolean fields
             if (f.display === "CHECKBOX" || f.data_type === "BOOLEAN") {
                 return new CheckBox({ selected: sPath, editable: bEditable });
             }
-            if (f.display === "DATEPICKER" || f.display === "DATE_PICKER" || f.data_type === "DATE") {
+
+            // Date fields — data_type always wins over display_type to prevent
+            // date fields from accidentally opening a value-help dialog
+            if (f.data_type === "DATE" ||
+                f.display === "DATEPICKER" ||
+                f.display === "DATE_PICKER" ||
+                f.display === "DATEPICKER") {
                 return new DatePicker({ value: sPath, editable: bEditable, width: "100%" });
             }
+
             if (f.display === "DROPDOWN" || f.display === "SEARCH_HELP") {
                 var sSource    = (this._mFieldSource && this._mFieldSource[f.field_id]) || f.sourceTable;
-                var sEntitySet = SOURCE_TO_LOOKUP[sSource];
-                if (sEntitySet) {
-                    // A reference list backs this field -> real dropdown of values.
+                // Check per-field override first (handles RF02D, KNVV, KNB1 where
+                // multiple fields share the same source_table but need different lookups)
+                var sEntitySet = SOURCE_TO_LOOKUP[sSource + "_" + f.field_id]
+                    || SOURCE_TO_LOOKUP["KNVV_" + f.field_id]
+                    || SOURCE_TO_LOOKUP["KNB1_" + f.field_id]
+                    || SOURCE_TO_LOOKUP["RF02D_" + f.field_id]
+                    || SOURCE_TO_LOOKUP[sSource];
+
+                // ── DROPDOWN: render as ComboBox (inline list) ────────
+                if (f.display === "DROPDOWN") {
                     var oCombo = new ComboBox({
                         selectedKey: sPath, editable: bEditable, width: "100%",
-                        placeholder: "Select…"
+                        placeholder: sEntitySet ? "Select\u2026" : "No value list configured"
                     });
-                    this._loadValueList(sEntitySet).then(function (aVals) {
-                        aVals.forEach(function (v) {
-                            oCombo.addItem(new Item({ key: v.code, text: v.text }));
-                        });
-                    }).catch(function () { /* leave empty on load failure */ });
+                    if (sEntitySet) {
+                        this._loadValueList(sEntitySet).then(function (aVals) {
+                            aVals.forEach(function (v) {
+                                oCombo.addItem(new Item({ key: v.code, text: v.text }));
+                            });
+                        }).catch(function () {});
+                    }
                     return oCombo;
                 }
-                if (f.display === "DROPDOWN") {
-                    // Configured as a dropdown but no value list is mapped yet —
-                    // still render a dropdown control (empty) rather than a textbox.
-                    return new ComboBox({
-                        selectedKey: sPath, editable: bEditable, width: "100%",
-                        placeholder: "No value list configured"
-                    });
-                }
-                // SEARCH_HELP without a mapped list -> value-help input.
-                return new Input({
-                    value: sPath, editable: bEditable, width: "100%",
+
+                // ── SEARCH_HELP: render as read-only Input + VH dialog ─
+                // The field has display_type = SEARCH_HELP in Field Master,
+                // meaning the admin explicitly wants a separate search popup,
+                // not an inline dropdown — regardless of whether a value list
+                // exists. We build the Input with valueHelpOnly=true so the
+                // user must open the dialog to pick a value.
+                var oVhInput = new Input({
+                    value       : sPath,
+                    editable    : true,
+                    valueHelpOnly: true,
                     showValueHelp: true,
-                    valueHelpRequest: function () { MessageToast.show("Value help — coming soon"); }
+                    width       : "100%",
+                    placeholder : "Search\u2026"
                 });
+
+                if (sEntitySet) {
+                    // Pre-load the value list so the VH dialog opens instantly
+                    this._loadValueList(sEntitySet);
+                }
+
+                oVhInput.attachValueHelpRequest(function () {
+                    this._openFieldVHDialog(f, sEntitySet);
+                }.bind(this));
+                return oVhInput;
             }
+
             var oInput = new Input({
                 value: sPath, editable: bEditable, width: "100%",
                 type: f.data_type === "INTEGER" || f.data_type === "DECIMAL" ? "Number" : "Text",
                 maxLength: f.length || 0
             });
-            // Apply FIELD-trigger validation live as the user types.
             if (f.valFn && f.valTrigger === "FIELD") {
                 oInput.attachLiveChange(function (oEv) {
                     var sVal = oEv.getParameter("value");
@@ -1451,6 +1625,83 @@ sap.ui.define([
                 }.bind(this));
             }
             return oInput;
+        },
+
+        // Generic Field Value Help Dialog — opens a searchable table of values
+        // for any SEARCH_HELP field. Reused for all fields with display_type = SEARCH_HELP.
+        _openFieldVHDialog: function (f, sEntitySet) {
+            var oView = this.getView();
+            this._oFieldVHMeta = f;
+
+            if (!this._oFieldVHModel) {
+                this._oFieldVHModel = new JSONModel({ items: [], allItems: [], busy: false, title: "" });
+            }
+            this._oFieldVHModel.setProperty("/title", f.description || f.field_id);
+            this._oFieldVHModel.setProperty("/busy", !!sEntitySet);
+            this._oFieldVHModel.setProperty("/items", []);
+
+            if (!this._oFieldVHDialog) {
+                Fragment.load({
+                    id        : oView.getId(),
+                    name      : "mdm.portal.view.Fragment.FieldVHDialog",
+                    controller: this
+                }).then(function (oDialog) {
+                    this._oFieldVHDialog = oDialog;
+                    oView.addDependent(oDialog);
+                    oDialog.setModel(this._oFieldVHModel, "fieldVH");
+                    this._loadFieldVHItems(sEntitySet);
+                    oDialog.open();
+                }.bind(this));
+            } else {
+                this._oFieldVHDialog.setModel(this._oFieldVHModel, "fieldVH");
+                // Reset the search field
+                var oSearch = this._oFieldVHDialog.getSubHeader().getContentMiddle()[0];
+                if (oSearch) { oSearch.setValue(""); }
+                this._loadFieldVHItems(sEntitySet);
+                this._oFieldVHDialog.open();
+            }
+        },
+
+        _loadFieldVHItems: function (sEntitySet) {
+            if (!sEntitySet) {
+                this._oFieldVHModel.setProperty("/busy", false);
+                this._oFieldVHModel.setProperty("/items", []);
+                return;
+            }
+            this._loadValueList(sEntitySet).then(function (aVals) {
+                this._oFieldVHModel.setProperty("/allItems", aVals);
+                this._oFieldVHModel.setProperty("/items", aVals);
+                this._oFieldVHModel.setProperty("/busy", false);
+            }.bind(this)).catch(function () {
+                this._oFieldVHModel.setProperty("/busy", false);
+            }.bind(this));
+        },
+
+        onFieldVHSearch: function (oEvent) {
+            var sQuery    = (oEvent.getParameter("newValue") || "").toLowerCase();
+            var aAllItems = this._oFieldVHModel.getProperty("/allItems") || [];
+            this._oFieldVHModel.setProperty("/items", sQuery
+                ? aAllItems.filter(function (o) {
+                    return o.code.toLowerCase().includes(sQuery) ||
+                           o.text.toLowerCase().includes(sQuery);
+                  })
+                : aAllItems);
+        },
+
+        onFieldVHSelect: function (oEvent) {
+            var oCtx = oEvent.getSource().getBindingContext("fieldVH");
+            if (!oCtx) { return; }
+            var oItem = oCtx.getObject();
+            var f     = this._oFieldVHMeta;
+            if (!f || !oItem) { return; }
+            // Write selected key into form model
+            this.getView().getModel("form").setProperty("/values/" + f.field_id, oItem.code);
+            this._oFieldVHDialog.close();
+            setTimeout(this._checkAndGateTabs.bind(this), 0);
+        },
+
+        onFieldVHCancel: function () {
+            this._oFieldVHDialog.close();
         },
 
         // Load (and cache) a reference list's values for dropdowns.
@@ -1480,9 +1731,7 @@ sap.ui.define([
         },
 
         onSaveDraft: function () {
-            // Persisting to CRHeader/CRFieldValue is the next build step; this
-            // confirms the form state is captured correctly in the meantime.
-            MessageToast.show("Saved as draft (request persistence is the next step).");
+            this._saveCR(false);
         },
 
         onSaveCreate: function () {
@@ -1491,7 +1740,197 @@ sap.ui.define([
                 MessageBox.warning("Please complete the required fields:\n\n" + aMissing.join("\n"));
                 return;
             }
-            MessageToast.show("Validated — submitting to the approval workflow is the next step.");
+            MessageBox.confirm(
+                "Submit this change request for approval?",
+                {
+                    title  : "Save & Create",
+                    actions: [MessageBox.Action.YES, MessageBox.Action.NO],
+                    onClose: function (sAction) {
+                        if (sAction === MessageBox.Action.YES) { this._saveCR(true); }
+                    }.bind(this)
+                }
+            );
+        },
+
+        // ── Core save logic ──────────────────────────────────────────
+        _saveCR: function (bSubmit) {
+            var oRt       = this._oRt;
+            var oFormVals = this.getView().getModel("form").getProperty("/values") || {};
+
+            // ── 1. Collect all resolved role IDs ─────────────────────
+            var aPickedKeys = oRt.getProperty("/roleKeys") || [];
+            var aAllRoleIds = [];
+            this._aAllAssignments.forEach(function (a) {
+                if (aAllRoleIds.indexOf(a.role) < 0) { aAllRoleIds.push(a.role); }
+            });
+
+            // ── 2. Build CRBPRole rows — one per role per instance ───
+            // _mRoleInstances[roleId] = array of { instance_no, key1, key2, fieldValues }
+            // If no multi-instance data exists, default to instance_no = 1
+            var aCRBPRoles  = [];
+            var aCRFieldVals = [];
+            var mSeen = {};  // prevent duplicate field rows
+
+            aAllRoleIds.forEach(function (sRoleId) {
+                var bAutoPull   = aPickedKeys.indexOf(sRoleId) < 0;
+                var aPrereqFlds = this._mRolePrereqFields[sRoleId] || [];
+                // Get all instances for this role (multi-company code scenario)
+                var aInstances  = (this._mRoleInstances && this._mRoleInstances[sRoleId])
+                    ? this._mRoleInstances[sRoleId]
+                    : null;
+
+                if (aInstances && aInstances.length) {
+                    // ── Multi-instance: one CRBPRole row per instance ─
+                    aInstances.forEach(function (oInst) {
+                        var iNo  = oInst.instance_no || 1;
+                        var oFvs = oInst.fieldValues || {};
+
+                        // CRBPRole row for this instance
+                        aCRBPRoles.push({
+                            role_id       : sRoleId,
+                            instance_no   : iNo,
+                            instance_key_1: aPrereqFlds[0] ? (oFvs[aPrereqFlds[0].field_id] || null) : null,
+                            instance_key_2: aPrereqFlds[1] ? (oFvs[aPrereqFlds[1].field_id] || null) : null,
+                            instance_key_3: null,
+                            auto_pulled   : bAutoPull
+                        });
+
+                        // CRFieldValue rows — instance-specific values first,
+                        // then fall back to the shared form values
+                        this._aAllAssignments.forEach(function (a) {
+                            if (a.role !== sRoleId) { return; }
+                            if (a.status === "SUPPRESS") { return; }
+                            // Instance-specific value overrides shared form value
+                            var sVal = oFvs[a.field_id] !== undefined
+                                ? oFvs[a.field_id]
+                                : oFormVals[a.field_id];
+                            if (sVal === undefined || sVal === null || String(sVal).trim() === "") { return; }
+                            var sKey = sRoleId + "|" + iNo + "|" + a.field_id;
+                            if (mSeen[sKey]) { return; }
+                            mSeen[sKey] = true;
+                            aCRFieldVals.push({
+                                role_id     : sRoleId,
+                                instance_no : iNo,
+                                field_id    : a.field_id,
+                                new_value   : String(sVal),
+                                source_level: "ROLE"
+                            });
+                        }.bind(this));
+                    }.bind(this));
+
+                } else {
+                    // ── Single instance (default, instance_no = 1) ────
+                    aCRBPRoles.push({
+                        role_id       : sRoleId,
+                        instance_no   : 1,
+                        instance_key_1: aPrereqFlds[0] ? (oFormVals[aPrereqFlds[0].field_id] || null) : null,
+                        instance_key_2: aPrereqFlds[1] ? (oFormVals[aPrereqFlds[1].field_id] || null) : null,
+                        instance_key_3: null,
+                        auto_pulled   : bAutoPull
+                    });
+
+                    this._aAllAssignments.forEach(function (a) {
+                        if (a.role !== sRoleId) { return; }
+                        if (a.status === "SUPPRESS") { return; }
+                        var sVal = oFormVals[a.field_id];
+                        if (sVal === undefined || sVal === null || String(sVal).trim() === "") { return; }
+                        var sKey = sRoleId + "|1|" + a.field_id;
+                        if (mSeen[sKey]) { return; }
+                        mSeen[sKey] = true;
+                        aCRFieldVals.push({
+                            role_id     : sRoleId,
+                            instance_no : 1,
+                            field_id    : a.field_id,
+                            new_value   : String(sVal),
+                            source_level: "ROLE"
+                        });
+                    }.bind(this));
+                }
+            }.bind(this));
+
+            // ── 4. Assemble the full payload ─────────────────────────
+            var oPayload = {
+                cr_id                : oRt.getProperty("/crId") || "",
+                request_type         : oRt.getProperty("/mode") === "EXTEND" ? "EXTEND" : "CREATE",
+                bp_category          : oRt.getProperty("/categoryId") || "",
+                account_group        : oRt.getProperty("/bpAgId") || "",
+                reference_object_no  : (oRt.getProperty("/extendBpData/bp_number")) || "",
+                bp_number            : oRt.getProperty("/bpNumber") || "",
+                business_justification: "",
+                submit               : bSubmit,
+                bp_roles             : aCRBPRoles,
+                field_values         : aCRFieldVals
+            };
+
+            // ── 5. Call SaveBPChangeRequest via direct HTTP POST ─────
+            oRt.setProperty("/busy", true);
+
+            var sServiceUrl = this.getOwnerComponent().getModel().getServiceUrl();
+            var sActionUrl  = sServiceUrl.replace(/\/$/, "") + "/SaveBPChangeRequest";
+
+            // Debug: log what we're about to save
+            console.log("[SaveBPChangeRequest] URL:", sActionUrl);
+            console.log("[SaveBPChangeRequest] payload:", JSON.stringify({
+                cr_id        : oPayload.cr_id,
+                request_type : oPayload.request_type,
+                bp_category  : oPayload.bp_category,
+                account_group: oPayload.account_group,
+                submit       : oPayload.submit,
+                bp_roles_count   : aCRBPRoles.length,
+                field_vals_count : aCRFieldVals.length,
+                bp_roles     : aCRBPRoles,
+                field_values : aCRFieldVals.slice(0, 3)  // first 3 for brevity
+            }, null, 2));
+
+            fetch(sActionUrl, {
+                method : "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept"      : "application/json"
+                },
+                body: JSON.stringify(oPayload)
+            })
+            .then(function (oResp) {
+                if (!oResp.ok) {
+                    return oResp.json().then(function (oErrBody) {
+                        var sMsg = (oErrBody && oErrBody.error && oErrBody.error.message)
+                            || ("HTTP " + oResp.status);
+                        throw new Error(sMsg);
+                    }).catch(function () {
+                        throw new Error("HTTP " + oResp.status);
+                    });
+                }
+                return oResp.json();
+            })
+            .then(function (oData) {
+                oRt.setProperty("/busy", false);
+                // CAP wraps action return in { value: { ... } }
+                var oResult = (oData && oData.value) ? oData.value : oData;
+                var sCrId   = oResult.cr_id || "";
+                oRt.setProperty("/crId",   sCrId);
+                oRt.setProperty("/status", bSubmit ? "Submitted" : "Draft");
+
+                if (bSubmit) {
+                    MessageBox.success(
+                        "Change request " + sCrId + " submitted for approval.",
+                        {
+                            title  : "Submitted",
+                            onClose: function () {
+                                this.getOwnerComponent().getRouter().navTo("home");
+                            }.bind(this)
+                        }
+                    );
+                } else {
+                    MessageToast.show("Saved as draft \u2014 " + sCrId);
+                }
+            }.bind(this))
+            .catch(function (oErr) {
+                oRt.setProperty("/busy", false);
+                MessageBox.error(
+                    "Could not save the change request:\n" +
+                    ((oErr && oErr.message) ? oErr.message : String(oErr))
+                );
+            }.bind(this));
         },
 
         _validateRequired: function () {

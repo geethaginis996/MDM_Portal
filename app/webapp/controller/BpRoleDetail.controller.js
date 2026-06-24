@@ -145,6 +145,20 @@ sap.ui.define([
             this._oViewModel.setProperty("/busy",  false);
 
             var oModel = this.getOwnerComponent().getModel();
+
+            // Reset any pending changes and unbind the view first.
+            // Without this, OData V4 carries over data from the previous
+            // binding context into the new transient CREATE context.
+            oModel.resetChanges("bpRoleUpdate");
+            this.getView().unbindObject();
+
+            // If a previous transient context exists (user navigated away
+            // without saving), discard it before creating a new one.
+            if (this._oCreateListBinding) {
+                try { this._oCreateListBinding.destroy(); } catch (e) {}
+                this._oCreateListBinding = null;
+            }
+
             var oListBinding = oModel.bindList("/BPRoles", null, [], [], {
                 $$updateGroupId: "bpRoleUpdate"
             });
@@ -161,6 +175,15 @@ sap.ui.define([
             this.getView().setBindingContext(oContext);
             this.byId("selMDT").setSelectedIndex(this.formatScopeIndex("CUSTOMER"));
             this._refreshHeader({ role_id: "", description: "", active: true });
+
+            // Explicitly clear the input fields to prevent stale values
+            // from the previous route visit bleeding through
+            var oRoleIdInput = this.byId("inId");
+            var oDescInput   = this.byId("inDescription");
+            var oSeqInput    = this.byId("inSequence");
+            if (oRoleIdInput) { oRoleIdInput.setValue(""); }
+            if (oDescInput)   { oDescInput.setValue(""); }
+            if (oSeqInput)    { oSeqInput.setValue("1"); }
         },
 
         _refreshHeader: function (oData) {
@@ -227,7 +250,8 @@ sap.ui.define([
             var sRole = this._roleId();
             if (!sRole) { return; }
             var oModel = this.getOwnerComponent().getModel();
-            // Prereq field set, to flag the is_prerequisite column
+
+            // Prereq field set — to flag the Prerequisite column
             var pPrereq = oModel.bindList("/BPRolePrereqFields", null, null, [
                 new Filter("role_role_id", FilterOperator.EQ, sRole)
             ], { $select: "field_field_id" }).requestContexts(0, Infinity)
@@ -238,35 +262,99 @@ sap.ui.define([
                 });
 
             pPrereq.then(function (oPrereqSet) {
-                return oModel.bindList("/BPRoleFields", null, [new Sorter("sequence")], [
-                    new Filter("role_role_id", FilterOperator.EQ, sRole)
-                ], {
-                    $expand: "field($select=field_id,description,data_type,main_group_group_id,sub_group_group_id)",
-                    $select: "role_role_id,field_field_id,field_status,sequence"
-                }).requestContexts(0, Infinity).then(function (aCtx) {
+                return oModel.bindList("/BPRoleFields", null,
+                    // Sort: main group → sub group → sequence
+                    [
+                        new Sorter("field/main_group_group_id"),
+                        new Sorter("field/sub_group_group_id"),
+                        new Sorter("sequence")
+                    ],
+                    [new Filter("role_role_id", FilterOperator.EQ, sRole)],
+                    {
+                        $expand: "field($select=field_id,description,data_type,main_group_group_id,sub_group_group_id)",
+                        $select: "role_role_id,field_field_id,field_status,sequence"
+                    }
+                ).requestContexts(0, Infinity).then(function (aCtx) {
                     var aItems = aCtx.map(function (c) {
-                        // Read nested fields via path notation — OData v4 rejects
-                        // getProperty("field") on the expanded object itself.
                         var sMain = c.getProperty("field/main_group_group_id") || "";
-                        var sSub  = c.getProperty("field/sub_group_group_id") || "";
-                        var sPath = sMain + (sSub && sSub !== sMain ? " \u25b8 " + sSub : "");
+                        var sSub  = c.getProperty("field/sub_group_group_id")  || "";
                         var sFid  = c.getProperty("field_field_id");
                         return {
                             field_id       : sFid,
                             description    : c.getProperty("field/description") || "",
-                            data_type      : c.getProperty("field/data_type") || "",
-                            group_path     : sPath || "\u2014",
+                            data_type      : c.getProperty("field/data_type")   || "",
+                            main_group     : sMain,
+                            sub_group      : sSub,
+                            // group_key drives the table's built-in grouping
+                            group_key      : sMain + "||" + sSub,
+                            group_path     : sMain + (sSub && sSub !== sMain ? " \u25b8 " + sSub : ""),
                             field_status   : c.getProperty("field_status"),
                             sequence       : c.getProperty("sequence"),
                             is_prerequisite: !!oPrereqSet[sFid]
                         };
                     });
+
+                    // Sort client-side: main group → sub group → sequence
+                    aItems.sort(function (a, b) {
+                        if (a.main_group < b.main_group) { return -1; }
+                        if (a.main_group > b.main_group) { return  1; }
+                        if (a.sub_group  < b.sub_group)  { return -1; }
+                        if (a.sub_group  > b.sub_group)  { return  1; }
+                        return (a.sequence || 0) - (b.sequence || 0);
+                    });
+
                     this.getView().getModel("assigned").setProperty("/items", aItems);
                     this._oViewModel.setProperty("/fieldCount", String(aItems.length));
                     this.byId("attrFields").setText(aItems.length + " field" + (aItems.length !== 1 ? "s" : ""));
+
+                    // Apply grouping to the table binding
+                    this._applyFieldTableGrouping();
                 }.bind(this));
             }.bind(this)).catch(function (e) {
                 MessageBox.error("Could not load assigned fields: " + e.message);
+            });
+        },
+
+        // Apply group header rows to the Field Assignment table by
+        // rebinding with a Sorter that triggers UI5's groupHeaderFactory.
+        _applyFieldTableGrouping: function () {
+            var oTable = this.byId("fieldsTable");
+            if (!oTable) { return; }
+            var oBinding = oTable.getBinding("items");
+            if (!oBinding) { return; }
+
+            oBinding.sort([
+                new Sorter("main_group",  false, function (oCtx) {
+                    // Group by main+sub — return object with key and text for the header
+                    var sMain = oCtx.getProperty("main_group") || "\u2014";
+                    var sSub  = oCtx.getProperty("sub_group")  || "";
+                    var sKey  = oCtx.getProperty("group_key");
+                    // Count how many items share this group (approximate — UI5 passes count to factory)
+                    return {
+                        key : sKey,
+                        text: sMain + (sSub && sSub !== sMain ? " \u25b8 " + sSub : "")
+                    };
+                }),
+                new Sorter("sequence")
+            ]);
+        },
+
+        // ── Field group header factory ────────────────────────────────
+        // Called by sap.m.Table for each group boundary when the binding
+        // has a Sorter with group: true.  oGroup.key = "MAIN||SUB".
+        // Returns a GroupHeaderListItem showing the wireframe style header.
+        createFieldGroupHeader: function (oGroup) {
+            var sKey   = oGroup.key  || "";
+            var iCount = oGroup.count || 0;
+            // Reconstruct display text from the key
+            var aParts = sKey.split("||");
+            var sMain  = aParts[0] || "\u2014";
+            var sSub   = aParts[1] || "";
+            var sDisplay = sMain + (sSub && sSub !== sMain ? " \u25b8 " + sSub : "");
+            var sTitle   = sDisplay + (iCount ? "\u2002\u00b7\u2002" + iCount + " field" + (iCount !== 1 ? "s" : "") : "");
+            return new sap.m.GroupHeaderListItem({
+                title    : sTitle,
+                upperCase: false
             });
         },
 
@@ -409,6 +497,16 @@ sap.ui.define([
         _loadChangeLog: function () {
             var sRole = this._roleId();
             if (!sRole) { return; }
+
+            // Populate managed-field strip from the entity binding context
+            var oCtx = this.getView().getBindingContext();
+            if (oCtx) {
+                this._oViewModel.setProperty("/clCreatedAt",  this._fmtDate(oCtx.getProperty("createdAt")));
+                this._oViewModel.setProperty("/clCreatedBy",  oCtx.getProperty("createdBy")  || "\u2014");
+                this._oViewModel.setProperty("/clModifiedAt", this._fmtDate(oCtx.getProperty("modifiedAt")));
+                this._oViewModel.setProperty("/clModifiedBy", oCtx.getProperty("modifiedBy") || "\u2014");
+            }
+
             var oBinding = this.byId("logTable").getBinding("items");
             if (!oBinding) { return; }
             oBinding.filter([
@@ -417,6 +515,11 @@ sap.ui.define([
             ]);
             oBinding.sort(new Sorter("acted_at", true));
             oBinding.resume();
+        },
+
+        _fmtDate: function (sVal) {
+            if (!sVal) { return "\u2014"; }
+            try { return new Date(sVal).toLocaleString(); } catch (e) { return sVal; }
         },
 
         // ── Row navigation ───────────────────────────────────────────

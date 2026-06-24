@@ -1,3 +1,4 @@
 code,description,active,last_synced_at
-10,Direct Sales,true,2026-06-16T00:00:00Z
-20,Retail,true,2026-06-16T00:00:00Z
+10,Local,true,2026-06-24T10:00:00.000Z
+20,Exports,true,2026-06-24T10:00:00.000Z
+50,Corporate Sales,true,2026-06-24T10:00:00.000Z

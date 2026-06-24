@@ -1,7 +1,7 @@
 role_id,description,master_data_type_master_data_type_id,initial_bp_required,sequence,active
 BUP001,General (Central),BUSINESS PARTNER,false,1,true
 FLCU01,Customer (Fin. Accounting),BUSINESS PARTNER,false,2,true
-FLCU00,Customer (General),BUSINESS PARTNER,false,3,true
+2FCUSTX,FT Customer Master Main,BUSINESS PARTNER,false,3,true
 FLVN01,Vendor (Fin. Accounting),BUSINESS PARTNER,true,4,true
 FLVN00,Vendor (General),BUSINESS PARTNER,false,5,true
 ZSALES,Customer (Sales),BUSINESS PARTNER,false,6,false

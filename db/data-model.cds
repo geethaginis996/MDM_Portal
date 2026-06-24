@@ -240,6 +240,12 @@ entity LK_Currency      : LookupBase {}
 entity LK_Industry      : LookupBase {}
 entity LK_MaterialType  : LookupBase {}
 entity LK_MaterialGroup : LookupBase {}
+entity LK_PriceGroup    : LookupBase {}
+entity LK_SalesDistrict : LookupBase {}
+entity LK_Incoterms     : LookupBase {}
+entity LK_AcctAssmtGrp  : LookupBase {}
+entity LK_TaxClass      : LookupBase {}
+entity LK_PaymentMethod : LookupBase {}
 
 entity LK_SalesArea : LookupBaseComposite {
     key sales_org       : String(10) not null;
@@ -375,7 +381,7 @@ entity CRBPRole : managed {
 entity CRFieldValue : managed {
     key cr              : Association to CRHeader    not null;
     key role_id         : String(10);
-    key instance_no     : Integer not null default 0;
+    key instance_no     : Integer not null default 1;
     key field           : Association to FieldMaster not null;
         old_value       : String(2000);
         new_value       : String(2000);

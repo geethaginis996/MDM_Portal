@@ -271,27 +271,51 @@
                     </IconTabFilter>
 
                     <!-- ── TAB 4 · Change Log ── -->
-                    <IconTabFilter text="Change Log" key="changelog" icon="sap-icon://history">
+                                        <IconTabFilter text="Change Log" key="changelog" icon="sap-icon://history">
+                        <VBox class="sapUiSmallMarginBeginEnd sapUiSmallMarginTop sapUiSmallMarginBottom">
+                            <Title text="Record Information" level="H5" class="sapUiTinyMarginBottom"/>
+                            <HBox wrap="Wrap">
+                                <VBox width="12rem" class="sapUiTinyMarginEnd">
+                                    <Label text="Created On" design="Bold"/>
+                                    <Text id="clCreatedAt" text="{view>/clCreatedAt}" wrapping="false"/>
+                                </VBox>
+                                <VBox width="12rem" class="sapUiTinyMarginEnd">
+                                    <Label text="Created By" design="Bold"/>
+                                    <Text id="clCreatedBy" text="{view>/clCreatedBy}" wrapping="false"/>
+                                </VBox>
+                                <VBox width="12rem" class="sapUiTinyMarginEnd">
+                                    <Label text="Last Modified On" design="Bold"/>
+                                    <Text id="clModifiedAt" text="{view>/clModifiedAt}" wrapping="false"/>
+                                </VBox>
+                                <VBox width="12rem">
+                                    <Label text="Last Modified By" design="Bold"/>
+                                    <Text id="clModifiedBy" text="{view>/clModifiedBy}" wrapping="false"/>
+                                </VBox>
+                            </HBox>
+                        </VBox>
                         <Table id="logTable"
                                noDataText="No changes recorded yet."
+                               alternateRowColors="true"
                                items="{path: '/AuditLogs', suspended: true}">
                             <columns>
-                                <Column width="180px"><Text text="Timestamp"/></Column>
-                                <Column width="130px"><Text text="User"/></Column>
-                                <Column width="100px"><Text text="Action"/></Column>
-                                <Column><Text text="Before"/></Column>
-                                <Column><Text text="After"/></Column>
+                                <Column width="11rem"><Label text="Timestamp" design="Bold"/></Column>
+                                <Column width="9rem"><Label text="User" design="Bold"/></Column>
+                                <Column width="7rem"><Label text="Action" design="Bold"/></Column>
+                                <Column><Label text="Before" design="Bold"/></Column>
+                                <Column><Label text="After" design="Bold"/></Column>
                             </columns>
                             <items>
                                 <ColumnListItem>
                                     <cells>
-                                        <Text text="{acted_at}"/>
-                                        <Text text="{actor}"/>
-                                        <ObjectStatus text="{action}"
+                                        <Text text="{acted_at}" wrapping="false"/>
+                                        <Text text="{actor}"    wrapping="false"/>
+                                        <ObjectStatus
+                                            text="{action}"
                                             state="{= ${action} === 'CREATE' ? 'Success' :
-                                                       ${action} === 'DELETE' ? 'Error' : 'None'}"/>
-                                        <Text text="{before_value}" maxLines="2"/>
-                                        <Text text="{after_value}"  maxLines="2"/>
+                                                   ${action} === 'DELETE' ? 'Error'   :
+                                                   ${action} === 'UPDATE' ? 'Warning' : 'None'}"/>
+                                        <Text text="{before_value}" maxLines="3"/>
+                                        <Text text="{after_value}"  maxLines="3"/>
                                     </cells>
                                 </ColumnListItem>
                             </items>

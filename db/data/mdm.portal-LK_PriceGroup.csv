@@ -1,0 +1,9 @@
+code,description,active,last_synced_at
+01,Bulk Buyer,true,2026-06-24T10:00:00.000Z
+02,Occasional Buyer,true,2026-06-24T10:00:00.000Z
+2A,FT Dealer,true,2026-06-24T10:00:00.000Z
+2B,FT Direct,true,2026-06-24T10:00:00.000Z
+1,Standard,true,2026-06-24T10:00:00.000Z
+2,Standard Incl Sales Tax,true,2026-06-24T10:00:00.000Z
+YC,FT-Claim Tyre,true,2026-06-24T10:00:00.000Z
+YD,FT-Domestic,true,2026-06-24T10:00:00.000Z

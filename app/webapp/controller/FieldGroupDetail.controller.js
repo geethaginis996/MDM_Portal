@@ -441,14 +441,26 @@ sap.ui.define([
             var sGroupId = oCtx.getProperty("group_id");
             if (!sGroupId) { return; }
 
+            // Populate managed-field strip
+            var oVm = this._oViewModel;
+            oVm.setProperty("/clCreatedAt",  this._fmtDate(oCtx.getProperty("createdAt")));
+            oVm.setProperty("/clCreatedBy",  oCtx.getProperty("createdBy")  || "\u2014");
+            oVm.setProperty("/clModifiedAt", this._fmtDate(oCtx.getProperty("modifiedAt")));
+            oVm.setProperty("/clModifiedBy", oCtx.getProperty("modifiedBy") || "\u2014");
+
             var oTable   = this.byId("logTable");
-            var oBinding = oTable.getBinding("items");
+            var oBinding = oTable && oTable.getBinding("items");
             if (!oBinding) { return; }
             oBinding.filter([
                 new Filter("entity_name", FilterOperator.EQ, "FieldGroup"),
                 new Filter("entity_key",  FilterOperator.EQ, sGroupId)
             ]);
             oBinding.resume();
+        },
+
+        _fmtDate: function (sVal) {
+            if (!sVal) { return "\u2014"; }
+            try { return new Date(sVal).toLocaleString(); } catch (e) { return sVal; }
         },
 
         // ── Save ─────────────────────────────────────────────────────

@@ -1,4 +1,6 @@
 code,description,active,last_synced_at
-0001,Payable immediately due net,true,2026-06-16T00:00:00Z
-0002,Within 14 days 3% / 30 days net,true,2026-06-16T00:00:00Z
-NT30,Net 30 days,true,2026-06-16T00:00:00Z
+Y505,CDC prior to collection of Materials,true,2026-06-24T10:00:00.000Z
+Y504,10% Adv Bal 60 Days PDC after Invoice,true,2026-06-24T10:00:00.000Z
+Y530,One week PDC after the delivery,true,2026-06-24T10:00:00.000Z
+Y013,100% CDC against delivery,true,2026-06-24T10:00:00.000Z
+NET30,Net 30 days,true,2026-06-24T10:00:00.000Z

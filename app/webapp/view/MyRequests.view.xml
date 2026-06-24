@@ -1,0 +1,125 @@
+<mvc:View
+    controllerName="mdm.portal.controller.MyRequests"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:f="sap.f"
+    xmlns:core="sap.ui.core"
+    displayBlock="true">
+
+    <f:DynamicPage id="myRequestsPage" fitContent="true">
+        <f:title>
+            <f:DynamicPageTitle>
+                <f:heading>
+                    <VBox>
+                        <Title text="My Change Requests"/>
+                        <Breadcrumbs currentLocationText="My Requests"
+                                     separatorStyle="Slash" class="sapUiTinyMarginTop">
+                            <links>
+                                <Link text="Home" press=".onNavHome"/>
+                            </links>
+                        </Breadcrumbs>
+                    </VBox>
+                </f:heading>
+                <f:actions>
+                    <Button text="Create BP" icon="sap-icon://add" type="Emphasized"
+                            press=".onCreateBP"/>
+                    <Button icon="sap-icon://refresh" tooltip="Refresh" press=".onRefresh"/>
+                </f:actions>
+            </f:DynamicPageTitle>
+        </f:title>
+
+        <f:content>
+            <VBox class="sapUiSmallMarginBeginEnd sapUiSmallMarginTop">
+
+                <!-- Filter bar -->
+                <HBox alignItems="End" class="sapUiSmallMarginBottom" wrap="Wrap">
+                    <VBox class="sapUiTinyMarginEnd">
+                        <Label text="Status" labelFor="selStatus"/>
+                        <Select id="selStatus" width="12rem"
+                                forceSelection="false" change=".onFilterChange">
+                            <core:Item key="" text="All Statuses"/>
+                            <core:Item key="DRAFT"       text="Draft"/>
+                            <core:Item key="IN_APPROVAL" text="In Approval"/>
+                            <core:Item key="APPROVED"    text="Approved"/>
+                            <core:Item key="REJECTED"    text="Rejected"/>
+                            <core:Item key="POSTED"      text="Posted"/>
+                            <core:Item key="CANCELLED"   text="Cancelled"/>
+                        </Select>
+                    </VBox>
+                    <VBox class="sapUiTinyMarginEnd">
+                        <Label text="Type" labelFor="selType"/>
+                        <Select id="selType" width="10rem"
+                                forceSelection="false" change=".onFilterChange">
+                            <core:Item key="" text="All Types"/>
+                            <core:Item key="CREATE" text="Create"/>
+                            <core:Item key="EXTEND" text="Extend"/>
+                            <core:Item key="CHANGE" text="Change"/>
+                        </Select>
+                    </VBox>
+                    <VBox>
+                        <Label text="Search"/>
+                        <SearchField id="sfSearch" width="18rem" search=".onSearch"
+                                     placeholder="Search by CR number or requester..."/>
+                    </VBox>
+                </HBox>
+
+                <!-- Request table -->
+                <Table id="crTable"
+                       noDataText="No change requests found. Click 'Create BP' to start one."
+                       alternateRowColors="true"
+                       growing="true"
+                       growingThreshold="20"
+                       busy="{view>/busy}"
+                       items="{
+                           path: '/ChangeRequests',
+                           sorter: { path: 'createdAt', descending: true },
+                           parameters: {
+                               $expand: 'bp_roles,field_values',
+                               $select: 'cr_id,request_type,scenario_code,bp_category_category_id,account_group_account_group_id,status,requester,priority,createdAt,submitted_at,posted_object_no'
+                           }
+                       }">
+                    <columns>
+                        <Column width="10rem"><Label text="CR Number"    design="Bold"/></Column>
+                        <Column width="6rem" ><Label text="Type"         design="Bold"/></Column>
+                        <Column width="8rem" ><Label text="Category"     design="Bold"/></Column>
+                        <Column width="8rem" ><Label text="Acct Group"   design="Bold"/></Column>
+                        <Column width="8rem" ><Label text="Status"       design="Bold"/></Column>
+                        <Column width="8rem" ><Label text="Priority"     design="Bold"/></Column>
+                        <Column width="9rem" ><Label text="Requester"    design="Bold"/></Column>
+                        <Column width="11rem"><Label text="Created On"   design="Bold"/></Column>
+                        <Column width="9rem" ><Label text="BP Number"    design="Bold"/></Column>
+                    </columns>
+                    <items>
+                        <ColumnListItem type="Active" press=".onRowPress">
+                            <cells>
+                                <Link text="{cr_id}" press=".onCrLinkPress" wrapping="false"/>
+                                <ObjectStatus
+                                    text="{request_type}"
+                                    state="{= ${request_type} === 'CREATE' ? 'Success' :
+                                           ${request_type} === 'EXTEND' ? 'Warning' : 'None'}"/>
+                                <Text text="{bp_category_category_id}" wrapping="false"/>
+                                <Text text="{account_group_account_group_id}" wrapping="false"/>
+                                <ObjectStatus
+                                    text="{status}"
+                                    state="{= ${status} === 'DRAFT'       ? 'None'    :
+                                           ${status} === 'IN_APPROVAL' ? 'Warning' :
+                                           ${status} === 'APPROVED'    ? 'Success' :
+                                           ${status} === 'POSTED'      ? 'Success' :
+                                           ${status} === 'REJECTED'    ? 'Error'   : 'None'}"/>
+                                <Text text="{priority}" wrapping="false"/>
+                                <Text text="{requester}" wrapping="false"/>
+                                <Text text="{
+                                    path: 'createdAt',
+                                    type: 'sap.ui.model.odata.type.DateTimeOffset',
+                                    formatOptions: { style: 'short' }
+                                }" wrapping="false"/>
+                                <Text text="{posted_object_no}" wrapping="false"/>
+                            </cells>
+                        </ColumnListItem>
+                    </items>
+                </Table>
+            </VBox>
+        </f:content>
+    </f:DynamicPage>
+
+</mvc:View>

@@ -69,7 +69,8 @@
 
                          <tnt:NavigationListItem text="BP Maintenance" icon="sap-icon://request" expanded="false">
                             <tnt:NavigationListItem text="Create BP"    icon="sap-icon://add-contact" key="createBP"/>
-                            <tnt:NavigationListItem text="My Approvals" icon="sap-icon://inbox"       key="myApprovals"/>
+                            <tnt:NavigationListItem text="My Requests"  icon="sap-icon://document-text" key="myRequests"/>
+                            <tnt:NavigationListItem text="My Approvals" icon="sap-icon://inbox"          key="myApprovals"/>
                         </tnt:NavigationListItem>
 
                         <tnt:NavigationListItem text="Release Strategy" icon="sap-icon://workflow-tasks" expanded="false">

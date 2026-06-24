@@ -1,5 +1,7 @@
 code,description,active,last_synced_at
-EUR,Euro,true,2026-06-16T00:00:00Z
-USD,US Dollar,true,2026-06-16T00:00:00Z
-GBP,Pound Sterling,true,2026-06-16T00:00:00Z
-LKR,Sri Lankan Rupee,true,2026-06-16T00:00:00Z
+AED,United Arab Emirates Dirham,true,2026-06-24T10:00:00.000Z
+AUD,Australian Dollar,true,2026-06-24T10:00:00.000Z
+LKR,Sri Lankan Rupee,true,2026-06-24T10:00:00.000Z
+EUR,Euro,true,2026-06-24T10:00:00.000Z
+USD,US Dollar,true,2026-06-24T10:00:00.000Z
+GBP,Pound Sterling,true,2026-06-24T10:00:00.000Z

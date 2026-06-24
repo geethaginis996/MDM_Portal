@@ -1,15 +1,36 @@
 group_id,description,icon,sequence,active,master_data_type_master_data_type_id,parent_group_id_group_id
-GD,General Data,sap-icon://general,1,true,BUSINESS PARTNER,
-GD_ID,Identification,sap-icon://key,1,true,MATERIAL,GD
-GD_NAME,Name Data,sap-icon://edit,2,true,BUSINESS PARTNER,GD
-AD,Address Data,sap-icon://location,2,true,BUSINESS PARTNER,
-AD_LOC,Location Information,sap-icon://map,1,true,BUSINESS PARTNER,AD
-AD_CONTACT,Contact Details,sap-icon://phone,2,true,BUSINESS PARTNER,AD
-FIN,Financial Data,sap-icon://money,3,true,BUSINESS PARTNER,
-FIN_PAY,Payment Terms,sap-icon://calculate,1,true,BUSINESS PARTNER,FIN
-FIN_BANK,Bank Details,sap-icon://building,2,true,BUSINESS PARTNER,FIN
-TAX,Tax Data,sap-icon://documents,4,true,BUSINESS PARTNER,
-TAX_ID,Tax Identification,sap-icon://id,1,true,BUSINESS PARTNER,TAX
-COMM,Communication,sap-icon://email,5,true,BUSINESS PARTNER,
-COMM_PHONE,Telephone,sap-icon://phone,1,true,BUSINESS PARTNER,COMM
-COMM_EMAIL,Email,sap-icon://email,2,true,MATERIAL,COMM
+ADDRESS,Address,,1,true,BUSINESS_PARTNER,
+IDENTIFICATION,Identification,,2,true,BUSINESS_PARTNER,
+CONTROL,Control,,3,true,BUSINESS_PARTNER,
+ADDR_NAME,Name,,1,true,BUSINESS_PARTNER,ADDRESS
+ADDR_STD_ADDR,Standard Address,,2,true,BUSINESS_PARTNER,ADDRESS
+ADDR_COMM,Communication,,3,true,BUSINESS_PARTNER,ADDRESS
+ADDR_PO_BOX,PO Box Address,,4,true,BUSINESS_PARTNER,ADDRESS
+ADDR_SEARCH_TERM,Search Term,,5,true,BUSINESS_PARTNER,ADDRESS
+ADDR_INDEP_COMM,Address-Independent Communication,,6,true,BUSINESS_PARTNER,ADDRESS
+AIC_COMM,Communication,,1,true,BUSINESS_PARTNER,ADDR_INDEP_COMM
+IDEN_TAX_NUM,Tax Number,,1,true,BUSINESS_PARTNER,IDENTIFICATION
+IDEN_NO_SUBGRP,No Sub Group,,2,true,BUSINESS_PARTNER,IDENTIFICATION
+IDEN_ORG_DATA,Organizational Data,,3,true,BUSINESS_PARTNER,IDENTIFICATION
+IDEN_INDUSTRIES,Industries,,4,true,BUSINESS_PARTNER,IDENTIFICATION
+IDEN_ID_NUMBERS,Identification Numbers,,5,true,BUSINESS_PARTNER,IDENTIFICATION
+CTRL_PARAMS,Control Parameters,,1,true,BUSINESS_PARTNER,CONTROL
+CTRL_DATA_ORIGIN,Data Origin,,2,true,BUSINESS_PARTNER,CONTROL
+CTRL_NOTES,Notes,,3,true,BUSINESS_PARTNER,CONTROL
+RF02D,Sales Area,,10,true,CUSTOMER,
+ORDERS,Orders,,20,true,CUSTOMER,
+SHIPPING,Shipping,,30,true,CUSTOMER,
+BILLING,Billing,,40,true,CUSTOMER,
+KNVI,Invoice Data,,50,true,CUSTOMER,
+BS001,Company Code,,60,true,CUSTOMER,
+KNB1_ACCT_MGMT,Customer Account Management,,70,true,CUSTOMER,
+KNB1_PAYMENT,Customer Payment Transactions,,80,true,CUSTOMER,
+ORDERS_ORDER,Order,,1,true,CUSTOMER,ORDERS
+ORDERS_PRICING,Pricing/Statistics,,2,true,CUSTOMER,ORDERS
+SHIPPING_SHIPPING,Shipping,,1,true,CUSTOMER,SHIPPING
+BILLING_DELV_PMT,Delivery and Payment Terms,,1,true,CUSTOMER,BILLING
+BILLING_ACCOUNTING,Accounting,,2,true,CUSTOMER,BILLING
+BILLING_OUTPUT_TAX,Output Tax,,3,true,CUSTOMER,BILLING
+KNB1_ACCT_MGMT_ACCT,Account Management,,1,true,CUSTOMER,KNB1_ACCT_MGMT
+KNB1_PMT_DATA,Payment Data,,1,true,CUSTOMER,KNB1_PAYMENT
+KNB1_AUTO_PMT,Automatic Payment Transactions,,2,true,CUSTOMER,KNB1_PAYMENT

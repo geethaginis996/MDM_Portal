@@ -695,22 +695,30 @@ sap.ui.define(
 
       _loadChangeLog: function () {
         var oCtx = this.getView().getBindingContext();
-        var sFieldId = oCtx ? oCtx.getProperty("field_id") : null;
-        if (!sFieldId) {
-          return;
-        }
+        if (!oCtx) { return; }
+        var sFieldId = oCtx.getProperty("field_id");
+        if (!sFieldId) { return; }
+
+        // Populate managed-field strip
+        var oVm = this._oViewModel;
+        oVm.setProperty("/clCreatedAt",  this._fmtDate(oCtx.getProperty("createdAt")));
+        oVm.setProperty("/clCreatedBy",  oCtx.getProperty("createdBy")  || "—");
+        oVm.setProperty("/clModifiedAt", this._fmtDate(oCtx.getProperty("modifiedAt")));
+        oVm.setProperty("/clModifiedBy", oCtx.getProperty("modifiedBy") || "—");
 
         var oTable = this.byId("logTable");
-        var oBinding = oTable.getBinding("items");
-        if (!oBinding) {
-          return;
-        }
-
+        var oBinding = oTable && oTable.getBinding("items");
+        if (!oBinding) { return; }
         oBinding.filter([
           new Filter("entity_name", FilterOperator.EQ, "FieldMaster"),
-          new Filter("entity_key", FilterOperator.EQ, sFieldId),
+          new Filter("entity_key",  FilterOperator.EQ, sFieldId),
         ]);
         oBinding.resume();
+      },
+
+      _fmtDate: function (sVal) {
+        if (!sVal) { return "—"; }
+        try { return new Date(sVal).toLocaleString(); } catch (e) { return sVal; }
       },
 
       // ── Navigation ───────────────────────────────────────────────

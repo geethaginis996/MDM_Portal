@@ -1,0 +1,126 @@
+<mvc:View
+    controllerName="mdm.portal.controller.MyRequestDetail"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:f="sap.f"
+    xmlns:core="sap.ui.core">
+
+    <f:DynamicPage id="detailPage" fitContent="true" busy="{view>/busy}" busyIndicatorDelay="0">
+        <f:title>
+            <f:DynamicPageTitle>
+                <f:heading>
+                    <VBox>
+                        <Title id="pageTitle" text="{view>/crId}" level="H2"/>
+                        <Text text="{view>/subtitle}" class="mdmSubtitleText sapUiTinyMarginTop"/>
+                        <Breadcrumbs id="pageBreadcrumb"
+                                     currentLocationText="{view>/crId}"
+                                     separatorStyle="Slash" class="sapUiTinyMarginTop">
+                            <links>
+                                <Link text="Home"        press=".onNavHome"/>
+                                <Link text="My Requests" press=".onNavList"/>
+                            </links>
+                        </Breadcrumbs>
+                    </VBox>
+                </f:heading>
+                <f:actions>
+                    <Button id="btnEdit" text="Edit Draft" icon="sap-icon://edit"
+                            visible="{= ${view>/status} === 'DRAFT'}"
+                            press=".onEditDraft"/>
+                    <Button id="btnSubmit" text="Submit" icon="sap-icon://paper-plane"
+                            type="Emphasized"
+                            visible="{= ${view>/status} === 'DRAFT'}"
+                            press=".onSubmit"/>
+                    <Button id="btnCancel" text="Cancel Request" icon="sap-icon://decline"
+                            visible="{= ${view>/status} === 'DRAFT' || ${view>/status} === 'IN_APPROVAL'}"
+                            press=".onCancelRequest"/>
+                </f:actions>
+            </f:DynamicPageTitle>
+        </f:title>
+
+        <!-- Status + metadata strip -->
+        <f:header>
+            <f:DynamicPageHeader pinnable="false">
+                <HBox wrap="Wrap" class="sapUiSmallMarginBeginEnd sapUiTinyMarginTopBottom">
+                    <ObjectAttribute title="Status"       text="{view>/status}"    class="sapUiMediumMarginEnd"/>
+                    <ObjectAttribute title="Type"         text="{view>/type}"      class="sapUiMediumMarginEnd"/>
+                    <ObjectAttribute title="Category"     text="{view>/category}"  class="sapUiMediumMarginEnd"/>
+                    <ObjectAttribute title="Account Group" text="{view>/accountGroup}" class="sapUiMediumMarginEnd"/>
+                    <ObjectAttribute title="Requester"    text="{view>/requester}" class="sapUiMediumMarginEnd"/>
+                    <ObjectAttribute title="Created On"   text="{view>/createdAt}" class="sapUiMediumMarginEnd"/>
+                    <ObjectAttribute title="BP Number"    text="{view>/bpNumber}"  class="sapUiMediumMarginEnd"/>
+                </HBox>
+            </f:DynamicPageHeader>
+        </f:header>
+
+        <f:content>
+            <IconTabBar id="detailTabs" selectedKey="roles"
+                        class="sapUiSmallMarginBeginEnd"
+                        select=".onTabSelect">
+                <items>
+
+                <!-- Tab 1: BP Roles -->
+                <IconTabFilter key="roles" text="BP Roles" icon="sap-icon://group"
+                               count="{view>/roleCount}">
+                    <Table id="rolesTable"
+                           noDataText="No roles saved."
+                           alternateRowColors="true"
+                           items="{
+                               path: 'detail>/roles'
+                           }">
+                        <columns>
+                            <Column width="8rem" ><Label text="Role ID"       design="Bold"/></Column>
+                            <Column>             <Label text="Description"   design="Bold"/></Column>
+                            <Column width="8rem" ><Label text="Instance No"   design="Bold"/></Column>
+                            <Column width="12rem"><Label text="Key (e.g. Company Code)" design="Bold"/></Column>
+                            <Column width="8rem" hAlign="Center"><Label text="Auto Pulled" design="Bold"/></Column>
+                        </columns>
+                        <items>
+                            <ColumnListItem>
+                                <cells>
+                                    <Text text="{detail>role_role_id}" wrapping="false"/>
+                                    <Text text="{detail>roleDesc}"     wrapping="false"/>
+                                    <Text text="{detail>instance_no}"  wrapping="false"/>
+                                    <Text text="{detail>instance_key_1}" wrapping="false"/>
+                                    <ObjectStatus
+                                        text="{= ${detail>auto_pulled} ? 'Yes' : 'No'}"
+                                        state="{= ${detail>auto_pulled} ? 'Warning' : 'None'}"/>
+                                </cells>
+                            </ColumnListItem>
+                        </items>
+                    </Table>
+                </IconTabFilter>
+
+                <!-- Tab 2: Field Values -->
+                <IconTabFilter key="fields" text="Field Values" icon="sap-icon://form"
+                               count="{view>/fieldCount}">
+                    <Table id="fieldsTable"
+                           noDataText="No field values saved."
+                           alternateRowColors="true"
+                           items="{path: 'detail>/fieldValues'}">
+                        <columns>
+                            <Column width="8rem" ><Label text="Role"        design="Bold"/></Column>
+                            <Column width="10rem"><Label text="Field ID"    design="Bold"/></Column>
+                            <Column>             <Label text="Description"  design="Bold"/></Column>
+                            <Column>             <Label text="Value"        design="Bold"/></Column>
+                            <Column width="8rem" hAlign="Center"><Label text="Instance" design="Bold"/></Column>
+                        </columns>
+                        <items>
+                            <ColumnListItem>
+                                <cells>
+                                    <Text text="{detail>role_id}"        wrapping="false"/>
+                                    <Text text="{detail>field_field_id}" wrapping="false"/>
+                                    <Text text="{detail>fieldDesc}"      wrapping="false"/>
+                                    <Text text="{detail>new_value}"      wrapping="false"/>
+                                    <Text text="{detail>instance_no}"    wrapping="false"/>
+                                </cells>
+                            </ColumnListItem>
+                        </items>
+                    </Table>
+                </IconTabFilter>
+
+                </items>
+            </IconTabBar>
+        </f:content>
+    </f:DynamicPage>
+
+</mvc:View>

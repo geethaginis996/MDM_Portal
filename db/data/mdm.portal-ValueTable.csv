@@ -1,12 +1,18 @@
 value_table_id,description,source_table,output_key,output_desc,status
-COUNTRY,Country Codes,T005,LAND1,LANDX,ACTIVE
-CURRENCY,Currency Codes,TCURC,WAERS,LTEXT,ACTIVE
-PAYMENT_TERMS,Payment Terms,T052,ZTERM,TEXT1,ACTIVE
-INDUSTRY,Industry Codes,T016,INIKA,INKTX,ACTIVE
-PRICE_GROUP,Price Groups,T188,KONDA,VTEXT,ACTIVE
-CUSTOMER_GRP,Customer Groups,T151,KDGRP,KTEXT,ACTIVE
-SALES_ORG,Sales Organizations,TVKO,VKORG,VTEXT,ACTIVE
-DIST_CHANNEL,Distribution Channels,TVTW,VTWEG,VTEXT,ACTIVE
-DIVISION,Divisions,TSPA,SPART,VTEXT,ACTIVE
-PLANT,Plants,T001W,WERKS,NAME1,ACTIVE
-COMPANY_CODE,Company Codes,T001,BUKRS,BUTXT,ACTIVE
+COUNTRY,Country Codes,T005,code,description,ACTIVE
+CURRENCY,Currency Codes,TCURC,code,description,ACTIVE
+PAYMENT_TERMS,Payment Terms,T052,code,description,ACTIVE
+INDUSTRY,Industry Codes,T016,code,description,ACTIVE
+COMPANY_CODE,Company Codes,T001,code,description,ACTIVE
+SALES_ORG,Sales Organizations,TVKO,code,description,ACTIVE
+DIST_CHANNEL,Distribution Channels,TVTW,code,description,ACTIVE
+DIVISION,Divisions,TSPA,code,description,ACTIVE
+PLANT,Plants,T001W,code,description,ACTIVE
+PRICE_GROUP,Price Groups,T188,code,description,ACTIVE
+SALES_DISTRICT,Sales Districts,T171,code,description,ACTIVE
+INCOTERMS,Incoterms,TINC,code,description,ACTIVE
+ACCT_ASSMT_GRP,Account Assignment Groups,T681,code,description,ACTIVE
+TAX_CLASS,Tax Classifications,T007A,code,description,ACTIVE
+PAYMENT_METHOD,Payment Methods,T042Z,code,description,ACTIVE
+RECON_ACCT,Reconciliation Accounts,SKA1,code,description,ACTIVE
+CUSTOMER_GRP,Customer Groups,T151,code,description,ACTIVE

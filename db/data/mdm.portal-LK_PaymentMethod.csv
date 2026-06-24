@@ -1,0 +1,4 @@
+code,description,active,last_synced_at
+E,Cheque Payment,true,2026-06-24T10:00:00.000Z
+K,Telegraphic Transfer,true,2026-06-24T10:00:00.000Z
+T,Bank Transfer,true,2026-06-24T10:00:00.000Z

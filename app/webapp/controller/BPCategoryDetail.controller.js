@@ -200,6 +200,16 @@ sap.ui.define([
         _loadChangeLog: function () {
             var sCat = this._categoryId();
             if (!sCat) { return; }
+
+            // Populate managed-field strip from the entity binding context
+            var oCtx = this.getView().getBindingContext();
+            if (oCtx) {
+                this._oViewModel.setProperty("/clCreatedAt",  this._fmtDate(oCtx.getProperty("createdAt")));
+                this._oViewModel.setProperty("/clCreatedBy",  oCtx.getProperty("createdBy")  || "\u2014");
+                this._oViewModel.setProperty("/clModifiedAt", this._fmtDate(oCtx.getProperty("modifiedAt")));
+                this._oViewModel.setProperty("/clModifiedBy", oCtx.getProperty("modifiedBy") || "\u2014");
+            }
+
             var oBinding = this.byId("logTable").getBinding("items");
             if (!oBinding) { return; }
             oBinding.filter([
@@ -207,6 +217,11 @@ sap.ui.define([
                 new Filter("entity_key",  FilterOperator.EQ, sCat)
             ]);
             oBinding.resume();
+        },
+
+        _fmtDate: function (sVal) {
+            if (!sVal) { return "\u2014"; }
+            try { return new Date(sVal).toLocaleString(); } catch (e) { return sVal; }
         },
 
         onFieldRowPress: function (oEvent) {

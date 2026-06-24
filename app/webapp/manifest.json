@@ -169,6 +169,21 @@
                     "name": "createBP",
                     "pattern": "createbp",
                     "target": "createBP"
+                },
+                {
+                    "name": "createBPEdit",
+                    "pattern": "createbp/{crId}",
+                    "target": "createBP"
+                },
+                {
+                    "name": "myRequests",
+                    "pattern": "myrequests",
+                    "target": "myRequests"
+                },
+                {
+                    "name": "myRequestDetail",
+                    "pattern": "myrequests/{crId}",
+                    "target": "myRequestDetail"
                 }
             ],
             "targets": {
@@ -221,6 +236,14 @@
                     "viewLevel": 1
                 },
                 "myRequests": {
+                    "viewName": "MyRequests",
+                    "viewLevel": 1
+                },
+                "myRequestDetail": {
+                    "viewName": "MyRequestDetail",
+                    "viewLevel": 2
+                },
+                "myRequests_old": {
                     "viewName": "FieldMaster",
                     "viewLevel": 1
                 },

@@ -65,9 +65,15 @@ service MDMPortalService {
     entity MaterialTypes as projection on portal.LK_MaterialType;
     entity MaterialGroups as projection on portal.LK_MaterialGroup;
     entity SalesAreas as projection on portal.LK_SalesArea;
-    entity ReconAccts as projection on portal.LK_ReconAcct;
-    entity Regions as projection on portal.LK_Region;
-    entity TaxCodes as projection on portal.LK_TaxCode;
+    entity ReconAccts      as projection on portal.LK_ReconAcct;
+    entity Regions         as projection on portal.LK_Region;
+    entity TaxCodes        as projection on portal.LK_TaxCode;
+    entity PriceGroups     as projection on portal.LK_PriceGroup;
+    entity SalesDistricts  as projection on portal.LK_SalesDistrict;
+    entity Incoterms       as projection on portal.LK_Incoterms;
+    entity AcctAssmtGrps   as projection on portal.LK_AcctAssmtGrp;
+    entity TaxClasses      as projection on portal.LK_TaxClass;
+    entity PaymentMethods  as projection on portal.LK_PaymentMethod;
     
     // Replication jobs (read-only)
     entity ReplicationLogs as projection on portal.ReplicationLog;
@@ -129,6 +135,97 @@ service MDMPortalService {
     
     entity AuditLogs as projection on portal.AuditLog;
     entity Notifications as projection on portal.Notification;
+
+    // =========================================================================
+    //  EXISTING BUSINESS PARTNER SEARCH & ROLE INSTANCES
+    //  Used by Create BP screen in EXTEND mode
+    // =========================================================================
+
+    // Lightweight BP search result — returned by SearchExistingBPs
+    type ExistingBPResult {
+        bp_number    : String(10);
+        name         : String(100);
+        category     : String(40);
+        account_group: String(10);
+        country      : String(3);
+        city         : String(40);
+        status       : String(20);
+    }
+
+    // One saved prerequisite-field combination for a role on a specific BP.
+    // e.g. FLCU01 extended to Company Code 1000 AND Company Code 2000 → 2 instances.
+    type BPRoleInstanceResult {
+        instance_no  : Integer;
+        key_label    : String(200);      // human-readable: "1000 — Intellect LK"
+        key_values   : String(1000);     // JSON: {"BUKRS":"1000"}
+        field_values : LargeString;      // JSON: all field values for this instance
+    }
+
+    // Search for existing BPs by number/name/country.
+    // Returns a filtered list the user can select from.
+    function SearchExistingBPs(
+        query      : String,
+        country    : String,
+        category   : String
+    ) returns array of ExistingBPResult;
+
+    // Get the existing role-extension instances for one BP + role.
+    // E.g. BP 1000001 extended to FLCU01 for company codes 1000 and 2000 → 2 rows.
+    function GetBPRoleInstances(
+        bp_number  : String,
+        role_id    : String
+    ) returns array of BPRoleInstanceResult;
+
+    // Get the general header data of one existing BP (pre-fill for extend mode).
+    function GetExistingBPData(
+        bp_number  : String
+    ) returns {
+        bp_number    : String(10);
+        name         : String(100);
+        name2        : String(100);
+        category     : String(40);
+        account_group: String(10);
+        country      : String(3);
+        city         : String(40);
+        street       : String(60);
+        telephone    : String(30);
+        email        : String(100);
+        existing_roles : array of String;   // role_ids already assigned to this BP
+    };
+
+    // =========================================================================
+    //  BP CREATION — SAVE TO INTERMEDIATE TABLE
+    //  Called by Save Draft (submit=false) and Save & Create (submit=true).
+    // =========================================================================
+    action SaveBPChangeRequest(
+        cr_id                  : String(20),
+        request_type           : String(10),
+        bp_category            : String(20),
+        account_group          : String(10),
+        reference_object_no    : String(20),
+        bp_number              : String(20),
+        business_justification : String(2000),
+        submit                 : Boolean,
+        bp_roles               : array of {
+            role_id       : String(10);
+            instance_no   : Integer;
+            instance_key_1: String(40);
+            instance_key_2: String(40);
+            instance_key_3: String(40);
+            auto_pulled   : Boolean;
+        },
+        field_values           : array of {
+            role_id     : String(10);
+            instance_no : Integer;
+            field_id    : String(40);
+            new_value   : String(2000);
+            source_level: String(20);
+        }
+    ) returns {
+        cr_id   : String(20);
+        status  : String(20);
+        message : String(200);
+    };
 
     // =========================================================================
     //  CUSTOM ACTIONS & FUNCTIONS - CHANGE REQUESTS

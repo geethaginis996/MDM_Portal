@@ -1,0 +1,10 @@
+code,description,active,last_synced_at
+CFR,Cost and Freight,true,2026-06-24T10:00:00.000Z
+CIF,Cost Insurance and Freight,true,2026-06-24T10:00:00.000Z
+CIP,Carriage and Insurance Paid To,true,2026-06-24T10:00:00.000Z
+CPT,Carriage Paid To,true,2026-06-24T10:00:00.000Z
+DAF,Delivered at Frontier,true,2026-06-24T10:00:00.000Z
+DDP,Delivered Duty Paid,true,2026-06-24T10:00:00.000Z
+EXW,Ex Works,true,2026-06-24T10:00:00.000Z
+FCA,Free Carrier,true,2026-06-24T10:00:00.000Z
+FOB,Free on Board,true,2026-06-24T10:00:00.000Z
