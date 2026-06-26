@@ -209,7 +209,6 @@ sap.ui.define([
                     });
                     this._mRoleInstances[r.role_role_id].push({
                         instance_no  : r.instance_no,
-                        instance_key1: r.instance_key_1 || "",
                         fieldValues  : mInstFv
                     });
                 }.bind(this));
@@ -270,6 +269,7 @@ sap.ui.define([
             this._mRolePrereqFields = {};
             this._mRoleInstances = {};
             this._aMainTabItems = [];
+            this._mFieldEntitySet = {};  // reset per-field entity set cache
             this.getView().getModel("form").setProperty("/values", {});
             var oTabs = this.byId("cbpTabs");
             if (oTabs) { oTabs.destroyItems(); }
@@ -855,7 +855,7 @@ sap.ui.define([
                         data_type  : c.getProperty("field/data_type") || "STRING",
                         display    : c.getProperty("field/display_type") || "INPUT",
                         sourceTable: c.getProperty("field/source_table") || "",
-                        mainGroup  : c.getProperty("field/main_group_group_id") || "OTHER",
+                        mainGroup  : c.getProperty("field/main_group_group_id") || "GD",
                         subGroup   : c.getProperty("field/sub_group_group_id") || "",
                         status     : c.getProperty("field_status"),
                         readOnly   : c.getProperty("read_only") === true,
@@ -989,9 +989,15 @@ sap.ui.define([
 
             // 1) Keep the strongest status per field (within one role each
             // field appears at most once, so this is mostly a pass-through).
+            // Exclude prereq fields — they are already shown in the Prerequisites
+            // tab above, so they must not also appear in the main group tabs.
+            var aPrereqFieldIds = (this._mRolePrereqFields[sActive] || [])
+                .reduce(function (o, f) { o[f.field_id] = true; return o; }, {});
+
             var mFields = {};
             aCtx.forEach(function (f) {
-                if (f.status === "SUPPRESS") { return; }             // hidden from the form
+                if (f.status === "SUPPRESS") { return; }
+                if (aPrereqFieldIds[f.field_id]) { return; }  // already in Prerequisites tab
                 var oExisting = mFields[f.field_id];
                 if (oExisting && STATUS_RANK[oExisting.status] >= STATUS_RANK[f.status]) { return; }
                 mFields[f.field_id] = f;
@@ -1116,7 +1122,7 @@ sap.ui.define([
                 }.bind(this));
 
                 var oTab = new IconTabFilter({
-                    key: sMain, text: oGrpMeta.description || sMain,
+                    key: sMain, text: oGrpMeta.description || sMain.replace(/_/g, " "),
                     count: String(aFields.length), icon: oGrpMeta.icon || "sap-icon://form",
                     content: [oTabContent]
                 });
@@ -1405,14 +1411,26 @@ sap.ui.define([
         },
 
         _arePrereqsComplete: function () {
-            var sActive = this._oRt.getProperty("/activeRole");
+            var sActive  = this._oRt.getProperty("/activeRole");
             var aPrereqs = this._mRolePrereqFields[sActive] || [];
             if (!aPrereqs.length) { return true; }   // no prereqs → always unlocked
+
             var mValues = this.getView().getModel("form").getProperty("/values") || {};
+
             return aPrereqs.every(function (f) {
                 var v = mValues[f.field_id];
-                return v !== undefined && v !== null && String(v).trim() !== "";
-            });
+                // Must have a value
+                if (v === undefined || v === null || String(v).trim() === "") { return false; }
+                // If the field has a value list and the list is loaded, validate the value
+                var sEntitySet = this._mFieldEntitySet && this._mFieldEntitySet[f.field_id];
+                if (sEntitySet && this._mValueListCache && this._mValueListCache[sEntitySet]) {
+                    var aCached = this._mValueListCache[sEntitySet];
+                    return aCached.some(function (item) {
+                        return item.code === String(v).trim();
+                    });
+                }
+                return true;  // no value list or not loaded yet → accept the value
+            }.bind(this));
         },
 
         // ── Attachments tab ─────────────────────────────────────────────
@@ -1569,6 +1587,12 @@ sap.ui.define([
                     || SOURCE_TO_LOOKUP["RF02D_" + f.field_id]
                     || SOURCE_TO_LOOKUP[sSource];
 
+                // Store entity set per field_id so _arePrereqsComplete can validate
+                if (sEntitySet) {
+                    this._mFieldEntitySet = this._mFieldEntitySet || {};
+                    this._mFieldEntitySet[f.field_id] = sEntitySet;
+                }
+
                 // ── DROPDOWN: render as ComboBox (inline list) ────────
                 if (f.display === "DROPDOWN") {
                     var oCombo = new ComboBox({
@@ -1585,24 +1609,48 @@ sap.ui.define([
                     return oCombo;
                 }
 
-                // ── SEARCH_HELP: render as read-only Input + VH dialog ─
-                // The field has display_type = SEARCH_HELP in Field Master,
-                // meaning the admin explicitly wants a separate search popup,
-                // not an inline dropdown — regardless of whether a value list
-                // exists. We build the Input with valueHelpOnly=true so the
-                // user must open the dialog to pick a value.
+                // ── SEARCH_HELP: Input with VH button — allows typing OR picking ─
+                // valueHelpOnly=false lets the user type directly.
+                // On change we validate the typed value against the value list
+                // and show an error state if it's not a valid key.
                 var oVhInput = new Input({
-                    value       : sPath,
-                    editable    : true,
-                    valueHelpOnly: true,
+                    value        : sPath,
+                    editable     : true,
+                    valueHelpOnly: false,      // allow free typing
                     showValueHelp: true,
-                    width       : "100%",
-                    placeholder : "Search\u2026"
+                    width        : "100%",
+                    placeholder  : sEntitySet ? "Type or search\u2026" : "Enter value\u2026"
                 });
 
                 if (sEntitySet) {
-                    // Pre-load the value list so the VH dialog opens instantly
+                    // Pre-load so dialog opens instantly AND so we can validate typed input
                     this._loadValueList(sEntitySet);
+
+                    // Validate typed value on blur — must be a valid key in the list
+                    oVhInput.attachChange(function (oEv) {
+                        var sTyped  = (oEv.getParameter("value") || "").trim();
+                        var oSrc    = oEv.getSource();
+                        if (!sTyped) {
+                            oSrc.setValueState("None");
+                            setTimeout(this._checkAndGateTabs.bind(this), 0);
+                            return;
+                        }
+                        // Check against cached value list
+                        var aCached = this._mValueListCache && this._mValueListCache[sEntitySet];
+                        if (aCached) {
+                            var bValid = aCached.some(function (v) {
+                                return v.code === sTyped ||
+                                       v.text.toLowerCase() === sTyped.toLowerCase();
+                            });
+                            oSrc.setValueState(bValid ? "None" : "Error");
+                            oSrc.setValueStateText(bValid ? "" : "Value not found in " + f.description + " list. Use the search icon to pick a valid value.");
+                        } else {
+                            // List not loaded yet — accept the value, server will validate
+                            oSrc.setValueState("None");
+                        }
+                        // Re-evaluate tab gating after validation state changes
+                        setTimeout(this._checkAndGateTabs.bind(this), 0);
+                    }.bind(this));
                 }
 
                 oVhInput.attachValueHelpRequest(function () {
@@ -1704,20 +1752,25 @@ sap.ui.define([
             this._oFieldVHDialog.close();
         },
 
-        // Load (and cache) a reference list's values for dropdowns.
+        // Load (and cache) a reference list's values for dropdowns + validation.
+        // Results are stored in both _mValueCache (promise) and _mValueListCache (resolved array).
         _loadValueList: function (sEntitySet) {
-            this._mValueCache = this._mValueCache || {};
+            this._mValueCache     = this._mValueCache     || {};
+            this._mValueListCache = this._mValueListCache || {};
             if (this._mValueCache[sEntitySet]) { return this._mValueCache[sEntitySet]; }
 
             var oModel = this.getOwnerComponent().getModel();
             var p = oModel.bindList("/" + sEntitySet, null, [new Sorter("code")], [
                 new Filter("active", FilterOperator.EQ, true)
             ]).requestContexts(0, 1000).then(function (aCtx) {
-                return aCtx.map(function (c) {
+                var aVals = aCtx.map(function (c) {
                     var sCode = c.getProperty("code");
-                    return { code: sCode, text: sCode + " — " + (c.getProperty("description") || "") };
+                    return { code: sCode, text: sCode + " \u2014 " + (c.getProperty("description") || "") };
                 });
-            });
+                // Store resolved array for synchronous validation in attachChange
+                this._mValueListCache[sEntitySet] = aVals;
+                return aVals;
+            }.bind(this));
             this._mValueCache[sEntitySet] = p;
             return p;
         },
@@ -1771,10 +1824,16 @@ sap.ui.define([
             var aCRFieldVals = [];
             var mSeen = {};  // prevent duplicate field rows
 
+            // Build a set of prereq field IDs per role for quick lookup
+            var mPrereqSet = {};
+            aAllRoleIds.forEach(function (sRoleId) {
+                var aPrereqFlds = this._mRolePrereqFields[sRoleId] || [];
+                mPrereqSet[sRoleId] = {};
+                aPrereqFlds.forEach(function (f) { mPrereqSet[sRoleId][f.field_id] = true; });
+            }.bind(this));
+
             aAllRoleIds.forEach(function (sRoleId) {
                 var bAutoPull   = aPickedKeys.indexOf(sRoleId) < 0;
-                var aPrereqFlds = this._mRolePrereqFields[sRoleId] || [];
-                // Get all instances for this role (multi-company code scenario)
                 var aInstances  = (this._mRoleInstances && this._mRoleInstances[sRoleId])
                     ? this._mRoleInstances[sRoleId]
                     : null;
@@ -1785,22 +1844,15 @@ sap.ui.define([
                         var iNo  = oInst.instance_no || 1;
                         var oFvs = oInst.fieldValues || {};
 
-                        // CRBPRole row for this instance
                         aCRBPRoles.push({
-                            role_id       : sRoleId,
-                            instance_no   : iNo,
-                            instance_key_1: aPrereqFlds[0] ? (oFvs[aPrereqFlds[0].field_id] || null) : null,
-                            instance_key_2: aPrereqFlds[1] ? (oFvs[aPrereqFlds[1].field_id] || null) : null,
-                            instance_key_3: null,
-                            auto_pulled   : bAutoPull
+                            role_id    : sRoleId,
+                            instance_no: iNo,
+                            auto_pulled: bAutoPull
                         });
 
-                        // CRFieldValue rows — instance-specific values first,
-                        // then fall back to the shared form values
                         this._aAllAssignments.forEach(function (a) {
                             if (a.role !== sRoleId) { return; }
                             if (a.status === "SUPPRESS") { return; }
-                            // Instance-specific value overrides shared form value
                             var sVal = oFvs[a.field_id] !== undefined
                                 ? oFvs[a.field_id]
                                 : oFormVals[a.field_id];
@@ -1809,11 +1861,12 @@ sap.ui.define([
                             if (mSeen[sKey]) { return; }
                             mSeen[sKey] = true;
                             aCRFieldVals.push({
-                                role_id     : sRoleId,
-                                instance_no : iNo,
-                                field_id    : a.field_id,
-                                new_value   : String(sVal),
-                                source_level: "ROLE"
+                                role_id         : sRoleId,
+                                instance_no     : iNo,
+                                field_id        : a.field_id,
+                                new_value       : String(sVal),
+                                source_level    : "ROLE",
+                                prereq_indicator: !!(mPrereqSet[sRoleId] && mPrereqSet[sRoleId][a.field_id])
                             });
                         }.bind(this));
                     }.bind(this));
@@ -1821,12 +1874,9 @@ sap.ui.define([
                 } else {
                     // ── Single instance (default, instance_no = 1) ────
                     aCRBPRoles.push({
-                        role_id       : sRoleId,
-                        instance_no   : 1,
-                        instance_key_1: aPrereqFlds[0] ? (oFormVals[aPrereqFlds[0].field_id] || null) : null,
-                        instance_key_2: aPrereqFlds[1] ? (oFormVals[aPrereqFlds[1].field_id] || null) : null,
-                        instance_key_3: null,
-                        auto_pulled   : bAutoPull
+                        role_id    : sRoleId,
+                        instance_no: 1,
+                        auto_pulled: bAutoPull
                     });
 
                     this._aAllAssignments.forEach(function (a) {
@@ -1838,11 +1888,12 @@ sap.ui.define([
                         if (mSeen[sKey]) { return; }
                         mSeen[sKey] = true;
                         aCRFieldVals.push({
-                            role_id     : sRoleId,
-                            instance_no : 1,
-                            field_id    : a.field_id,
-                            new_value   : String(sVal),
-                            source_level: "ROLE"
+                            role_id         : sRoleId,
+                            instance_no     : 1,
+                            field_id        : a.field_id,
+                            new_value       : String(sVal),
+                            source_level    : "ROLE",
+                            prereq_indicator: !!(mPrereqSet[sRoleId] && mPrereqSet[sRoleId][a.field_id])
                         });
                     }.bind(this));
                 }
@@ -1879,7 +1930,7 @@ sap.ui.define([
                 bp_roles_count   : aCRBPRoles.length,
                 field_vals_count : aCRFieldVals.length,
                 bp_roles     : aCRBPRoles,
-                field_values : aCRFieldVals.slice(0, 3)  // first 3 for brevity
+                field_values : aCRFieldVals   // full list — no slice
             }, null, 2));
 
             fetch(sActionUrl, {
@@ -1891,13 +1942,16 @@ sap.ui.define([
                 body: JSON.stringify(oPayload)
             })
             .then(function (oResp) {
+                console.log("[SaveBPChangeRequest] HTTP status:", oResp.status);
                 if (!oResp.ok) {
-                    return oResp.json().then(function (oErrBody) {
-                        var sMsg = (oErrBody && oErrBody.error && oErrBody.error.message)
-                            || ("HTTP " + oResp.status);
+                    return oResp.text().then(function (sBody) {
+                        console.error("[SaveBPChangeRequest] Error body:", sBody);
+                        var sMsg = "HTTP " + oResp.status;
+                        try {
+                            var oErrBody = JSON.parse(sBody);
+                            sMsg = (oErrBody.error && oErrBody.error.message) || sMsg;
+                        } catch (e) { sMsg = sBody || sMsg; }
                         throw new Error(sMsg);
-                    }).catch(function () {
-                        throw new Error("HTTP " + oResp.status);
                     });
                 }
                 return oResp.json();

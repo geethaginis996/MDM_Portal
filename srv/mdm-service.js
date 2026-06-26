@@ -689,14 +689,10 @@ class MDMPortalService extends cds.ApplicationService {
                 if (bp_roles.length) {
                     await INSERT.into('mdm.portal.CRBPRole').entries(
                         bp_roles.map(r => ({
-                            cr_cr_id       : sCrId,
-                            role_role_id   : r.role_id,
-                            instance_no    : r.instance_no    || 1,
-                            instance_key_1 : r.instance_key_1 || null,
-                            instance_key_2 : r.instance_key_2 || null,
-                            instance_key_3 : r.instance_key_3 || null,
-                            instance_key_4 : null,
-                            auto_pulled    : r.auto_pulled     || false
+                            cr_cr_id    : sCrId,
+                            role_role_id: r.role_id,
+                            instance_no : r.instance_no || 1,
+                            auto_pulled : r.auto_pulled  || false
                         }))
                     );
                 }
@@ -711,13 +707,14 @@ class MDMPortalService extends cds.ApplicationService {
                 if (aFvRows.length) {
                     await INSERT.into('mdm.portal.CRFieldValue').entries(
                         aFvRows.map(fv => ({
-                            cr_cr_id      : sCrId,
-                            role_id       : fv.role_id      || '',
-                            instance_no   : fv.instance_no  || 1,  // match CRBPRole.instance_no
-                            field_field_id: fv.field_id,
-                            old_value     : null,
-                            new_value     : String(fv.new_value),
-                            source_level  : fv.source_level || 'ROLE'
+                            cr_cr_id        : sCrId,
+                            role_id         : fv.role_id          || '',
+                            instance_no     : fv.instance_no      || 1,
+                            field_field_id  : fv.field_id,
+                            old_value       : null,
+                            new_value       : String(fv.new_value),
+                            source_level    : fv.source_level     || 'ROLE',
+                            prereq_indicator: fv.prereq_indicator === true
                         }))
                     );
                 }

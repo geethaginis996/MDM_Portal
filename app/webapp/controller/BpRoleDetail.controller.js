@@ -1,5 +1,6 @@
 sap.ui.define([
     "sap/ui/core/mvc/Controller",
+    "sap/ui/core/Fragment",
     "sap/ui/model/json/JSONModel",
     "sap/ui/model/Filter",
     "sap/ui/model/FilterOperator",
@@ -9,7 +10,7 @@ sap.ui.define([
     "mdm/portal/controller/AssignFieldsHelper",
     "mdm/portal/controller/FieldAssignmentEditHelper"
 ], function (
-    Controller, JSONModel, Filter, FilterOperator, Sorter,
+    Controller, Fragment, JSONModel, Filter, FilterOperator, Sorter,
     MessageToast, MessageBox, AssignFieldsHelper, FieldAssignmentEditHelper
 ) {
     "use strict";
@@ -263,7 +264,6 @@ sap.ui.define([
 
             pPrereq.then(function (oPrereqSet) {
                 return oModel.bindList("/BPRoleFields", null,
-                    // Sort: main group → sub group → sequence
                     [
                         new Sorter("field/main_group_group_id"),
                         new Sorter("field/sub_group_group_id"),
@@ -598,6 +598,9 @@ sap.ui.define([
 
             var fnAfterLoad = function () {
                 this._loadAvailablePrereqRoles().then(function () {
+                    // Clear search field on every open
+                    var oSearch = Fragment.byId(this.getView().getId(), "prereqRoleSearch");
+                    if (oSearch) { oSearch.setValue(""); }
                     this._oPrereqRoleDialog.open();
                 }.bind(this));
             }.bind(this);

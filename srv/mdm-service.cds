@@ -209,17 +209,15 @@ service MDMPortalService {
         bp_roles               : array of {
             role_id       : String(10);
             instance_no   : Integer;
-            instance_key_1: String(40);
-            instance_key_2: String(40);
-            instance_key_3: String(40);
             auto_pulled   : Boolean;
         },
         field_values           : array of {
-            role_id     : String(10);
-            instance_no : Integer;
-            field_id    : String(40);
-            new_value   : String(2000);
-            source_level: String(20);
+            role_id        : String(10);
+            instance_no    : Integer;
+            field_id       : String(40);
+            new_value      : String(2000);
+            source_level   : String(20);
+            prereq_indicator : Boolean;
         }
     ) returns {
         cr_id   : String(20);

@@ -58,21 +58,17 @@
                         select=".onTabSelect">
                 <items>
 
-                <!-- Tab 1: BP Roles -->
                 <IconTabFilter key="roles" text="BP Roles" icon="sap-icon://group"
                                count="{view>/roleCount}">
                     <Table id="rolesTable"
                            noDataText="No roles saved."
                            alternateRowColors="true"
-                           items="{
-                               path: 'detail>/roles'
-                           }">
+                           items="{path: 'detail>/roles'}">
                         <columns>
-                            <Column width="8rem" ><Label text="Role ID"       design="Bold"/></Column>
-                            <Column>             <Label text="Description"   design="Bold"/></Column>
-                            <Column width="8rem" ><Label text="Instance No"   design="Bold"/></Column>
-                            <Column width="12rem"><Label text="Key (e.g. Company Code)" design="Bold"/></Column>
-                            <Column width="8rem" hAlign="Center"><Label text="Auto Pulled" design="Bold"/></Column>
+                            <Column width="8rem" ><Label text="Role ID"      design="Bold"/></Column>
+                            <Column>             <Label text="Description"  design="Bold"/></Column>
+                            <Column width="8rem" ><Label text="Instance No"  design="Bold"/></Column>
+                            <Column width="8rem"  hAlign="Center"><Label text="Auto Pulled" design="Bold"/></Column>
                         </columns>
                         <items>
                             <ColumnListItem>
@@ -80,7 +76,6 @@
                                     <Text text="{detail>role_role_id}" wrapping="false"/>
                                     <Text text="{detail>roleDesc}"     wrapping="false"/>
                                     <Text text="{detail>instance_no}"  wrapping="false"/>
-                                    <Text text="{detail>instance_key_1}" wrapping="false"/>
                                     <ObjectStatus
                                         text="{= ${detail>auto_pulled} ? 'Yes' : 'No'}"
                                         state="{= ${detail>auto_pulled} ? 'Warning' : 'None'}"/>
@@ -98,11 +93,12 @@
                            alternateRowColors="true"
                            items="{path: 'detail>/fieldValues'}">
                         <columns>
-                            <Column width="8rem" ><Label text="Role"        design="Bold"/></Column>
-                            <Column width="10rem"><Label text="Field ID"    design="Bold"/></Column>
-                            <Column>             <Label text="Description"  design="Bold"/></Column>
-                            <Column>             <Label text="Value"        design="Bold"/></Column>
-                            <Column width="8rem" hAlign="Center"><Label text="Instance" design="Bold"/></Column>
+                            <Column width="8rem" ><Label text="Role"         design="Bold"/></Column>
+                            <Column width="10rem"><Label text="Field ID"     design="Bold"/></Column>
+                            <Column>             <Label text="Description"   design="Bold"/></Column>
+                            <Column>             <Label text="Value"         design="Bold"/></Column>
+                            <Column width="8rem"  hAlign="Center"><Label text="Instance"    design="Bold"/></Column>
+                            <Column width="8rem"  hAlign="Center"><Label text="Prerequisite" design="Bold"/></Column>
                         </columns>
                         <items>
                             <ColumnListItem>
@@ -112,6 +108,9 @@
                                     <Text text="{detail>fieldDesc}"      wrapping="false"/>
                                     <Text text="{detail>new_value}"      wrapping="false"/>
                                     <Text text="{detail>instance_no}"    wrapping="false"/>
+                                    <ObjectStatus
+                                        text="{= ${detail>prereq_indicator} ? 'Yes' : 'No'}"
+                                        state="{= ${detail>prereq_indicator} ? 'Warning' : 'None'}"/>
                                 </cells>
                             </ColumnListItem>
                         </items>

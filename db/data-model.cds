@@ -371,10 +371,6 @@ entity CRBPRole : managed {
     key cr              : Association to CRHeader not null;
     key role            : Association to BPRole   not null;
     key instance_no     : Integer not null default 1;
-        instance_key_1  : String(40);
-        instance_key_2  : String(40);
-        instance_key_3  : String(40);
-        instance_key_4  : String(40);
         auto_pulled     : Boolean not null default false;
 }
 
@@ -386,6 +382,7 @@ entity CRFieldValue : managed {
         old_value       : String(2000);
         new_value       : String(2000);
         source_level    : String(20) not null @assert.range enum { CATEGORY; ROLE; ACCOUNT_GROUP; };
+        prereq_indicator : Boolean not null default false;
 }
 
 entity CRAttachment : managed {

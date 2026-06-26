@@ -29,16 +29,11 @@
                                class="sapUiSmallMarginEnd"/>
                     <VBox>
                         <Title text="Create Business Partner" level="H2" wrapping="false"/>
-                        <Text text="{rt>/subtitle}" class="sapUiTinyMarginTop"
-                              style="color: var(--sapContent_LabelColor); font-size: 0.875rem;"/>
+                       
                     </VBox>
                 </HBox>
                 <HBox wrap="Wrap" class="sapUiSmallMarginTop" alignItems="Center">
-                    <ObjectAttribute title="BP Category"      text="{rt>/catDisp}"  class="sapUiMediumMarginEnd"/>
-                    <ObjectAttribute title="BP Roles"         text="{rt>/roleDisp}" class="sapUiMediumMarginEnd"/>
-                    <ObjectAttribute title="BP Account Group" text="{rt>/bpAgDisp}" class="sapUiMediumMarginEnd"/>
-                    <ObjectAttribute title="Number Range"     text="{rt>/nrDisp}"   class="sapUiMediumMarginEnd"/>
-                    <ObjectAttribute title="Prerequisites"    text="{rt>/preqDisp}" class="sapUiMediumMarginEnd"/>
+                    
                     <ObjectStatus    title="Status" text="{rt>/status}" state="Information"/>
                 </HBox>
             </VBox>

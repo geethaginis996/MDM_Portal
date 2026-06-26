@@ -109,17 +109,17 @@ sap.ui.define([
                     role_role_id  : r.role_role_id  || r.role_id   || "",
                     roleDesc      : "",
                     instance_no   : r.instance_no,
-                    instance_key_1: r.instance_key_1 || "",
                     auto_pulled   : !!r.auto_pulled
                 };
             });
             var aNormFvs = aFieldVals.map(function (fv) {
                 return {
-                    role_id       : fv.role_id        || "",
-                    field_field_id: fv.field_field_id || fv.field_id || "",
-                    fieldDesc     : "",
-                    new_value     : fv.new_value      || "",
-                    instance_no   : fv.instance_no
+                    role_id          : fv.role_id        || "",
+                    field_field_id   : fv.field_field_id || fv.field_id || "",
+                    fieldDesc        : "",
+                    new_value        : fv.new_value      || "",
+                    instance_no      : fv.instance_no,
+                    prereq_indicator : !!fv.prereq_indicator
                 };
             });
 

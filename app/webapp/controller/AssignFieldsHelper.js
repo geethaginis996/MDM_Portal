@@ -39,6 +39,19 @@ sap.ui.define([
 
             var fnAfterLoad = function () {
                 this._loadAvailableFields().then(function () {
+                    // ── Clear previous state every time dialog opens ──────
+                    // 1. Clear table selection
+                    var oTable = Fragment.byId(this.getView().getId(), "dlgFieldsTable");
+                    if (oTable) { oTable.removeSelections(true); }
+
+                    // 2. Clear search field
+                    var oSearch = Fragment.byId(this.getView().getId(), "dlgSearch");
+                    if (oSearch) { oSearch.setValue(""); }
+
+                    // 3. Reset status dropdown to OPTIONAL
+                    var oStatus = Fragment.byId(this.getView().getId(), "dlgDefaultStatus");
+                    if (oStatus) { oStatus.setSelectedKey("OPTIONAL"); }
+
                     this._oAssignDialog.open();
                 }.bind(this));
             }.bind(this);

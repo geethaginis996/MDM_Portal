@@ -27,8 +27,11 @@ sap.ui.define([
         releaseCriteria: "Release Strategy \u203a Release Criteria",
         releaseCodes: "Release Strategy \u203a Release Codes",
         releaseStrategies: "Release Strategy \u203a Release Strategies",
-        createBP: "Runtime Preview \u203a Create BP",
-        myApprovals: "Runtime Preview \u203a My Approvals",
+        createBP      : "BP Maintenance \u203a Create BP",
+        createBPEdit  : "BP Maintenance \u203a Edit Draft",
+        myRequests    : "BP Maintenance \u203a My Requests",
+        myRequestDetail: "BP Maintenance \u203a My Requests",
+        myApprovals   : "BP Maintenance \u203a My Approvals",
         authRoles: "Authorizations \u203a Authorization Roles",
         users: "Authorizations \u203a Users",
         help: "Help",
@@ -164,16 +167,24 @@ sap.ui.define([
             var oItem = oEvent.getParameter("item");
             if (!oItem) return;
 
+            // Explicitly move focus away from the nav item BEFORE navigating.
+            // This prevents the aria-hidden conflict: when UI5 collapses a
+            // NavigationListItem group it sets aria-hidden on it, but if a
+            // child anchor still has focus the browser fires an accessibility
+            // warning ("Blocked aria-hidden on a focused element").
+            // Moving focus to the body first ensures the element is no longer
+            // focused when UI5 sets aria-hidden on it.
+            if (document.activeElement && document.activeElement !== document.body) {
+                document.activeElement.blur();
+            }
+
             var sKey = oItem.getKey();
             if (sKey) {
-                // Only navigate if a route is actually defined; menu items for
-                // screens that aren't built yet (Release Criteria, Create BP,
-                // Authorizations, etc.) show a notice instead of throwing.
                 var oRouter = this.getOwnerComponent().getRouter();
                 if (oRouter.getRoute(sKey)) {
                     oRouter.navTo(sKey);
                 } else {
-                    MessageToast.show(oItem.getText() + " — coming soon");
+                    MessageToast.show(oItem.getText() + " \u2014 coming soon");
                 }
             }
 
