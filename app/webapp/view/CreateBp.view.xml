@@ -7,7 +7,7 @@
     controllerName="mdm.portal.controller.CreateBP"
     displayBlock="true">
 
-    <Page id="createBpPage" showHeader="false">
+    <Page id="createBpPage" showHeader="false" busy="{rt>/busy}" busyIndicatorDelay="0">
         <content>
             <!-- ── Header bar with breadcrumb ─────────────────────────── -->
             <VBox>
@@ -29,11 +29,16 @@
                                class="sapUiSmallMarginEnd"/>
                     <VBox>
                         <Title text="Create Business Partner" level="H2" wrapping="false"/>
-                       
+                        <Text text="{rt>/subtitle}"
+                              class="sapUiTinyMarginTop mdmSubtitleText"/>
                     </VBox>
                 </HBox>
                 <HBox wrap="Wrap" class="sapUiSmallMarginTop" alignItems="Center">
-                    
+                    <ObjectAttribute title="BP Category"      text="{rt>/catDisp}"  class="sapUiMediumMarginEnd"/>
+                    <ObjectAttribute title="BP Roles"         text="{rt>/roleDisp}" class="sapUiMediumMarginEnd"/>
+                    <ObjectAttribute title="BP Account Group" text="{rt>/bpAgDisp}" class="sapUiMediumMarginEnd"/>
+                    <ObjectAttribute title="Number Range"     text="{rt>/nrDisp}"   class="sapUiMediumMarginEnd"/>
+                    <ObjectAttribute title="Prerequisites"    text="{rt>/preqDisp}" class="sapUiMediumMarginEnd"/>
                     <ObjectStatus    title="Status" text="{rt>/status}" state="Information"/>
                 </HBox>
             </VBox>
@@ -56,7 +61,7 @@
 
                     <VBox width="16%" alignItems="Center">
                         <Text text="— OR —"
-                              style="font-size:0.75rem; font-weight:600; color:var(--sapContent_LabelColor);"/>
+                              class="mdmLabelXs"/>
                     </VBox>
 
                     <VBox width="42%">
@@ -80,13 +85,18 @@
                 <VBox id="rolesBlock" visible="{rt>/started}" class="sapUiSmallMarginTop">
                     <Label text="BP Roles" required="true" labelFor="inRolesDisplay"
                            class="sapUiTinyMarginBottom"/>
-                    <Input id="inRolesDisplay" width="100%"
-                           placeholder="Click to select BP roles..."
-                           editable="true"
-                           showValueHelp="true"
-                           valueHelpOnly="true"
-                           value="{rt>/roleDisp}"
-                           valueHelpRequest=".onBpRoleValueHelp"/>
+                    <MultiInput id="inRolesDisplay" width="100%"
+                                placeholder="Click to select BP roles..."
+                                editable="true"
+                                showValueHelp="true"
+                                valueHelpOnly="true"
+                                tokens="{rt>/roleTokens}"
+                                valueHelpRequest=".onBpRoleValueHelp"
+                                tokenUpdate=".onBpRoleTokenUpdate">
+                        <tokens>
+                            <Token key="{rt>key}" text="{rt>text}"/>
+                        </tokens>
+                    </MultiInput>
 
                     <HBox alignItems="End" class="sapUiSmallMarginTop">
                         <VBox width="33%" class="sapUiTinyMarginEnd">
@@ -112,6 +122,17 @@
                         </VBox>
                     </HBox>
 
+                    <HBox alignItems="End" class="sapUiSmallMarginTop">
+                        <VBox width="33%" class="sapUiTinyMarginEnd">
+                            <Label text="Priority" labelFor="selPriority"/>
+                            <Select id="selPriority" width="100%"
+                                    selectedKey="{rt>/priority}">
+                                <core:Item key="NORMAL" text="Normal"/>
+                                <core:Item key="HIGH"   text="High"/>
+                            </Select>
+                        </VBox>
+                    </HBox>
+
                     <!-- BP Number status — only relevant when this account group uses
                          external numbering, so the field above is actually editable. -->
                     <MessageStrip class="sapUiSmallMarginTop"
@@ -133,8 +154,7 @@
             <!-- ── Active Role switcher — only shown when a selected role has
                  auto-pulled prerequisite roles (wireframe: hidden for single role) ── -->
             <VBox visible="{rt>/hasRoles}" class="sapUiMediumMarginBeginEnd sapUiSmallMarginTop sapUiTinyMarginBottom">
-                <Label id="cbpRoleBarLabel" text="ACTIVE ROLE" class="sapUiTinyMarginBottom"
-                       style="font-size:0.7rem; font-weight:600; letter-spacing:0.04em; color:var(--sapContent_LabelColor);"/>
+                <Label id="cbpRoleBarLabel" text="ACTIVE ROLE" class="sapUiTinyMarginBottom mdmRoleBarLabel"/>
                 <SegmentedButton id="cbpRoleBar" width="100%" select=".onActiveRoleChange"/>
             </VBox>
 

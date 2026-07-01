@@ -19,8 +19,8 @@
                         <Breadcrumbs id="pageBreadcrumb"
                                      separatorStyle="Slash"
                                      class="sapUiTinyMarginBegin">
-                            <Link text="Configuration" press=".onNavBack"/>
-                            <Link text="Field Groups"  press=".onNavBack"/>
+                            <Link text="{i18n>breadcrumb.configuration}" press=".onNavBack"/>
+                            <Link text="{i18n>breadcrumb.fieldGroups}"  press=".onNavBack"/>
                             <!-- current item rendered as plain text by control -->
                         </Breadcrumbs>
                     </contentLeft>
@@ -42,19 +42,19 @@
 
                 <!-- Status + metadata strip -->
                 <HBox wrap="Wrap" class="sapUiSmallMarginTop" alignItems="Center">
-                    <ObjectStatus id="attrStatus"   text="Active"  state="Success"/>
+                    <ObjectStatus id="attrStatus"   text="{i18n>lbl.active}"  state="Success"/>
                     <Text text="·" class="sapUiTinyMarginBegin sapUiTinyMarginEnd"
 />
-                    <ObjectAttribute id="attrType"     title="Type"     text="Main group"/>
+                    <ObjectAttribute id="attrType"     title="{i18n>lbl.type}"     text="{i18n>lbl.mainGroupType}"/>
                     <Text text="·" class="sapUiTinyMarginBegin sapUiTinyMarginEnd"
 />
-                    <ObjectAttribute id="attrParent"   title="Parent"   text="— (Main Group)"/>
+                    <ObjectAttribute id="attrParent"   title="{i18n>col.parent}"   text="{i18n>lbl.parentGroupPlaceholder}"/>
                     <Text text="·" class="sapUiTinyMarginBegin sapUiTinyMarginEnd"
 />
-                    <ObjectAttribute id="attrSequence" title="Sequence" text=""/>
+                    <ObjectAttribute id="attrSequence" title="{i18n>lbl.sequence}" text=""/>
                     <Text text="·" class="sapUiTinyMarginBegin sapUiTinyMarginEnd"
 />
-                    <ObjectAttribute id="attrSubCount" title="Sub Groups" text=""/>
+                    <ObjectAttribute id="attrSubCount" title="{i18n>col.subGroups}" text=""/>
                 </HBox>
             </VBox>
 
@@ -68,10 +68,10 @@
                 <items>
 
                     <!-- ── TAB 1 · General ── -->
-                    <IconTabFilter text="General" key="general" icon="sap-icon://hint">
+                    <IconTabFilter text="{i18n>tab.general}" key="general" icon="sap-icon://hint">
                         <VBox class="sapUiMediumMarginBeginEnd">
 
-                            <Title text="Group Details" level="H4"
+                            <Title text="{i18n>fieldGroupDetail.groupDetails}" level="H4"
                                    class="sapUiSmallMarginTop sapUiSmallMarginBottom"/>
 
                             <l:Grid defaultSpan="L6 M6 S12" hSpacing="2">
@@ -79,7 +79,7 @@
 
                                     <!-- Master Data Type -->
                                     <VBox>
-                                        <Label text="Master Data Type" required="true"
+                                        <Label text="{i18n>lbl.masterDataType}" required="true"
                                                labelFor="selMasterDataType"/>
                                         <Select id="selMasterDataType" width="100%"
                                                 change=".onFieldChange"
@@ -90,7 +90,7 @@
 
                                     <!-- Group ID -->
                                     <VBox>
-                                        <Label text="Field Group Name" required="true" labelFor="inGroupId"/>
+                                        <Label text="{i18n>lbl.fieldGroupName}" required="true" labelFor="inGroupId"/>
                                         <Input id="inGroupId"
                                                value="{group_id}"
                                                placeholder="e.g. GRP_COCD"
@@ -101,7 +101,7 @@
 
                                     <!-- Description -->
                                     <VBox>
-                                        <Label text="Description" required="true" labelFor="inDescription"/>
+                                        <Label text="{i18n>lbl.description}" required="true" labelFor="inDescription"/>
                                         <Input id="inDescription"
                                                value="{description}"
                                                placeholder="e.g. Company Code Data"
@@ -111,7 +111,7 @@
 
                                     <!-- Icon -->
                                     <VBox>
-                                        <Label text="Icon" labelFor="inIcon"/>
+                                        <Label text="{i18n>lbl.icon}" labelFor="inIcon"/>
                                         <HBox alignItems="Center">
                                             <core:Icon id="iconPreview" src="{path: 'icon', mode: 'OneWay', formatter: '.formatIcon'}"
                                                        size="1.5rem" color="Default"
@@ -126,7 +126,7 @@
 
                                     <!-- Parent Group -->
                                     <VBox>
-                                        <Label text="Parent Group" labelFor="selParentGroup"/>
+                                        <Label text="{i18n>filter.parentGroup}" labelFor="selParentGroup"/>
                                         <Select id="selParentGroup" width="100%"
                                                 change=".onParentGroupChange"
                                                 forceSelection="false"
@@ -138,7 +138,7 @@
 
                                     <!-- Sequence -->
                                     <VBox>
-                                        <Label text="Sequence" required="true" labelFor="inSequence"/>
+                                        <Label text="{i18n>lbl.sequence}" required="true" labelFor="inSequence"/>
                                         <Input id="inSequence"
                                                value="{sequence}"
                                                type="Number"
@@ -151,7 +151,7 @@
 
                             <!-- Active switch -->
                             <HBox alignItems="Center" class="sapUiSmallMarginTop">
-                                <Label text="Active" labelFor="swActive"
+                                <Label text="{i18n>lbl.active}" labelFor="swActive"
                                        class="sapUiSmallMarginEnd" width="8rem"/>
                                 <Switch id="swActive"
                                         state="{active}"
@@ -164,14 +164,14 @@
                     </IconTabFilter>
 
                     <!-- ── TAB 2 · Sub Groups ── -->
-                    <IconTabFilter id="tabSubGroups" text="Sub Groups" key="subGroups"
+                    <IconTabFilter id="tabSubGroups" text="{i18n>tab.subGroups}" key="subGroups"
                                    count="{ui>/subGroupCount}"
                                    icon="sap-icon://add-subfolder">
                         <VBox>
                             <Toolbar class="sapUiSmallMarginTop">
-                                <Title text="Sub Groups" level="H4"/>
+                                <Title text="{i18n>tab.subGroups}" level="H4"/>
                                 <ToolbarSpacer/>
-                                <Button text="Add Sub-Group" icon="sap-icon://add"
+                                <Button text="{i18n>fieldGroupDetail.addSubGroup}" icon="sap-icon://add"
                                         type="Emphasized" press=".onAddSubGroup"
                                         enabled="{= !${view>/isNew}}"/>
                             </Toolbar>
@@ -183,16 +183,16 @@
                                    items="{subGroups>/items}">
                                 <columns>
                                     <Column width="7rem">
-                                        <Label text="Field Group Name" design="Bold"/>
+                                        <Label text="{i18n>lbl.fieldGroupName}" design="Bold"/>
                                     </Column>
                                     <Column>
-                                        <Label text="Description" design="Bold"/>
+                                        <Label text="{i18n>lbl.description}" design="Bold"/>
                                     </Column>
                                     <Column width="4rem" hAlign="End">
-                                        <Label text="Seq" design="Bold"/>
+                                        <Label text="{i18n>col.sequence}" design="Bold"/>
                                     </Column>
                                     <Column width="5rem" hAlign="Center">
-                                        <Label text="Status" design="Bold"/>
+                                        <Label text="{i18n>lbl.status}" design="Bold"/>
                                     </Column>
                                     <Column width="3rem" hAlign="End"/>
                                 </columns>
@@ -217,13 +217,18 @@
                     </IconTabFilter>
 
                     <!-- ── TAB 3 · Assigned Fields ── -->
-                    <IconTabFilter id="tabAssignedFields" text="Assigned Fields" key="assignedFields"
+                    <IconTabFilter id="tabAssignedFields" text="{i18n>fieldGroupDetail.assignedFields}" key="assignedFields"
                                    count="{ui>/assignedFieldCount}"
                                    icon="sap-icon://form">
                         <VBox>
                             <Toolbar class="sapUiSmallMarginTop">
-                                <Title text="Fields assigned to this group" level="H4"/>
+                                <Title text="{i18n>fieldGroupDetail.assignedFieldsDesc}" level="H4"/>
                                 <ToolbarSpacer/>
+                                <Button icon="sap-icon://add"
+                                        text="Assign Fields"
+                                        type="Emphasized"
+                                        press=".onAssignFieldsToGroup"
+                                        enabled="{= !${view>/isNew} }"/>
                             </Toolbar>
 
                             <Table id="fieldsTable"
@@ -233,19 +238,19 @@
                                    items="{assignedFields>/items}">
                                 <columns>
                                     <Column width="8rem">
-                                        <Label text="Field ID" design="Bold"/>
+                                        <Label text="{i18n>col.fieldId}" design="Bold"/>
                                     </Column>
                                     <Column>
-                                        <Label text="Description" design="Bold"/>
+                                        <Label text="{i18n>lbl.description}" design="Bold"/>
                                     </Column>
                                     <Column width="6rem">
-                                        <Label text="Data Type" design="Bold"/>
+                                        <Label text="{i18n>col.dataType}" design="Bold"/>
                                     </Column>
                                     <Column width="7rem">
-                                        <Label text="Display Type" design="Bold"/>
+                                        <Label text="{i18n>col.displayType}" design="Bold"/>
                                     </Column>
                                     <Column width="5rem" hAlign="Center">
-                                        <Label text="Status" design="Bold"/>
+                                        <Label text="{i18n>lbl.status}" design="Bold"/>
                                     </Column>
                                     <Column width="3rem" hAlign="End"/>
                                 </columns>
@@ -271,24 +276,24 @@
                     </IconTabFilter>
 
                     <!-- ── TAB 4 · Change Log ── -->
-                                        <IconTabFilter text="Change Log" key="changelog" icon="sap-icon://history">
+                                        <IconTabFilter text="{i18n>tab.changeLog}" key="changelog" icon="sap-icon://history">
                         <VBox class="sapUiSmallMarginBeginEnd sapUiSmallMarginTop sapUiSmallMarginBottom">
-                            <Title text="Record Information" level="H5" class="sapUiTinyMarginBottom"/>
+                            <Title text="{i18n>lbl.recordInfo}" level="H5" class="sapUiTinyMarginBottom"/>
                             <HBox wrap="Wrap">
                                 <VBox width="12rem" class="sapUiTinyMarginEnd">
-                                    <Label text="Created On" design="Bold"/>
+                                    <Label text="{i18n>lbl.createdOn}" design="Bold"/>
                                     <Text id="clCreatedAt" text="{view>/clCreatedAt}" wrapping="false"/>
                                 </VBox>
                                 <VBox width="12rem" class="sapUiTinyMarginEnd">
-                                    <Label text="Created By" design="Bold"/>
+                                    <Label text="{i18n>lbl.createdBy}" design="Bold"/>
                                     <Text id="clCreatedBy" text="{view>/clCreatedBy}" wrapping="false"/>
                                 </VBox>
                                 <VBox width="12rem" class="sapUiTinyMarginEnd">
-                                    <Label text="Last Modified On" design="Bold"/>
+                                    <Label text="{i18n>lbl.modifiedOn}" design="Bold"/>
                                     <Text id="clModifiedAt" text="{view>/clModifiedAt}" wrapping="false"/>
                                 </VBox>
                                 <VBox width="12rem">
-                                    <Label text="Last Modified By" design="Bold"/>
+                                    <Label text="{i18n>lbl.modifiedBy}" design="Bold"/>
                                     <Text id="clModifiedBy" text="{view>/clModifiedBy}" wrapping="false"/>
                                 </VBox>
                             </HBox>
@@ -298,11 +303,11 @@
                                alternateRowColors="true"
                                items="{path: '/AuditLogs', suspended: true}">
                             <columns>
-                                <Column width="11rem"><Label text="Timestamp" design="Bold"/></Column>
-                                <Column width="9rem"><Label text="User" design="Bold"/></Column>
-                                <Column width="7rem"><Label text="Action" design="Bold"/></Column>
-                                <Column><Label text="Before" design="Bold"/></Column>
-                                <Column><Label text="After" design="Bold"/></Column>
+                                <Column width="11rem"><Label text="{i18n>col.timestamp}" design="Bold"/></Column>
+                                <Column width="9rem"><Label text="{i18n>col.user}" design="Bold"/></Column>
+                                <Column width="7rem"><Label text="{i18n>col.action}" design="Bold"/></Column>
+                                <Column><Label text="{i18n>lbl.triggerBefore}" design="Bold"/></Column>
+                                <Column><Label text="{i18n>lbl.triggerAfter}" design="Bold"/></Column>
                             </columns>
                             <items>
                                 <ColumnListItem>
@@ -329,10 +334,10 @@
         <footer>
             <OverflowToolbar>
                 <ToolbarSpacer/>
-                <Button id="btnCopy"   text="Copy"   icon="sap-icon://copy"
+                <Button id="btnCopy"   text="{i18n>btn.copy}"   icon="sap-icon://copy"
                         type="Transparent" press=".onCopy"/>
-                <Button id="btnCancel" text="Cancel" type="Default" press=".onCancel"/>
-                <Button id="btnSave"   text="Save"   type="Emphasized" press=".onSave"/>
+                <Button id="btnCancel" text="{i18n>btn.cancel}" type="Default" press=".onCancel"/>
+                <Button id="btnSave"   text="{i18n>btn.save}"   type="Emphasized" press=".onSave"/>
             </OverflowToolbar>
         </footer>
 

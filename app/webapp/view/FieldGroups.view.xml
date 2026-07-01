@@ -21,7 +21,7 @@
 
                 <f:heading>
                     <VBox>
-                        <Title text="Field Groups" level="H2" wrapping="false"/>
+                        <Title text="{i18n>fieldGroups.title}" level="H2" wrapping="false"/>
                         <HBox class="sapUiTinyMarginTop">
                             <ObjectStatus id="countMain" text="{ui>/mainCount} main"
                                           state="Information" class="sapUiTinyMarginEnd"/>
@@ -32,7 +32,7 @@
                 </f:heading>
 
                 <f:snappedHeading>
-                    <Title text="Field Groups" level="H3" wrapping="false"/>
+                    <Title text="{i18n>fieldGroups.title}" level="H3" wrapping="false"/>
                 </f:snappedHeading>
 
                 <f:actions>
@@ -42,13 +42,13 @@
                                          selectionChange=".onObjectClassChange"
                                          selectedKey="BP">
                             <items>
-                                <SegmentedButtonItem key="BP"       text="Business Partner"/>
-                                <SegmentedButtonItem key="MATERIAL" text="Material"/>
+                                <SegmentedButtonItem key="BP"       text="{i18n>toggle.businessPartner}"/>
+                                <SegmentedButtonItem key="MATERIAL" text="{i18n>toggle.material}"/>
                             </items>
                         </SegmentedButton>
                         <ToolbarSeparator/>
                         <Button id="exportBtn"
-                                text="Export"
+                                text="{i18n>btn.export}"
                                 icon="sap-icon://download"
                                 type="Transparent"
                                 press=".onExport">
@@ -57,7 +57,7 @@
                             </layoutData>
                         </Button>
                         <Button id="addGroupBtn"
-                                text="New Group"
+                                text="{i18n>fieldGroups.newGroup}"
                                 icon="sap-icon://add"
                                 type="Emphasized"
                                 press=".onAdd">
@@ -80,7 +80,7 @@
                         class="sapUiSmallMarginBeginEnd sapUiSmallMarginTopBottom">
                     <l:content>
                         <VBox>
-                            <Label text="Field Group Name / Description" labelFor="filterSearch" design="Bold"/>
+                            <Label text="{i18n>filter.groupName}" labelFor="filterSearch" design="Bold"/>
                             <Input id="filterSearch" placeholder="Search…"
                                    showClearIcon="true" width="100%"
                                    liveChange=".onFilterLiveChange"/>
@@ -88,18 +88,18 @@
                     </l:content>
                     <l:content>
                         <VBox>
-                            <Label text="Group Type" labelFor="filterGroupType" design="Bold"/>
+                            <Label text="{i18n>filter.groupType}" labelFor="filterGroupType" design="Bold"/>
                             <Select id="filterGroupType" width="100%"
                                     change=".onFilterChange" forceSelection="false">
-                                <core:Item key=""    text="All"/>
-                                <core:Item key="MAIN" text="Main Group"/>
-                                <core:Item key="SUB"  text="Sub Group"/>
+                                <core:Item key=""    text="{i18n>lbl.all}"/>
+                                <core:Item key="MAIN" text="{i18n>lbl.mainGroupBadge}"/>
+                                <core:Item key="SUB"  text="{i18n>lbl.subGroupBadge}"/>
                             </Select>
                         </VBox>
                     </l:content>
                     <l:content>
                         <VBox>
-                            <Label text="Parent" labelFor="filterParent" design="Bold"/>
+                            <Label text="{i18n>col.parent}" labelFor="filterParent" design="Bold"/>
                             <Select id="filterParent" width="100%"
                                     change=".onFilterChange" forceSelection="false"
                                     items="{path: 'filters>/parentGroups'}">
@@ -109,20 +109,20 @@
                     </l:content>
                     <l:content>
                         <VBox>
-                            <Label text="Status" labelFor="filterStatus" design="Bold"/>
+                            <Label text="{i18n>lbl.status}" labelFor="filterStatus" design="Bold"/>
                             <Select id="filterStatus" width="100%"
                                     change=".onFilterChange" forceSelection="false">
-                                <core:Item key=""      text="All"/>
-                                <core:Item key="true"  text="Active"/>
-                                <core:Item key="false" text="Inactive"/>
+                                <core:Item key=""      text="{i18n>lbl.all}"/>
+                                <core:Item key="true"  text="{i18n>lbl.active}"/>
+                                <core:Item key="false" text="{i18n>lbl.inactive}"/>
                             </Select>
                         </VBox>
                     </l:content>
                 </l:Grid>
                     <Toolbar style="Clear" class="sapUiSmallMarginTop">
                         <ToolbarSpacer/>
-                        <Button text="Clear" type="Transparent" press=".onClearFilters"/>
-                        <Button text="Go" type="Emphasized" press=".onGo"/>
+                        <Button text="{i18n>btn.clear}" type="Transparent" press=".onClearFilters"/>
+                        <Button text="{i18n>btn.go}" type="Emphasized" press=".onGo"/>
                     </Toolbar>
                 </VBox>
             </f:DynamicPageHeader>
@@ -159,16 +159,16 @@
 
                     <headerToolbar>
                         <OverflowToolbar id="tableToolbar" style="Clear">
-                            <Title id="tableTitle" text="Groups" level="H3"/>
+                            <Title id="tableTitle" text="{i18n>fieldGroups.title}" level="H3"/>
                             <ToolbarSpacer/>
-                            <Button id="bulkActivateBtn" text="Activate"
+                            <Button id="bulkActivateBtn" text="{i18n>btn.activate}"
                                     icon="sap-icon://accept" type="Success"
                                     visible="false" press=".onBulkActivate">
                                 <layoutData>
                                     <OverflowToolbarLayoutData priority="NeverOverflow"/>
                                 </layoutData>
                             </Button>
-                            <Button id="bulkDeleteBtn" text="Delete"
+                            <Button id="bulkDeleteBtn" text="{i18n>btn.delete}"
                                     icon="sap-icon://delete" type="Negative"
                                     visible="false" press=".onBulkDelete">
                                 <layoutData>
@@ -181,31 +181,31 @@
 
                     <columns>
                         <Column id="colGroupId"    width="8rem"  vAlign="Middle" importance="High">
-                            <Label text="Field Group Name" design="Bold"/>
+                            <Label text="{i18n>col.groupName}" design="Bold"/>
                         </Column>
                         <Column id="colDescription" width="12rem" vAlign="Middle" importance="High">
-                            <Label text="Description" design="Bold"/>
+                            <Label text="{i18n>col.description}" design="Bold"/>
                         </Column>
                         <Column id="colType"       width="7rem"  vAlign="Middle" hAlign="Center" importance="High">
-                            <Label text="Type" design="Bold"/>
+                            <Label text="{i18n>col.type}" design="Bold"/>
                         </Column>
                         <Column id="colParent"     width="7rem"  vAlign="Middle" importance="Medium">
-                            <Label text="Parent Group" design="Bold"/>
+                            <Label text="{i18n>filter.parentGroup}" design="Bold"/>
                         </Column>
                         <Column id="colIcon"       width="4rem"  vAlign="Middle" hAlign="Center" importance="Low">
-                            <Label text="Icon" design="Bold"/>
+                            <Label text="{i18n>lbl.icon}" design="Bold"/>
                         </Column>
                         <Column id="colSequence"   width="5rem"  vAlign="Middle" hAlign="End" importance="Low">
-                            <Label text="Sequence" design="Bold"/>
+                            <Label text="{i18n>col.sequence}" design="Bold"/>
                         </Column>
                         <Column id="colSubGroups"  width="6rem"  vAlign="Middle" hAlign="Center" importance="Medium">
-                            <Label text="Sub Groups" design="Bold"/>
+                            <Label text="{i18n>col.subGroups}" design="Bold"/>
                         </Column>
                         <Column id="colFields"     width="5rem"  vAlign="Middle" hAlign="Center" importance="Medium">
-                            <Label text="Fields" design="Bold"/>
+                            <Label text="{i18n>fieldMaster.tableTitle}" design="Bold"/>
                         </Column>
                         <Column id="colStatus"     width="5rem"  vAlign="Middle" hAlign="Center" importance="High">
-                            <Label text="Status" design="Bold"/>
+                            <Label text="{i18n>lbl.status}" design="Bold"/>
                         </Column>
                         <Column id="colActions"    width="3rem"  vAlign="Middle" hAlign="End" importance="High"/>
                     </columns>

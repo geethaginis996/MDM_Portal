@@ -664,6 +664,21 @@ sap.ui.define(
       },
 
       _loadUsage: function () {
+        // Never attempt to load usage data for an unsaved new field.
+        // The transient OData V4 context created by listBinding.create()
+        // has field_id = "" at creation time, but between navigation and
+        // the setBindingContext() call completing, getBindingContext() can
+        // still return the *previous* field's context — causing _loadUsage
+        // to query BPRoleFields with that stale field_id and showing the
+        // previous field's role assignments on the new-field form.
+        if (this._oViewModel.getProperty("/isNew")) {
+          // Clear any stale data from a previous field's usage load
+          var oUsageModel = this.getView().getModel("usage");
+          if (oUsageModel) { oUsageModel.setProperty("/items", []); }
+          this.byId("usageCount") && this.byId("usageCount").setText("0 role assignments");
+          return;
+        }
+
         var oCtx = this.getView().getBindingContext();
         if (!oCtx) {
           return;

@@ -205,6 +205,7 @@ service MDMPortalService {
         reference_object_no    : String(20),
         bp_number              : String(20),
         business_justification : String(2000),
+        priority                : String(10),
         submit                 : Boolean,
         bp_roles               : array of {
             role_id       : String(10);
@@ -228,6 +229,15 @@ service MDMPortalService {
     // =========================================================================
     //  CUSTOM ACTIONS & FUNCTIONS - CHANGE REQUESTS
     // =========================================================================
+
+    // Delete (DRAFT) or Cancel (IN_APPROVAL) a change request
+    action DeleteChangeRequest(
+        cr_id   : String,
+        reason  : String
+    ) returns {
+        success : Boolean;
+        message : String;
+    };
 
     // Submit a change request for approval
     action submitChangeRequest(
@@ -333,7 +343,13 @@ service MDMPortalService {
     };
 
     function GetFieldsByMasterDataType(masterDataTypeId: String) 
-        returns array of FieldMasters;
+        returns array of {
+            field_id     : String;
+            description  : String;
+            data_type    : String;
+            display_type : String;
+            source_table : String;
+        };
 
     function ValidateField(field_id: String, value: String) returns {
         isValid: Boolean;

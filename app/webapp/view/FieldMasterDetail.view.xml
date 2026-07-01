@@ -11,7 +11,7 @@
             <Bar>
                 <contentLeft>
                     <Button icon="sap-icon://nav-back" type="Transparent" press=".onNavBack"/>
-                    <Title id="pageTitle" text="Field Detail" level="H4"/>
+                    <Title id="pageTitle" text="{i18n>fieldMasterDetail.titleEdit}" level="H4"/>
                 </contentLeft>
             </Bar>
         </customHeader>
@@ -22,9 +22,9 @@
             <VBox class="sapUiMediumMarginBeginEnd sapUiSmallMarginBottom">
                 <HBox wrap="Wrap" class="sapUiSmallMarginTop" alignItems="Center">
                     <ObjectAttribute id="attrStatus"   title="Status"        text=""/>
-                    <ObjectAttribute id="attrCreated"  title="Created By"    text="" class="sapUiSmallMarginBegin"/>
-                    <ObjectAttribute id="attrDate"     title="Created On"    text="" class="sapUiSmallMarginBegin"/>
-                    <ObjectAttribute id="attrModified" title="Last Modified" text="" class="sapUiSmallMarginBegin"/>
+                    <ObjectAttribute id="attrCreated"  title="{i18n>lbl.createdBy}"    text="" class="sapUiSmallMarginBegin"/>
+                    <ObjectAttribute id="attrDate"     title="{i18n>lbl.createdOn}"    text="" class="sapUiSmallMarginBegin"/>
+                    <ObjectAttribute id="attrModified" title="{i18n>lbl.modifiedOn}" text="" class="sapUiSmallMarginBegin"/>
                 </HBox>
             </VBox>
 
@@ -34,29 +34,29 @@
                 <items>
 
                     <!-- ── TAB 1 · General ── -->
-                    <IconTabFilter text="General" key="general" icon="sap-icon://hint">
+                    <IconTabFilter text="{i18n>tab.general}" key="general" icon="sap-icon://hint">
                         <VBox class="sapUiMediumMarginBeginEnd">
 
-                            <Title text="General Information" level="H4"
+                            <Title text="{i18n>fieldMasterDetail.generalInfo}" level="H4"
                                    class="sapUiSmallMarginTop sapUiSmallMarginBottom"/>
                             <layout:Grid defaultSpan="L6 M6 S12" hSpacing="2">
                                 <layout:content>
                                     <VBox>
-                                        <Label text="Field Name" required="true"/>
+                                        <Label text="{i18n>lbl.fieldName}" required="true"/>
                                         <Input id="inFieldId"
                                                value="{field_id}"
-                                               placeholder="e.g. BUKRS"
+                                               placeholder="{i18n>ph.fieldId}"
                                                editable="{view>/isNew}"
                                                liveChange=".onFieldChange"/>
                                     </VBox>
                                     <VBox>
-                                        <Label text="Description" required="true"/>
+                                        <Label text="{i18n>lbl.description}" required="true"/>
                                         <Input id="inDescription"
                                                value="{description}"
                                                liveChange=".onFieldChange"/>
                                     </VBox>
                                     <VBox>
-                                        <Label text="Active"/>
+                                        <Label text="{i18n>lbl.active}"/>
                                         <Switch id="swActive"
                                                 state="{active}"
                                                 customTextOn="Yes"
@@ -66,12 +66,12 @@
                                 </layout:content>
                             </layout:Grid>
 
-                            <Title text="Technical Attributes" level="H4"
+                            <Title text="{i18n>fieldMasterDetail.technicalAttrs}" level="H4"
                                    class="sapUiMediumMarginTop sapUiSmallMarginBottom"/>
                             <layout:Grid defaultSpan="L6 M6 S12" hSpacing="2">
                                 <layout:content>
                                     <VBox>
-                                        <Label text="Data Type" required="true"/>
+                                        <Label text="{i18n>lbl.dataType}" required="true"/>
                                         <Select id="selDataType"
                                                 selectedKey="{data_type}"
                                                 width="100%"
@@ -81,49 +81,36 @@
                                         </Select>
                                     </VBox>
                                     <VBox>
-                                        <Label text="Length" required="true"/>
+                                        <Label text="{i18n>lbl.length}" required="true"/>
                                         <Input id="inLength"
                                                value="{length}"
                                                type="Number"
-                                               placeholder="e.g. 10"
+                                               placeholder="{i18n>ph.length}"
                                                liveChange=".onFieldChange"/>
                                     </VBox>
                                     <VBox>
-                                        <Label text="Decimals"/>
+                                        <Label text="{i18n>lbl.decimals}"/>
                                         <Input id="inDecimals"
                                                value="{decimals}"
                                                type="Number"
-                                               placeholder="— only for DEC"
+                                               placeholder="{i18n>ph.decimals}"
                                                liveChange=".onFieldChange"/>
                                     </VBox>
-                                    <VBox>
-                                        <Label text="Source Table"/>
-                                        <Input id="inSourceTable"
-                                               value="{source_table}"
-                                               placeholder="e.g. T001"
-                                               liveChange=".onFieldChange"/>
-                                    </VBox>
-                                    <VBox>
-                                        <Label text="Source Field"/>
-                                        <Input id="inSourceField"
-                                               value="{source_field}"
-                                               placeholder="e.g. BUKRS"
-                                               liveChange=".onFieldChange"/>
-                                    </VBox>
+                                 
                                 </layout:content>
                             </layout:Grid>
                         </VBox>
                     </IconTabFilter>
 
                     <!-- ── TAB 2 · Value Help ── -->
-                    <IconTabFilter text="Value Help" key="valuehelp" icon="sap-icon://value-help">
+                    <IconTabFilter text="{i18n>tab.valueHelp}" key="valuehelp" icon="sap-icon://value-help">
                         <VBox class="sapUiMediumMarginBeginEnd">
-                            <Title text="Value Help &amp; Display" level="H4"
+                            <Title text="{i18n>tab.valueHelp}" level="H4"
                                    class="sapUiSmallMarginTop sapUiSmallMarginBottom"/>
                             <layout:Grid defaultSpan="L6 M6 S12" hSpacing="2">
                                 <layout:content>
                                     <VBox>
-                                        <Label text="Display Type" required="true"/>
+                                        <Label text="{i18n>lbl.displayType}" required="true"/>
                                         <Select id="selDisplayType"
                                                 selectedKey="{display_type}"
                                                 width="100%"
@@ -133,7 +120,7 @@
                                         </Select>
                                     </VBox>
                                     <VBox>
-                                        <Label text="Value Table" labelFor="selValueTable"
+                                        <Label text="{i18n>lbl.valueTable}" labelFor="selValueTable"
                                                required="{= ${display_type} === 'DROPDOWN' || ${display_type} === 'SEARCH_HELP' }"/>
                                         <Select id="selValueTable"
                                                 selectedKey="{value_table_value_table_id}"
@@ -148,29 +135,19 @@
                                 </layout:content>
                             </layout:Grid>
 
-                            <!-- Value table preview panel -->
-                            <Panel headerText="Value Table Preview" expandable="true" expanded="false"
-                                   class="sapUiSmallMarginTop">
-                                <content>
-                                    <VBox class="sapUiSmallMargin">
-                                        <ObjectAttribute id="vtSource"     title="Backend Table" text="—"/>
-                                        <ObjectAttribute id="vtOutputKey"  title="Output Key"    text="—"/>
-                                        <ObjectAttribute id="vtOutputDesc" title="Output Desc"   text="—"/>
-                                    </VBox>
-                                </content>
-                            </Panel>
+                         
                         </VBox>
                     </IconTabFilter>
 
                     <!-- ── TAB 4 · Validation ── -->
-                    <IconTabFilter text="Validation" key="validation" icon="sap-icon://validate">
+                    <IconTabFilter text="{i18n>tab.validation}" key="validation" icon="sap-icon://validate">
                         <VBox class="sapUiMediumMarginBeginEnd">
-                            <Title text="Validation Rule" level="H4"
+                            <Title text="{i18n>lbl.validationRule}" level="H4"
                                    class="sapUiSmallMarginTop sapUiSmallMarginBottom"/>
                             <layout:Grid defaultSpan="L6 M6 S12" hSpacing="2">
                                 <layout:content>
                                     <VBox>
-                                        <Label text="Validation Rule"/>
+                                        <Label text="{i18n>lbl.validationRule}"/>
                                         <Select id="selValidation"
                                                 selectedKey="{validation_validation_id}"
                                                 change=".onValidationChange"
@@ -181,38 +158,26 @@
                                         </Select>
                                     </VBox>
                                     <VBox>
-                                        <Label text="Trigger"/>
+                                        <Label text="{i18n>lbl.trigger}"/>
                                         <Select id="selTrigger" width="100%"
                                                 change=".onFieldChange">
-                                            <core:Item key="CHANGE" text="On Field Change"/>
-                                            <core:Item key="SAVE"   text="On Save"/>
-                                            <core:Item key="BOTH"   text="Both"/>
+                                            <core:Item key="CHANGE" text="{i18n>lbl.triggerOnChange}"/>
+                                            <core:Item key="SAVE"   text="{i18n>lbl.triggerOnSave}"/>
+                                            <core:Item key="BOTH"   text="{i18n>lbl.triggerBoth}"/>
                                         </Select>
                                     </VBox>
                                 </layout:content>
                             </layout:Grid>
 
                             <!-- Validation rule detail panel -->
-                            <Panel id="validationPreview" headerText="Rule Details"
-                                   expandable="false" class="sapUiSmallMarginTop">
-                                <content>
-                                    <VBox class="sapUiSmallMargin">
-                                        <ObjectAttribute id="valFnName" title="Function"      text="—"/>
-                                        <ObjectAttribute id="valDesc"   title="Description"   text="—"/>
-                                        <ObjectAttribute id="valParam1" title="Parameter 1"   text="—"/>
-                                        <ObjectAttribute id="valParam2" title="Parameter 2"   text="—"/>
-                                        <ObjectAttribute id="valParam3" title="Parameter 3"   text="—"/>
-                                        <ObjectAttribute id="valErrMsg" title="Error Message" text="—"/>
-                                    </VBox>
-                                </content>
-                            </Panel>
+                            
                         </VBox>
                     </IconTabFilter>
 
                     <!-- ── TAB 5 · Usage ── -->
-                    <IconTabFilter text="Usage" key="usage" icon="sap-icon://connected">
+                    <IconTabFilter text="{i18n>tab.usage}" key="usage" icon="sap-icon://connected">
                         <Toolbar class="sapUiSmallMarginTop">
-                            <Title text="Used in BP Roles" level="H4"/>
+                            <Title text="{i18n>fieldMasterDetail.usedInRoles}" level="H4"/>
                             <ToolbarSpacer/>
                             <Text id="usageCount" text=""/>
                         </Toolbar>
@@ -220,17 +185,18 @@
                                noDataText="This field is not assigned to any BP role yet"
                                items="{
                                    path: '/BPRoleFields',
+                                   filters: [{ path: 'field_field_id', operator: 'EQ', value1: '__NONE__' }],
                                    parameters: {
                                        $expand: 'role($select=role_id,description)',
                                        $select: 'role_role_id,field_field_id,field_status,sequence,default_value,read_only'
                                    }
                                }">
                             <columns>
-                                <Column width="120px"><Text text="Role ID"/></Column>
-                                <Column><Text text="Description"/></Column>
-                                <Column width="120px"><Text text="Field Status"/></Column>
-                                <Column width="80px"><Text text="Sequence"/></Column>
-                                <Column width="80px"><Text text="Read Only"/></Column>
+                                <Column width="120px"><Text text="{i18n>col.roleId}"/></Column>
+                                <Column><Text text="{i18n>lbl.description}"/></Column>
+                                <Column width="120px"><Text text="{i18n>col.fieldStatus}"/></Column>
+                                <Column width="80px"><Text text="{i18n>col.sequence}"/></Column>
+                                <Column width="80px"><Text text="{i18n>lbl.readOnly}"/></Column>
                             </columns>
                             <items>
                                 <ColumnListItem type="Navigation" press=".onUsageRowPress">
@@ -250,24 +216,24 @@
                     </IconTabFilter>
 
                     <!-- ── TAB 6 · Change Log ── -->
-                    <IconTabFilter text="Change Log" key="changelog" icon="sap-icon://history">
+                    <IconTabFilter text="{i18n>tab.changeLog}" key="changelog" icon="sap-icon://history">
                         <VBox class="sapUiSmallMarginBeginEnd sapUiSmallMarginTop sapUiSmallMarginBottom">
-                            <Title text="Record Information" level="H5" class="sapUiTinyMarginBottom"/>
+                            <Title text="{i18n>lbl.recordInfo}" level="H5" class="sapUiTinyMarginBottom"/>
                             <HBox wrap="Wrap">
                                 <VBox width="12rem" class="sapUiTinyMarginEnd">
-                                    <Label text="Created On" design="Bold"/>
+                                    <Label text="{i18n>lbl.createdOn}" design="Bold"/>
                                     <Text id="clCreatedAt" text="{view>/clCreatedAt}" wrapping="false"/>
                                 </VBox>
                                 <VBox width="12rem" class="sapUiTinyMarginEnd">
-                                    <Label text="Created By" design="Bold"/>
+                                    <Label text="{i18n>lbl.createdBy}" design="Bold"/>
                                     <Text id="clCreatedBy" text="{view>/clCreatedBy}" wrapping="false"/>
                                 </VBox>
                                 <VBox width="12rem" class="sapUiTinyMarginEnd">
-                                    <Label text="Last Modified On" design="Bold"/>
+                                    <Label text="{i18n>lbl.modifiedOn}" design="Bold"/>
                                     <Text id="clModifiedAt" text="{view>/clModifiedAt}" wrapping="false"/>
                                 </VBox>
                                 <VBox width="12rem">
-                                    <Label text="Last Modified By" design="Bold"/>
+                                    <Label text="{i18n>lbl.modifiedBy}" design="Bold"/>
                                     <Text id="clModifiedBy" text="{view>/clModifiedBy}" wrapping="false"/>
                                 </VBox>
                             </HBox>
@@ -277,11 +243,11 @@
                                alternateRowColors="true"
                                items="{path: '/AuditLogs', suspended: true}">
                             <columns>
-                                <Column width="11rem"><Label text="Timestamp" design="Bold"/></Column>
-                                <Column width="9rem"><Label text="User" design="Bold"/></Column>
-                                <Column width="7rem"><Label text="Action" design="Bold"/></Column>
-                                <Column><Label text="Before" design="Bold"/></Column>
-                                <Column><Label text="After" design="Bold"/></Column>
+                                <Column width="11rem"><Label text="{i18n>col.timestamp}" design="Bold"/></Column>
+                                <Column width="9rem"><Label text="{i18n>col.user}" design="Bold"/></Column>
+                                <Column width="7rem"><Label text="{i18n>col.action}" design="Bold"/></Column>
+                                <Column><Label text="{i18n>lbl.triggerBefore}" design="Bold"/></Column>
+                                <Column><Label text="{i18n>lbl.triggerAfter}" design="Bold"/></Column>
                             </columns>
                             <items>
                                 <ColumnListItem>
@@ -308,9 +274,9 @@
         <footer>
             <OverflowToolbar>
                 <ToolbarSpacer/>
-                <Button text="Copy"   icon="sap-icon://copy" type="Transparent" press=".onCopy"/>
-                <Button text="Cancel" type="Default"         press=".onCancel"/>
-                <Button text="Save"   type="Emphasized"      press=".onSave"/>
+                <Button text="{i18n>btn.copy}"   icon="sap-icon://copy" type="Transparent" press=".onCopy"/>
+                <Button text="{i18n>btn.cancel}" type="Default"         press=".onCancel"/>
+                <Button text="{i18n>btn.save}"   type="Emphasized"      press=".onSave"/>
             </OverflowToolbar>
         </footer>
 

@@ -3,8 +3,10 @@ sap.ui.define([
     "sap/ui/model/json/JSONModel",
     "sap/ui/model/Filter",
     "sap/ui/model/FilterOperator",
-    "sap/ui/model/Sorter"
-], function (Controller, JSONModel, Filter, FilterOperator, Sorter) {
+    "sap/ui/model/Sorter",
+    "sap/m/MessageToast",
+    "sap/m/MessageBox"
+], function (Controller, JSONModel, Filter, FilterOperator, Sorter, MessageToast, MessageBox) {
     "use strict";
 
     return Controller.extend("mdm.portal.controller.MyRequests", {
@@ -82,8 +84,67 @@ sap.ui.define([
             this.getOwnerComponent().getRouter().navTo("createBP");
         },
 
+        onDeleteRow: function (oEvent) {
+            // Stop the row press from firing too
+            oEvent.stopPropagation ? oEvent.stopPropagation() : null;
+
+            var oCtx    = oEvent.getSource().getBindingContext();
+            var sCrId   = oCtx.getProperty("cr_id");
+            var sStatus = oCtx.getProperty("status");
+
+            var sTitle = sStatus === "DRAFT" ? "Delete Draft" : "Cancel Request";
+            var sMsg   = sStatus === "DRAFT"
+                ? "Permanently delete draft " + sCrId + "? This cannot be undone."
+                : "Cancel request " + sCrId + "? It will be marked as Cancelled.";
+
+            MessageBox.confirm(sMsg, {
+                title           : sTitle,
+                icon            : MessageBox.Icon.WARNING,
+                actions         : [MessageBox.Action.YES, MessageBox.Action.NO],
+                emphasizedAction: MessageBox.Action.NO,
+                onClose         : function (sAction) {
+                    if (sAction !== MessageBox.Action.YES) { return; }
+                    this._deleteOrCancelCR(sCrId);
+                }.bind(this)
+            });
+        },
+
+        _deleteOrCancelCR: function (sCrId) {
+            var oVm    = this.getView().getModel("view");
+            var oModel = this.getOwnerComponent().getModel();
+            var sUrl   = oModel.getServiceUrl().replace(/\/$/, "") + "/DeleteChangeRequest";
+
+            oVm.setProperty("/busy", true);
+
+            fetch(sUrl, {
+                method : "POST",
+                headers: { "Content-Type": "application/json", "Accept": "application/json" },
+                body   : JSON.stringify({ cr_id: sCrId, reason: "" })
+            })
+            .then(function (r) {
+                if (!r.ok) {
+                    return r.json().then(function (e) {
+                        throw new Error((e.error && e.error.message) || "HTTP " + r.status);
+                    });
+                }
+                return r.json();
+            })
+            .then(function (oData) {
+                oVm.setProperty("/busy", false);
+                MessageToast.show(oData.value && oData.value.message
+                    ? oData.value.message : sCrId + " removed.");
+                // Refresh the list
+                var oBinding = this.byId("crTable").getBinding("items");
+                if (oBinding) { oBinding.refresh(); }
+            }.bind(this))
+            .catch(function (oErr) {
+                oVm.setProperty("/busy", false);
+                MessageBox.error("Could not remove: " + oErr.message);
+            }.bind(this));
+        },
+
         onNavHome: function () {
-            this.getOwnerComponent().getRouter().navTo("home");
+            this.getOwnerComponent().getRouter().navTo("home", {}, true);
         }
     });
 });

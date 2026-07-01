@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<core:FragmentDefinition
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core">
+
+    <Dialog id="assignFieldsToGroupDialog"
+            title="Assign Fields to Group"
+            contentWidth="48rem"
+            contentHeight="36rem"
+            draggable="true"
+            resizable="true"
+            stretch="{device>/system/phone}">
+
+        <subHeader>
+            <Toolbar>
+                <SearchField id="assignFgSearch"
+                             placeholder="Search by field ID or description..."
+                             width="100%"
+                             liveChange=".onAssignFgSearchLiveChange"/>
+            </Toolbar>
+        </subHeader>
+
+        <content>
+            <Table id="assignFgTable"
+                   mode="MultiSelect"
+                   growing="true"
+                   growingThreshold="50"
+                   noDataText="No unassigned fields found."
+                   selectionChange=".onAssignFgSelectionChange"
+                   items="{
+                       path: 'assignFgPicker>/items'
+                   }">
+                <columns>
+                    <Column width="8rem"><Label text="Field ID"    design="Bold"/></Column>
+                    <Column>            <Label text="Description"  design="Bold"/></Column>
+                    <Column width="7rem"><Label text="Data Type"   design="Bold"/></Column>
+                    <Column width="8rem"><Label text="Display Type" design="Bold"/></Column>
+                </columns>
+                <items>
+                    <ColumnListItem type="Active">
+                        <cells>
+                            <ObjectIdentifier title="{assignFgPicker>field_id}"/>
+                            <Text text="{assignFgPicker>description}" wrapping="false"/>
+                            <Text text="{assignFgPicker>data_type}"   wrapping="false"/>
+                            <Text text="{assignFgPicker>display_type}" wrapping="false"/>
+                        </cells>
+                    </ColumnListItem>
+                </items>
+            </Table>
+        </content>
+
+        <beginButton>
+            <Button id="assignFgConfirmBtn"
+                    text="Assign Selected ({assignFgPicker>/selectedCount})"
+                    type="Emphasized"
+                    enabled="{= ${assignFgPicker>/selectedCount} > 0 }"
+                    press=".onAssignFgConfirm"/>
+        </beginButton>
+        <endButton>
+            <Button text="Cancel"
+                    press=".onAssignFgCancel"/>
+        </endButton>
+
+    </Dialog>
+
+</core:FragmentDefinition>

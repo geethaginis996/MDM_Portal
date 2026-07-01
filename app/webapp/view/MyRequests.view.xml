@@ -69,25 +69,32 @@
                        alternateRowColors="true"
                        growing="true"
                        growingThreshold="20"
+                       fixedLayout="false"
                        busy="{view>/busy}"
                        items="{
                            path: '/ChangeRequests',
                            sorter: { path: 'createdAt', descending: true },
                            parameters: {
-                               $expand: 'bp_roles,field_values',
                                $select: 'cr_id,request_type,scenario_code,bp_category_category_id,account_group_account_group_id,status,requester,priority,createdAt,submitted_at,posted_object_no'
                            }
                        }">
                     <columns>
-                        <Column width="10rem"><Label text="CR Number"    design="Bold"/></Column>
-                        <Column width="6rem" ><Label text="Type"         design="Bold"/></Column>
-                        <Column width="8rem" ><Label text="Category"     design="Bold"/></Column>
-                        <Column width="8rem" ><Label text="Acct Group"   design="Bold"/></Column>
-                        <Column width="8rem" ><Label text="Status"       design="Bold"/></Column>
-                        <Column width="8rem" ><Label text="Priority"     design="Bold"/></Column>
-                        <Column width="9rem" ><Label text="Requester"    design="Bold"/></Column>
-                        <Column width="11rem"><Label text="Created On"   design="Bold"/></Column>
-                        <Column width="9rem" ><Label text="BP Number"    design="Bold"/></Column>
+                        <Column width="10rem"><Label text="CR Number"  design="Bold"/></Column>
+                        <Column width="6rem" ><Label text="Type"       design="Bold"/></Column>
+                        <Column width="9rem" ><Label text="Category"   design="Bold"/></Column>
+                        <Column width="7rem" ><Label text="Acct Group" design="Bold"/></Column>
+                        <Column width="8rem" ><Label text="Status"     design="Bold"/></Column>
+                        <Column width="8rem"
+                                minScreenWidth="Tablet"
+                                demandPopin="true"><Label text="Priority"   design="Bold"/></Column>
+                        <Column><Label text="Requester"  design="Bold"/></Column>
+                        <Column width="9rem"
+                                minScreenWidth="Tablet"
+                                demandPopin="true"><Label text="Created On" design="Bold"/></Column>
+                        <Column width="7rem"
+                                minScreenWidth="Desktop"
+                                demandPopin="true"><Label text="BP Number"  design="Bold"/></Column>
+                        <Column width="3rem" hAlign="End"/>
                     </columns>
                     <items>
                         <ColumnListItem type="Active" press=".onRowPress">
@@ -111,9 +118,15 @@
                                 <Text text="{
                                     path: 'createdAt',
                                     type: 'sap.ui.model.odata.type.DateTimeOffset',
-                                    formatOptions: { style: 'short' }
+                                    formatOptions: { style: 'short', UTC: false }
                                 }" wrapping="false"/>
                                 <Text text="{posted_object_no}" wrapping="false"/>
+                                <!-- Delete/Cancel button — only for removable statuses -->
+                                <Button icon="{= ${status} === 'DRAFT' ? 'sap-icon://delete' : 'sap-icon://cancel'}"
+                                        type="Transparent"
+                                        tooltip="{= ${status} === 'DRAFT' ? 'Delete Draft' : 'Cancel Request'}"
+                                        visible="{= ${status} === 'DRAFT' || ${status} === 'IN_APPROVAL' || ${status} === 'SENT_BACK'}"
+                                        press=".onDeleteRow"/>
                             </cells>
                         </ColumnListItem>
                     </items>

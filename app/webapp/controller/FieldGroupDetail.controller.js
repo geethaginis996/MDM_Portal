@@ -1,5 +1,6 @@
 sap.ui.define([
     "sap/ui/core/mvc/Controller",
+    "sap/ui/core/Fragment",
     "sap/ui/model/json/JSONModel",
     "sap/ui/model/Filter",
     "sap/ui/model/FilterOperator",
@@ -8,7 +9,7 @@ sap.ui.define([
     "sap/m/MessageBox",
     "sap/ui/core/format/DateFormat"
 ], function (
-    Controller, JSONModel, Filter, FilterOperator, Sorter,
+    Controller, Fragment, JSONModel, Filter, FilterOperator, Sorter,
     MessageToast, MessageBox, DateFormat
 ) {
     "use strict";
@@ -41,6 +42,12 @@ sap.ui.define([
             // (populated on demand when tabs are selected)
             this.getView().setModel(new JSONModel({ items: [] }), "subGroups");
             this.getView().setModel(new JSONModel({ items: [] }), "assignedFields");
+            // Picker model for the Assign Fields to Group dialog
+            this.getView().setModel(new JSONModel({
+                items        : [],
+                allItems     : [],
+                selectedCount: 0
+            }), "assignFgPicker");
 
             this._loadLookups();
 
@@ -351,8 +358,93 @@ sap.ui.define([
             var oCtx = this.getView().getBindingContext();
             if (!oCtx) { return; }
             var sGroupId = oCtx.getProperty("group_id");
-            this.getOwnerComponent().getRouter().navTo("fieldGroupDetail", {
-                groupId: "NEW_SUB_" + encodeURIComponent(sGroupId)
+            if (!sGroupId) {
+                MessageBox.warning("Please save the main group first before adding sub-groups.");
+                return;
+            }
+
+            // Get the current group's description for display in the dialog
+            var sDesc    = oCtx.getProperty("description") || "";
+            var sLabel   = sGroupId + (sDesc ? " — " + sDesc : "");
+
+            var fnOpen = function () {
+                // Reset fields every time the dialog opens
+                Fragment.byId(this.getView().getId(), "subDlgGroupId").setValue("").setValueState("None");
+                Fragment.byId(this.getView().getId(), "subDlgDescription").setValue("");
+                Fragment.byId(this.getView().getId(), "subDlgSequence").setValue("10");
+                Fragment.byId(this.getView().getId(), "subDlgIcon").setValue("sap-icon://group");
+                Fragment.byId(this.getView().getId(), "subDlgParentLabel").setText(sLabel);
+                Fragment.byId(this.getView().getId(), "subDlgSaveBtn").setEnabled(false);
+                this._oSubGroupDialog.open();
+            }.bind(this);
+
+            if (this._oSubGroupDialog) {
+                fnOpen();
+                return;
+            }
+
+            Fragment.load({
+                id        : this.getView().getId(),
+                name      : "mdm.portal.view.Fragment.AddSubGroupDialog",
+                controller: this
+            }).then(function (oDialog) {
+                this._oSubGroupDialog = oDialog;
+                this.getView().addDependent(oDialog);
+                fnOpen();
+            }.bind(this));
+        },
+
+        // Enable Save button only when Group ID is non-empty
+        onSubGroupIdLiveChange: function (oEvent) {
+            var sVal = (oEvent.getParameter("value") || "").trim();
+            Fragment.byId(this.getView().getId(), "subDlgSaveBtn").setEnabled(!!sVal);
+            var oInput = oEvent.getSource();
+            oInput.setValueState(sVal ? "None" : "Error");
+            oInput.setValueStateText(sVal ? "" : "Group ID is required.");
+        },
+
+        onSubGroupDialogCancel: function () {
+            if (this._oSubGroupDialog) { this._oSubGroupDialog.close(); }
+        },
+
+        onSubGroupDialogSave: function () {
+            var sParentCtx = this.getView().getBindingContext();
+            if (!sParentCtx) { return; }
+            var sParentId = sParentCtx.getProperty("group_id");
+            var sParentMDT = sParentCtx.getProperty("master_data_type_master_data_type_id");
+
+            var sGroupId  = (Fragment.byId(this.getView().getId(), "subDlgGroupId").getValue() || "").trim().toUpperCase();
+            var sDescVal  = (Fragment.byId(this.getView().getId(), "subDlgDescription").getValue() || "").trim();
+            var iSeq      = parseInt(Fragment.byId(this.getView().getId(), "subDlgSequence").getValue(), 10) || 10;
+            var sIcon     = (Fragment.byId(this.getView().getId(), "subDlgIcon").getValue() || "").trim() || "sap-icon://group";
+
+            if (!sGroupId) {
+                Fragment.byId(this.getView().getId(), "subDlgGroupId").setValueState("Error");
+                return;
+            }
+
+            // Create sub-group via OData POST
+            var oModel      = this.getOwnerComponent().getModel();
+            var oListBinding = oModel.bindList("/FieldGroups", null, [], [], {
+                $$updateGroupId: "subGroupCreate"
+            });
+            oListBinding.create({
+                group_id                          : sGroupId,
+                description                       : sDescVal,
+                icon                              : sIcon,
+                sequence                          : iSeq,
+                active                            : true,
+                master_data_type_master_data_type_id: sParentMDT || null,
+                parent_group_id_group_id           : sParentId
+            });
+
+            oModel.submitBatch("subGroupCreate").then(function () {
+                MessageToast.show("Sub-group " + sGroupId + " created.");
+                if (this._oSubGroupDialog) { this._oSubGroupDialog.close(); }
+                // Refresh the sub-groups table to show the newly added row
+                this._loadSubGroups();
+            }.bind(this)).catch(function (oErr) {
+                MessageBox.error("Could not create sub-group: " + (oErr.message || oErr));
             });
         },
 
@@ -418,6 +510,140 @@ sap.ui.define([
             }.bind(this)).catch(function (e) {
                 MessageBox.error("Could not load fields: " + e.message);
             });
+        },
+
+        // ── Assign Fields to Group ───────────────────────────────────
+
+        // Open a picker showing all FieldMaster records NOT yet assigned
+        // to this group (for a sub-group: not already in sub_group;
+        // for a main group: not already in main_group).
+        onAssignFieldsToGroup: function () {
+            var oCtx = this.getView().getBindingContext();
+            if (!oCtx) { return; }
+            var sGroupId = oCtx.getProperty("group_id");
+            var bIsMain  = !oCtx.getProperty("parent_group_id_group_id");
+            var oModel   = this.getOwnerComponent().getModel();
+            var oPickerModel = this.getView().getModel("assignFgPicker");
+
+            // Build the exclusion filter — skip fields already pointing at this group
+            var sExcludeField = bIsMain ? "main_group_group_id" : "sub_group_group_id";
+            var oFilter = new Filter(sExcludeField, FilterOperator.NE, sGroupId);
+
+            oModel.bindList("/FieldMasters", null, [new Sorter("field_id")], [oFilter], {
+                $select: "field_id,description,data_type,display_type,active"
+            }).requestContexts(0, 500).then(function (aCtx) {
+                var aItems = aCtx
+                    .filter(function (c) { return c.getProperty("active"); })
+                    .map(function (c) {
+                        return {
+                            field_id    : c.getProperty("field_id"),
+                            description : c.getProperty("description"),
+                            data_type   : c.getProperty("data_type"),
+                            display_type: c.getProperty("display_type")
+                        };
+                    });
+                oPickerModel.setData({ items: aItems, allItems: aItems, selectedCount: 0 });
+
+                var fnOpen = function () {
+                    // Clear search and selection on every open
+                    var oSearch = Fragment.byId(this.getView().getId(), "assignFgSearch");
+                    if (oSearch) { oSearch.setValue(""); }
+                    var oTable = Fragment.byId(this.getView().getId(), "assignFgTable");
+                    if (oTable) { oTable.removeSelections(true); }
+                    oPickerModel.setProperty("/selectedCount", 0);
+                    this._oAssignFgDialog.open();
+                }.bind(this);
+
+                if (this._oAssignFgDialog) {
+                    fnOpen();
+                    return;
+                }
+
+                Fragment.load({
+                    id        : this.getView().getId(),
+                    name      : "mdm.portal.view.Fragment.AssignFieldsToGroupDialog",
+                    controller: this
+                }).then(function (oDialog) {
+                    this._oAssignFgDialog = oDialog;
+                    this.getView().addDependent(oDialog);
+                    fnOpen();
+                }.bind(this));
+            }.bind(this)).catch(function (oErr) {
+                MessageBox.error("Could not load fields: " + (oErr.message || oErr));
+            });
+        },
+
+        // Live search filter on the picker table
+        onAssignFgSearchLiveChange: function (oEvent) {
+            var sQuery = (oEvent.getParameter("newValue") || "").trim().toLowerCase();
+            var oPickerModel = this.getView().getModel("assignFgPicker");
+            var aAll = oPickerModel.getProperty("/allItems") || [];
+            var aFiltered = sQuery
+                ? aAll.filter(function (item) {
+                    return item.field_id.toLowerCase().indexOf(sQuery) >= 0 ||
+                           item.description.toLowerCase().indexOf(sQuery) >= 0;
+                })
+                : aAll;
+            oPickerModel.setProperty("/items", aFiltered);
+            // Reset selected count since selection is cleared by model change
+            oPickerModel.setProperty("/selectedCount", 0);
+        },
+
+        onAssignFgCancel: function () {
+            if (this._oAssignFgDialog) { this._oAssignFgDialog.close(); }
+        },
+
+        onAssignFgConfirm: function () {
+            var oCtx = this.getView().getBindingContext();
+            if (!oCtx) { return; }
+            var sGroupId    = oCtx.getProperty("group_id");
+            var bIsMain     = !oCtx.getProperty("parent_group_id_group_id");
+            var sGroupField = bIsMain ? "main_group_group_id" : "sub_group_group_id";
+
+            var oTable = Fragment.byId(this.getView().getId(), "assignFgTable");
+            var aSelected = oTable ? oTable.getSelectedItems() : [];
+            if (!aSelected.length) { return; }
+
+            var oModel = this.getOwnerComponent().getModel();
+            var aFieldIds = aSelected.map(function (oItem) {
+                return oItem.getBindingContext("assignFgPicker").getProperty("field_id");
+            });
+
+            // Patch each selected field's group FK directly via a PATCH request.
+            // bindList + filter + requestContexts gives us a live OData V4 context
+            // with setProperty() available — bindContext() returns a binding object,
+            // not the context itself, so we use bindList filtered to the single key.
+            var aPatches = aFieldIds.map(function (sFieldId) {
+                return oModel.bindList("/FieldMasters", null, null, [
+                    new Filter("field_id", FilterOperator.EQ, sFieldId)
+                ], {
+                    $select       : "field_id," + sGroupField,
+                    $$updateGroupId: "fieldGroupAssign"
+                }).requestContexts(0, 1).then(function (aCtxs) {
+                    if (!aCtxs.length) {
+                        throw new Error("Field " + sFieldId + " not found.");
+                    }
+                    aCtxs[0].setProperty(sGroupField, sGroupId);
+                });
+            });
+
+            Promise.all(aPatches).then(function () {
+                return oModel.submitBatch("fieldGroupAssign");
+            }).then(function () {
+                MessageToast.show(aFieldIds.length + " field" +
+                    (aFieldIds.length > 1 ? "s" : "") + " assigned to " + sGroupId + ".");
+                if (this._oAssignFgDialog) { this._oAssignFgDialog.close(); }
+                this._loadAssignedFields();
+            }.bind(this)).catch(function (oErr) {
+                MessageBox.error("Could not assign fields: " + (oErr.message || oErr));
+            });
+        },
+
+        // Track selection count for the Assign button label
+        onAssignFgSelectionChange: function () {
+            var oTable = Fragment.byId(this.getView().getId(), "assignFgTable");
+            var iCount = oTable ? oTable.getSelectedItems().length : 0;
+            this.getView().getModel("assignFgPicker").setProperty("/selectedCount", iCount);
         },
 
         onFieldRowPress: function (oEvent) {

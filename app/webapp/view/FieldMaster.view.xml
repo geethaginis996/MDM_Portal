@@ -44,7 +44,7 @@
                 <f:actions>
                     <OverflowToolbar style="Clear">
                         <Button id="exportBtn"
-                                text="Export"
+                                text="{i18n>btn.export}"
                                 icon="sap-icon://download"
                                 type="Transparent"
                                 press=".onExport">
@@ -54,7 +54,7 @@
                             </layoutData>
                         </Button>
                         <Button id="importBtn"
-                                text="Import"
+                                text="{i18n>btn.import}"
                                 icon="sap-icon://upload"
                                 type="Transparent"
                                 press=".onImport">
@@ -64,7 +64,7 @@
                             </layoutData>
                         </Button>
                         <Button id="addFieldBtn"
-                                text="New Field"
+                                text="{i18n>fieldMaster.newField}"
                                 icon="sap-icon://add"
                                 type="Emphasized"
                                 press=".onAdd">
@@ -92,16 +92,16 @@
                         class="sapUiSmallMarginBeginEnd sapUiSmallMarginTopBottom">
                     <l:content>
                         <VBox>
-                            <Label text="Field Name / Description"
+                            <Label text="{i18n>filter.fieldName}"
                                    labelFor="filterSearch" design="Bold"/>
-                            <Input id="filterSearch" placeholder="Search…"
+                            <Input id="filterSearch" placeholder="{i18n>filter.search}"
                                    showClearIcon="true" width="100%"
                                    liveChange=".onFilterLiveChange"/>
                         </VBox>
                     </l:content>
                     <l:content>
                         <VBox>
-                            <Label text="Master Data Type"
+                            <Label text="{i18n>filter.masterDataType}"
                                    labelFor="filterMasterDataType" design="Bold"/>
                             <Select id="filterMasterDataType" width="100%"
                                     change=".onFilterChange" selectedKey=""
@@ -113,7 +113,7 @@
                     </l:content>
                     <l:content>
                         <VBox>
-                            <Label text="Main Group"
+                            <Label text="{i18n>filter.mainGroup}"
                                    labelFor="filterMainGroup" design="Bold"/>
                             <Select id="filterMainGroup" width="100%"
                                     change=".onFilterChange" selectedKey=""
@@ -125,7 +125,7 @@
                     </l:content>
                     <l:content>
                         <VBox>
-                            <Label text="Display Type"
+                            <Label text="{i18n>filter.displayType}"
                                    labelFor="filterDisplayType" design="Bold"/>
                             <Select id="filterDisplayType" width="100%"
                                     change=".onFilterChange" selectedKey=""
@@ -137,20 +137,20 @@
                     </l:content>
                     <l:content>
                         <VBox>
-                            <Label text="Status" labelFor="filterActive" design="Bold"/>
+                            <Label text="{i18n>lbl.status}" labelFor="filterActive" design="Bold"/>
                             <Select id="filterActive" width="100%"
                                     change=".onFilterChange" forceSelection="false">
-                                <core:Item key=""      text="All"/>
-                                <core:Item key="true"  text="Active"/>
-                                <core:Item key="false" text="Inactive"/>
+                                <core:Item key=""      text="{i18n>lbl.all}"/>
+                                <core:Item key="true"  text="{i18n>lbl.active}"/>
+                                <core:Item key="false" text="{i18n>lbl.inactive}"/>
                             </Select>
                         </VBox>
                     </l:content>
                 </l:Grid>
                     <Toolbar style="Clear" class="sapUiSmallMarginTop">
                         <ToolbarSpacer/>
-                        <Button id="clearFiltersBtn" text="Clear" type="Transparent" press=".onClearFilters"/>
-                        <Button id="goButton" text="Go" type="Emphasized" press=".onGo"/>
+                        <Button id="clearFiltersBtn" text="{i18n>btn.clear}" type="Transparent" press=".onClearFilters"/>
+                        <Button id="goButton" text="{i18n>btn.go}" type="Emphasized" press=".onGo"/>
                     </Toolbar>
                 </VBox>
             </f:DynamicPageHeader>
@@ -191,7 +191,7 @@
                     growing="true"
                     growingThreshold="30"
                     growingScrollToLoad="true"
-                    noDataText="No fields match the current filters"
+                    noDataText="{i18n>fieldMaster.noData}"
                     mode="MultiSelect"
                     fixedLayout="true"
                     alternateRowColors="true"
@@ -201,16 +201,16 @@
 
                     <headerToolbar>
                         <OverflowToolbar id="tableToolbar" style="Clear">
-                            <Title id="tableTitle" text="Fields" level="H3"/>
+                            <Title id="tableTitle" text="{i18n>fieldMaster.tableTitle}" level="H3"/>
                             <ToolbarSpacer/>
-                            <Button id="bulkActivateBtn" text="Activate"
+                            <Button id="bulkActivateBtn" text="{i18n>btn.bulkActivate}"
                                     icon="sap-icon://accept" type="Success"
                                     visible="false" press=".onBulkActivate">
                                 <layoutData>
                                     <OverflowToolbarLayoutData priority="NeverOverflow"/>
                                 </layoutData>
                             </Button>
-                            <Button id="bulkDeleteBtn" text="Delete"
+                            <Button id="bulkDeleteBtn" text="{i18n>btn.delete}"
                                     icon="sap-icon://delete" type="Negative"
                                     visible="false" press=".onBulkDelete">
                                 <layoutData>
@@ -237,48 +237,48 @@
                     <columns>
                         <Column id="colFieldName"
                                 width="6rem" vAlign="Middle" importance="High">
-                            <Label text="Field Name" design="Bold"/>
+                            <Label text="{i18n>col.fieldId}" design="Bold"/>
                         </Column>
                         <Column id="colDescription"
                                 width="8rem" vAlign="Middle" importance="High">
-                            <Label text="Description" design="Bold"/>
+                            <Label text="{i18n>col.description}" design="Bold"/>
                         </Column>
                         <Column id="colDataType"
                                 width="4rem" vAlign="Middle" hAlign="Center"
                                 importance="Medium">
-                            <Label text="Type" design="Bold"/>
+                            <Label text="{i18n>col.dataType}" design="Bold"/>
                         </Column>
                         <Column id="colMainGroup"
                                 width="7rem" vAlign="Middle" importance="Medium">
-                            <Label text="Main Group" design="Bold"/>
+                            <Label text="{i18n>filter.mainGroup}" design="Bold"/>
                         </Column>
                         <Column id="colSubGroup"
                                 width="6rem" vAlign="Middle" importance="Low">
-                            <Label text="Sub Group" design="Bold"/>
+                            <Label text="{i18n>col.subGroup}" design="Bold"/>
                         </Column>
                         <Column id="colLength"
                                 width="3rem" vAlign="Middle" hAlign="End"
                                 importance="Low">
-                            <Label text="Len" design="Bold"/>
+                            <Label text="{i18n>col.length}" design="Bold"/>
                         </Column>
                         <Column id="colValueTable"
                                 width="5rem" vAlign="Middle" hAlign="Center"
                                 importance="Low">
-                            <Label text="Value Tbl" design="Bold"/>
+                            <Label text="{i18n>col.valueTable}" design="Bold"/>
                         </Column>
                         <Column id="colDisplayType"
                                 width="6rem" vAlign="Middle" importance="Low">
-                            <Label text="Display Type" design="Bold"/>
+                            <Label text="{i18n>filter.displayType}" design="Bold"/>
                         </Column>
                         <Column id="colValidation"
                                 width="5rem" vAlign="Middle" hAlign="Center"
                                 importance="Low">
-                            <Label text="Validation" design="Bold"/>
+                            <Label text="{i18n>col.validation}" design="Bold"/>
                         </Column>
                         <Column id="colStatus"
                                 width="5rem" vAlign="Middle" hAlign="Center"
                                 importance="High">
-                            <Label text="Status" design="Bold"/>
+                            <Label text="{i18n>lbl.status}" design="Bold"/>
                         </Column>
                         <Column id="colActions"
                                 width="2.5rem" vAlign="Middle" hAlign="End"
@@ -341,7 +341,7 @@
 
                                 <Button icon="sap-icon://slim-arrow-right"
                                         type="Transparent"
-                                        tooltip="Open details"
+                                        tooltip="{i18n>tooltip.openDetail}"
                                         press=".onFieldLinkPress"/>
 
                             </cells>

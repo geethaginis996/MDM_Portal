@@ -5,6 +5,63 @@
 const cds = require('@sap/cds');
 const { v4: uuid } = require('uuid');
 
+// Maps a BPCategory.category_id value to the short, fixed-length prefix
+// used inside the CR ID (e.g. CR-ORG-2026-000001 for "Organization").
+// A lookup table is used instead of algorithmically truncating the
+// category name, so the prefix stays stable and unambiguous even if
+// category descriptions change or new categories are added later with
+// similar leading letters.
+const CATEGORY_PREFIX = {
+    Organization: 'ORG',
+    Person      : 'PER',
+    Group       : 'GRP'
+};
+const DEFAULT_CATEGORY_PREFIX = 'GEN';   // fallback for an unmapped/blank category
+
+/**
+ * Generates the next sequential Change Request ID for the given BP
+ * category and year, in the form CR-{CAT}-{YYYY}-{NNNNNN} (3-letter
+ * category prefix + 6-digit zero-padded running sequence).
+ *
+ * The sequence is scoped per category AND per year — each category gets
+ * its own independent counter, so e.g. Organization and Person requests
+ * don't share or skip numbers because of each other's volume. Reads the
+ * highest existing sequence number for that exact category+year prefix
+ * and increments it — wrapped in a retry loop by the caller to stay safe
+ * under concurrent requests (SQLite has no native sequence object, so we
+ * rely on optimistic retry on a unique-key violation).
+ *
+ * Examples: CR-ORG-2026-000001, CR-ORG-2026-000002, CR-PER-2026-000001,
+ *           CR-ORG-2027-000001 (resets when the year changes)
+ */
+async function generateNextCrId(db, sCategoryId) {
+    const sCatPrefix = CATEGORY_PREFIX[sCategoryId] || DEFAULT_CATEGORY_PREFIX;
+    const sYear   = String(new Date().getFullYear());
+    const sPrefix = `CR-${sCatPrefix}-${sYear}-`;
+
+    // Find the highest existing sequence number for this exact
+    // category+year prefix. cr_id format is always
+    // CR-{CAT}-{YYYY}-{NNNNNN}, so a simple string max works because the
+    // numeric part is fixed-width zero-padded.
+    const aExisting = await db.run(
+        SELECT.from('mdm.portal.CRHeader')
+            .columns('cr_id')
+            .where(`cr_id like '${sPrefix}%'`)
+            .orderBy('cr_id desc')
+            .limit(1)
+    );
+
+    let iNext = 1;
+    if (aExisting && aExisting.length) {
+        const sLast = aExisting[0].cr_id;                 // e.g. CR-ORG-2026-000042
+        const sSeqPart = sLast.slice(sPrefix.length);      // e.g. 000042
+        const iLast = parseInt(sSeqPart, 10);
+        if (!isNaN(iLast)) { iNext = iLast + 1; }
+    }
+
+    return sPrefix + String(iNext).padStart(6, '0');
+}
+
 class MDMPortalService extends cds.ApplicationService {
     async init() {
 
@@ -19,13 +76,61 @@ class MDMPortalService extends cds.ApplicationService {
          * - Creates initial release strategy snapshot
          * - Changes CR status to IN_APPROVAL
          */
+        // =====================================================================
+        //  DELETE / CANCEL CHANGE REQUEST
+        //  DRAFT     → hard delete: removes CRHeader + all child rows (cascade)
+        //  IN_APPROVAL → soft cancel: sets status = CANCELLED
+        //  APPROVED / POSTED → not allowed
+        // =====================================================================
+        this.on('DeleteChangeRequest', async (req) => {
+            const { cr_id, reason } = req.data;
+            const db = cds.db;
+
+            if (!cr_id) { return req.error(400, 'cr_id is required'); }
+
+            // Use explicit WHERE — db.read(entity, key) only works with default 'ID' key
+            const cr = await SELECT.one.from('mdm.portal.CRHeader')
+                .where({ cr_id: cr_id });
+            if (!cr) { return req.error(404, `Change request ${cr_id} not found`); }
+
+            const { status } = cr;
+
+            if (status === 'APPROVED' || status === 'POSTED') {
+                return req.error(400,
+                    `Cannot delete a ${status} request. Only DRAFT or IN_APPROVAL requests can be removed.`
+                );
+            }
+
+            if (status === 'DRAFT') {
+                // Hard delete — delete children first to satisfy FK constraints,
+                // then delete the header
+                await DELETE.from('mdm.portal.CRFieldValue')
+                    .where({ cr_cr_id: cr_id });
+                await DELETE.from('mdm.portal.CRBPRole')
+                    .where({ cr_cr_id: cr_id });
+                await DELETE.from('mdm.portal.CRHeader')
+                    .where({ cr_id: cr_id });
+                return { success: true, message: `Draft ${cr_id} deleted.` };
+            }
+
+            if (status === 'IN_APPROVAL' || status === 'SENT_BACK' || status === 'CANCELLED') {
+                // Soft cancel — keep data for audit trail, just update status
+                await UPDATE('mdm.portal.CRHeader')
+                    .set({ status: 'CANCELLED' })
+                    .where({ cr_id: cr_id });
+                return { success: true, message: `Request ${cr_id} cancelled.` };
+            }
+
+            return req.error(400, `Cannot remove a request with status ${status}`);
+        });
+
         this.on('submitChangeRequest', async (req) => {
             const { cr_id } = req.data;
             const db = cds.db;
 
             try {
                 // Fetch CR
-                const cr = await db.read('mdm.portal.CRHeader', cr_id);
+                const cr = await SELECT.one.from('mdm.portal.CRHeader').where({ cr_id: cr_id });
                 if (!cr) {
                     return req.error(404, `Change Request ${cr_id} not found`);
                 }
@@ -201,7 +306,7 @@ class MDMPortalService extends cds.ApplicationService {
             const db = cds.db;
 
             try {
-                const cr = await db.read('mdm.portal.CRHeader', cr_id);
+                const cr = await SELECT.one.from('mdm.portal.CRHeader').where({ cr_id: cr_id });
 
                 if (!cr) {
                     return req.error(404, `CR ${cr_id} not found`);
@@ -462,7 +567,7 @@ class MDMPortalService extends cds.ApplicationService {
             const { data } = req;
 
             // Set defaults
-            data.cr_id = data.cr_id || `CR-${new Date().getFullYear()}-${uuid().slice(0, 6).toUpperCase()}`;
+            data.cr_id = data.cr_id || await generateNextCrId(cds.db, data.bp_category_category_id);
             data.status = 'DRAFT';
             data.requester = req.user.id;
 
@@ -489,7 +594,7 @@ class MDMPortalService extends cds.ApplicationService {
 
         this.createReleaseStrategySnapshot = async function (crId, strategyId) {
             const db = cds.db;
-            const strategy = await db.read('mdm.portal.ReleaseStrategy', strategyId);
+            const strategy = await SELECT.one.from('mdm.portal.ReleaseStrategy').where({ strategy_id: strategyId });
 
             if (!strategy) return;
 
@@ -629,36 +734,87 @@ class MDMPortalService extends cds.ApplicationService {
                 reference_object_no,
                 bp_number,
                 business_justification,
+                priority,
                 submit,
                 bp_roles     = [],
                 field_values = []
             } = req.data;
 
             const actor   = req.user?.id || 'system';
+
+            // BP Account Group is marked required on the Create BP screen
+            // (red asterisk) precisely because everything downstream —
+            // Number Range, BP numbering, posting — depends on it. The
+            // CRHeader.account_group column itself is nullable at the
+            // schema level (so a half-finished draft can still be saved
+            // mid-edit without other in-progress fields blocking it), but
+            // it must never be silently accepted as blank by this action —
+            // that previously let drafts persist with no Account Group at
+            // all, which is misleading in My Requests and breaks once that
+            // draft is edited and submitted. Enforce it explicitly here.
+            if (!account_group) {
+                return req.error(400, 'BP Account Group is required.');
+            }
+
             const isNew   = !existingCrId;
-            const sCrId   = isNew
-                ? `CR-${new Date().getFullYear()}-${uuid().slice(0,6).toUpperCase()}`
+            let sCrId     = isNew
+                ? await generateNextCrId(cds.db, bp_category)
                 : existingCrId;
-            const sStatus = submit ? 'IN_APPROVAL' : 'DRAFT';
+            const sStatus   = submit ? 'IN_APPROVAL' : 'DRAFT';
+            // CRHeader.priority is a CRPriority enum (NORMAL | HIGH) — guard
+            // against anything else coming in from the client and fall back
+            // to the schema default.
+            const sPriority = (priority === 'HIGH') ? 'HIGH' : 'NORMAL';
+            // CRHeader uses the @sap/cds/common `managed` aspect, which
+            // normally auto-fills createdAt/createdBy/modifiedAt/modifiedBy.
+            // That auto-fill only runs for requests CAP dispatches through
+            // its own CREATE/UPDATE event pipeline for the entity — this
+            // handler instead does a raw INSERT.into(...), which bypasses
+            // that pipeline entirely, so those columns are left NULL unless
+            // set explicitly here (this previously left "Created On" blank
+            // in My Requests for every CR saved through this action).
+            const dNow = new Date();
 
             try {
                 if (isNew) {
                     // ── INSERT new CRHeader ──────────────────────────────
-                    await INSERT.into('mdm.portal.CRHeader').entries({
-                        cr_id                             : sCrId,
-                        cr_group_id                       : sCrId,        // group = CR itself for now
-                        request_type                      : request_type || 'CREATE',
-                        master_data_type_master_data_type_id: 'BUSINESS PARTNER',
-                        scenario_code                     : 'BP_CREATE',
-                        bp_category_category_id           : bp_category    || null,
-                        account_group_account_group_id    : account_group  || null,
-                        reference_object_no               : reference_object_no || null,
-                        requester                         : actor,
-                        priority                          : 'NORMAL',
-                        business_justification            : business_justification || null,
-                        status                            : sStatus,
-                        submitted_at                      : submit ? new Date() : null
-                    });
+                    // Retry once on a (very rare) primary-key collision —
+                    // two near-simultaneous saves could read the same "last
+                    // sequence" value before either commits. On collision,
+                    // re-derive the next sequence and retry exactly once.
+                    let bInserted = false;
+                    for (let iAttempt = 0; iAttempt < 2 && !bInserted; iAttempt++) {
+                        try {
+                            await INSERT.into('mdm.portal.CRHeader').entries({
+                                cr_id                             : sCrId,
+                                cr_group_id                       : sCrId,        // group = CR itself for now
+                                request_type                      : request_type || 'CREATE',
+                                master_data_type_master_data_type_id: 'BUSINESS PARTNER',
+                                scenario_code                     : 'BP_CREATE',
+                                bp_category_category_id           : bp_category    || null,
+                                account_group_account_group_id    : account_group  || null,
+                                reference_object_no               : reference_object_no || null,
+                                requester                         : actor,
+                                priority                          : sPriority,
+                                business_justification            : business_justification || null,
+                                status                            : sStatus,
+                                submitted_at                      : submit ? dNow : null,
+                                createdAt                         : dNow,
+                                createdBy                         : actor,
+                                modifiedAt                        : dNow,
+                                modifiedBy                        : actor
+                            });
+                            bInserted = true;
+                        } catch (eInsert) {
+                            const sMsg = String(eInsert && eInsert.message || '').toLowerCase();
+                            const bIsDupKey = sMsg.includes('unique') || sMsg.includes('constraint') || sMsg.includes('primary key');
+                            if (bIsDupKey && iAttempt === 0) {
+                                sCrId = await generateNextCrId(cds.db, bp_category);
+                                continue;
+                            }
+                            throw eInsert;
+                        }
+                    }
                 } else {
                     // ── Verify existing CR can still be edited ────────────
                     const [existing] = await SELECT.from('mdm.portal.CRHeader')
@@ -676,8 +832,11 @@ class MDMPortalService extends cds.ApplicationService {
                         account_group_account_group_id : account_group || null,
                         reference_object_no            : reference_object_no || null,
                         business_justification         : business_justification || null,
+                        priority                        : sPriority,
                         status                         : sStatus,
-                        submitted_at                   : submit ? new Date() : null
+                        submitted_at                   : submit ? dNow : null,
+                        modifiedAt                      : dNow,
+                        modifiedBy                      : actor
                     });
 
                     // ── Delete old child rows and re-insert fresh ─────────

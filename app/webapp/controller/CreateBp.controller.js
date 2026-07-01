@@ -156,6 +156,7 @@ sap.ui.define([
                 oRt.setProperty("/bpAgId",     sAg);
                 oRt.setProperty("/mode",        oData.request_type === "EXTEND" ? "EXTEND" : "CREATE");
                 oRt.setProperty("/started",     true);
+                oRt.setProperty("/priority",    oData.priority || "NORMAL");
 
                 // Display text for category
                 var aCats = this.getView().getModel("cat").getProperty("/items") || [];
@@ -188,9 +189,14 @@ sap.ui.define([
                 this.getView().getModel("roles").setProperty("/items", aAllItems);
 
                 // ── 3. Restore field values into the form model ───────
+                // Namespaced by role: form>/values/{role_id}/{field_id}
+                // — mirrors the live-entry structure so the same field shared
+                // by multiple roles keeps each role's saved value distinct.
                 var mValues = {};
                 (oData.field_values || []).forEach(function (fv) {
-                    mValues[fv.field_field_id] = fv.new_value || "";
+                    var sRole = fv.role_id || "";
+                    if (!mValues[sRole]) { mValues[sRole] = {}; }
+                    mValues[sRole][fv.field_field_id] = fv.new_value || "";
                 });
                 this.getView().getModel("form").setProperty("/values", mValues);
 
@@ -245,6 +251,7 @@ sap.ui.define([
                 // role_id -> "edit" | "copy"
                 roleInstanceMode : {},
                 roleKeys         : [],
+                roleTokens       : [],
                 activeRole       : "",
                 bpAgId           : "",
                 bpNumber         : "",
@@ -252,6 +259,9 @@ sap.ui.define([
                 bpNumberEditable : false,
                 bpNumberPlaceholder: "\u2014",
                 bpNumberHelp     : "Will be set based on the selected role(s).",
+                // CRHeader.priority — defaults to NORMAL, matching the
+                // schema's own default. User can switch to HIGH on screen.
+                priority         : "NORMAL",
                 crId             : "",
                 busy             : false,
                 // header strip
@@ -554,10 +564,14 @@ sap.ui.define([
 
         // Pre-fill form values from the existing BP response.
         // Called in EXTEND mode so the user sees existing data in every field.
+        // Writes the same pre-filled value into every currently resolved
+        // role's namespace (form>/values/{role}/{field_id}) since this data
+        // describes the BP itself, not anything role-specific — it should
+        // show up no matter which role tab the user is viewing.
         _prefillExtendValues: function (oBpData) {
             if (!oBpData) return;
             var oFormModel = this.getView().getModel("form");
-            var mCurrent   = oFormModel.getProperty("/values") || {};
+            var mCurrent   = Object.assign({}, oFormModel.getProperty("/values") || {});
             var mFill = {
                 NAME1    : oBpData.name      || "",
                 NAME2    : oBpData.name2     || "",
@@ -567,9 +581,17 @@ sap.ui.define([
                 TELEPHONE: oBpData.telephone || "",
                 EMAIL    : oBpData.email     || ""
             };
-            // Merge: only set if not already entered by the user
-            Object.keys(mFill).forEach(function (k) {
-                if (!mCurrent[k] && mFill[k]) { mCurrent[k] = mFill[k]; }
+            // Every role that currently has resolved field assignments
+            var aRoleIds = [];
+            this._aAllAssignments.forEach(function (a) {
+                if (aRoleIds.indexOf(a.role) < 0) { aRoleIds.push(a.role); }
+            });
+            aRoleIds.forEach(function (sRoleId) {
+                mCurrent[sRoleId] = Object.assign({}, mCurrent[sRoleId] || {});
+                // Merge: only set if not already entered by the user
+                Object.keys(mFill).forEach(function (k) {
+                    if (!mCurrent[sRoleId][k] && mFill[k]) { mCurrent[sRoleId][k] = mFill[k]; }
+                });
             });
             oFormModel.setProperty("/values", mCurrent);
         },
@@ -674,6 +696,7 @@ sap.ui.define([
 
         _onRoleKeysChanged: function (aKeys) {
             this._oRt.setProperty("/roleKeys", aKeys);
+            this._oRt.setProperty("/roleTokens", this._buildRoleTokens(aKeys));
 
             if (!aKeys.length) {
                 this._oRt.setProperty("/roleDisp", "\u2014");
@@ -695,6 +718,42 @@ sap.ui.define([
                 this._buildTabs(aResolved, aKeys);
                 this._recomputeCanSave();
             }.bind(this));
+        },
+
+        // Build the Token list shown in the BP Roles MultiInput.
+        // Only the roles the user explicitly picked are shown as removable
+        // chips here — auto-pulled prerequisite roles are not independently
+        // removable from this field (removing the role that needs them takes
+        // the prerequisite with it automatically).
+        _buildRoleTokens: function (aKeys) {
+            var aAllItems = this.getView().getModel("roles").getProperty("/items") || [];
+            return aKeys.map(function (sKey) {
+                var oItem = aAllItems.find(function (i) { return i.key === sKey; });
+                var sText = oItem ? (sKey + " \u2014 " + oItem.description) : sKey;
+                return { key: sKey, text: sText };
+            });
+        },
+
+        // Fires when a token is removed (✕ clicked) directly from the
+        // MultiInput, or when tokens are otherwise added/removed in bulk.
+        onBpRoleTokenUpdate: function (oEvent) {
+            var sType = oEvent.getParameter("type");
+            if (sType !== "removed") { return; }   // only react to removals here — additions go through the VH dialog
+            var aRemovedTokens = oEvent.getParameter("removedTokens") || [];
+            var aRemovedKeys   = aRemovedTokens.map(function (t) { return t.getKey(); });
+            var aCurrentKeys   = this._oRt.getProperty("/roleKeys") || [];
+            var aNewKeys       = aCurrentKeys.filter(function (k) {
+                return aRemovedKeys.indexOf(k) < 0;
+            });
+
+            // Keep the master roles model and VH dialog state in sync
+            var aAllItems = this.getView().getModel("roles").getProperty("/items") || [];
+            aAllItems.forEach(function (item) {
+                item.selected = aNewKeys.indexOf(item.key) >= 0;
+            });
+            this.getView().getModel("roles").setProperty("/items", aAllItems);
+
+            this._onRoleKeysChanged(aNewKeys);
         },
 
         // Resolve auto-pull prerequisite roles for the selected roles, returned
@@ -924,6 +983,7 @@ sap.ui.define([
                         this._mRolePrereqFields[sRole] = [];
                     }
                     this._mRolePrereqFields[sRole].push({
+                        role       : sRole,
                         field_id   : c.getProperty("field_field_id"),
                         description: c.getProperty("field/description") || c.getProperty("field_field_id"),
                         data_type  : c.getProperty("field/data_type") || "STRING",
@@ -1011,17 +1071,47 @@ sap.ui.define([
             });
 
             // 3) Seed the form value model — preserve any values the user has already
-            //    entered when switching role tabs; start new fields blank.
+            //    entered (for this role, and for every other role) when switching
+            //    role tabs; start new fields blank.
             //    default_value on the field assignment is stored as metadata only;
             //    it is NOT auto-populated here so nothing appears pre-filled without
             //    user action. To apply a default the admin should set it explicitly.
-            var oFormModel = this.getView().getModel("form");
-            var mExisting  = oFormModel.getProperty("/values") || {};
-            var mValues    = {};
+            //
+            //    IMPORTANT: values are namespaced per role —
+            //    form>/values/{roleId}/{field_id} — so this only seeds the active
+            //    role's slice and never touches other roles' already-entered data.
+            //
+            //    NOTE: getProperty("/values") returns a reference to the model's
+            //    live internal object, not a copy. Mutating that reference in
+            //    place and passing the SAME reference back into setProperty can
+            //    cause UI5 to miss the change (no new object identity to diff
+            //    against), so bindings for the field controls just rendered for
+            //    this role may not refresh — which looks like "switching roles
+            //    doesn't pick up entered values" or only the first role's tab
+            //    ever rendering correctly. Building a fresh shallow clone here
+            //    guarantees setProperty always sees a new object and propagates
+            //    the update to every bound control.
+            //
+            //    CRITICAL: mFields only contains the MAIN-TAB fields for this
+            //    role (prerequisite fields are deliberately excluded — see the
+            //    aPrereqFieldIds filter above, since they're rendered in their
+            //    own Prerequisites tab instead). If this role's existing value
+            //    bucket is replaced outright with only the main-tab keys, any
+            //    already-typed prerequisite value (e.g. Company Code) is wiped
+            //    out every time this function runs — which happens on every
+            //    role-tab switch. So we start from a clone of the EXISTING
+            //    bucket (which preserves prereq + main-tab values already
+            //    there) and only reset/seed the specific main-tab keys that
+            //    belong on this render pass, leaving everything else intact.
+            var oFormModel  = this.getView().getModel("form");
+            var mAllValues  = Object.assign({}, oFormModel.getProperty("/values") || {});
+            var mExisting   = mAllValues[sActive] || {};
+            var mRoleValues = Object.assign({}, mExisting);
             Object.keys(mFields).forEach(function (sFid) {
-                mValues[sFid] = mExisting[sFid] !== undefined ? mExisting[sFid] : "";
+                mRoleValues[sFid] = mExisting[sFid] !== undefined ? mExisting[sFid] : "";
             });
-            oFormModel.setProperty("/values", mValues);
+            mAllValues[sActive] = mRoleValues;
+            oFormModel.setProperty("/values", mAllValues);
 
             // 4) Order main groups by their configured sequence.
             var aMainIds = Object.keys(mMain).sort(function (a, b) {
@@ -1337,18 +1427,25 @@ sap.ui.define([
 
             var oInst = aInstances.find(function (i) { return i.instance_no === iInstNo; });
             if (oInst) {
-                // Load all saved field values into the form model
+                // Load all saved field values into the form model, namespaced
+                // under this role so they don't collide with other roles'
+                // values for the same field_id.
                 var mLoaded = {};
                 try { mLoaded = JSON.parse(oInst.field_values || "{}"); } catch (e) {}
                 var oFormModel = this.getView().getModel("form");
-                var mCurrent   = oFormModel.getProperty("/values") || {};
+                // Fresh clone — see note in _renderTabsForActiveRole on why
+                // mutating the live model reference in place can cause UI5
+                // to miss the update.
+                var mAllValues = Object.assign({}, oFormModel.getProperty("/values") || {});
+                var mCurrent   = Object.assign({}, mAllValues[sRoleId] || {});
                 Object.assign(mCurrent, mLoaded);
 
                 // In copy mode: clear the prereq field values so user enters new ones
                 if (sMode === "copy") {
                     aPrereqFields.forEach(function (f) { delete mCurrent[f.field_id]; });
                 }
-                oFormModel.setProperty("/values", mCurrent);
+                mAllValues[sRoleId] = mCurrent;
+                oFormModel.setProperty("/values", mAllValues);
             }
 
             // Rebuild the prereq form to honour the lock/unlock state
@@ -1362,9 +1459,11 @@ sap.ui.define([
         // Clear the prerequisite field values for a role from the form model.
         _clearPrereqValues: function (sRoleId, aPrereqFields) {
             var oFormModel = this.getView().getModel("form");
-            var mCurrent   = oFormModel.getProperty("/values") || {};
+            var mAllValues = Object.assign({}, oFormModel.getProperty("/values") || {});
+            var mCurrent   = Object.assign({}, mAllValues[sRoleId] || {});
             aPrereqFields.forEach(function (f) { delete mCurrent[f.field_id]; });
-            oFormModel.setProperty("/values", mCurrent);
+            mAllValues[sRoleId] = mCurrent;
+            oFormModel.setProperty("/values", mAllValues);
         },
 
         // Rebuild only the prereq form content (lock/unlock) and refresh the strip.
@@ -1415,7 +1514,8 @@ sap.ui.define([
             var aPrereqs = this._mRolePrereqFields[sActive] || [];
             if (!aPrereqs.length) { return true; }   // no prereqs → always unlocked
 
-            var mValues = this.getView().getModel("form").getProperty("/values") || {};
+            var mAllValues = this.getView().getModel("form").getProperty("/values") || {};
+            var mValues    = mAllValues[sActive] || {};
 
             return aPrereqs.every(function (f) {
                 var v = mValues[f.field_id];
@@ -1559,8 +1659,15 @@ sap.ui.define([
         },
 
         // Build the right input control for a field's display type.
+        // IMPORTANT: the binding path is namespaced by role (f.role) — not just
+        // field_id — because the same field_id can be assigned to multiple
+        // roles (e.g. NAME1 on both BUP001 and FLCU00) and each role's value
+        // must be tracked independently. Without this, typing a value while
+        // viewing one role's tab silently overwrote the value shown for every
+        // other role sharing that field, and the save logic picked up only
+        // the last-typed value for all of them.
         _fieldControl: function (f) {
-            var sPath    = "{form>/values/" + f.field_id + "}";
+            var sPath    = "{form>/values/" + f.role + "/" + f.field_id + "}";
             var bEditable = !f.readOnly;
 
             // Boolean fields
@@ -1742,8 +1849,9 @@ sap.ui.define([
             var oItem = oCtx.getObject();
             var f     = this._oFieldVHMeta;
             if (!f || !oItem) { return; }
-            // Write selected key into form model
-            this.getView().getModel("form").setProperty("/values/" + f.field_id, oItem.code);
+            // Write selected key into form model, namespaced by the field's role
+            this.getView().getModel("form")
+                .setProperty("/values/" + f.role + "/" + f.field_id, oItem.code);
             this._oFieldVHDialog.close();
             setTimeout(this._checkAndGateTabs.bind(this), 0);
         },
@@ -1784,6 +1892,16 @@ sap.ui.define([
         },
 
         onSaveDraft: function () {
+            // BP Account Group is marked required on screen (red asterisk).
+            // Checking it here gives the user immediate feedback instead of
+            // a round-trip just to learn the same thing from the server —
+            // the server still enforces this independently as the
+            // authoritative check (see SaveBPChangeRequest), this is purely
+            // a faster client-side short-circuit for the common case.
+            if (!this._oRt.getProperty("/bpAgId")) {
+                MessageBox.warning("Please select a BP Account Group before saving.");
+                return;
+            }
             this._saveCR(false);
         },
 
@@ -1853,9 +1971,10 @@ sap.ui.define([
                         this._aAllAssignments.forEach(function (a) {
                             if (a.role !== sRoleId) { return; }
                             if (a.status === "SUPPRESS") { return; }
+                            var mRoleVals = oFormVals[sRoleId] || {};
                             var sVal = oFvs[a.field_id] !== undefined
                                 ? oFvs[a.field_id]
-                                : oFormVals[a.field_id];
+                                : mRoleVals[a.field_id];
                             if (sVal === undefined || sVal === null || String(sVal).trim() === "") { return; }
                             var sKey = sRoleId + "|" + iNo + "|" + a.field_id;
                             if (mSeen[sKey]) { return; }
@@ -1882,7 +2001,8 @@ sap.ui.define([
                     this._aAllAssignments.forEach(function (a) {
                         if (a.role !== sRoleId) { return; }
                         if (a.status === "SUPPRESS") { return; }
-                        var sVal = oFormVals[a.field_id];
+                        var mRoleVals = oFormVals[sRoleId] || {};
+                        var sVal = mRoleVals[a.field_id];
                         if (sVal === undefined || sVal === null || String(sVal).trim() === "") { return; }
                         var sKey = sRoleId + "|1|" + a.field_id;
                         if (mSeen[sKey]) { return; }
@@ -1908,6 +2028,7 @@ sap.ui.define([
                 reference_object_no  : (oRt.getProperty("/extendBpData/bp_number")) || "",
                 bp_number            : oRt.getProperty("/bpNumber") || "",
                 business_justification: "",
+                priority             : oRt.getProperty("/priority") || "NORMAL",
                 submit               : bSubmit,
                 bp_roles             : aCRBPRoles,
                 field_values         : aCRFieldVals
@@ -1976,6 +2097,13 @@ sap.ui.define([
                     );
                 } else {
                     MessageToast.show("Saved as draft \u2014 " + sCrId);
+                    // Clear the form back to a blank state — the draft is now
+                    // safely persisted in the backend, so there's no reason to
+                    // keep the entered values sitting in the screen. Without
+                    // this, every field stayed populated with the values that
+                    // were just saved, which looked like the save hadn't
+                    // actually happened or invited an accidental duplicate save.
+                    this._onRouteMatched();
                 }
             }.bind(this))
             .catch(function (oErr) {
@@ -1989,30 +2117,31 @@ sap.ui.define([
 
         _validateRequired: function () {
             var aErrors = [];
-            var oValues = this.getView().getModel("form").getProperty("/values") || {};
+            var oAllValues = this.getView().getModel("form").getProperty("/values") || {};
 
-            // Validate all assignments across every resolved role (picked + prereqs).
-            // _aAllAssignments already contains fields from all resolved roles.
-            var mActive = {};
+            // Validate every (role, field) assignment independently — a field
+            // shared by two roles (e.g. NAME1 on both BUP001 and FLCU00) can
+            // have a different status per role and a different value per role,
+            // so each role's copy must be checked on its own, not deduped
+            // down to a single cross-role slot.
+            var mSeen = {};
             this._aAllAssignments.forEach(function (a) {
                 if (a.status === "SUPPRESS") { return; }
-                var oEx = mActive[a.field_id];
-                if (oEx && STATUS_RANK[oEx.status] >= STATUS_RANK[a.status]) { return; }
-                mActive[a.field_id] = a;
-            });
+                var sKey = a.role + "|" + a.field_id;
+                if (mSeen[sKey]) { return; }
+                mSeen[sKey] = true;
 
-            Object.keys(mActive).forEach(function (sFid) {
-                var f    = mActive[sFid];
-                var sVal = oValues[sFid];
+                var mRoleVals = oAllValues[a.role] || {};
+                var sVal = mRoleVals[a.field_id];
                 var sStr = (sVal === undefined || sVal === null) ? "" : String(sVal);
 
-                if (f.status === "REQUIRED" && !sStr.trim()) {
-                    aErrors.push("\u2022 " + f.description + " is required.");
+                if (a.status === "REQUIRED" && !sStr.trim()) {
+                    aErrors.push("\u2022 " + a.description + " is required.");
                     return;
                 }
-                if (f.valFn && f.valTrigger === "SAVE" && sStr.trim()) {
-                    var sErr = this._runValidation(f, sVal);
-                    if (sErr) { aErrors.push("\u2022 " + f.description + ": " + sErr); }
+                if (a.valFn && a.valTrigger === "SAVE" && sStr.trim()) {
+                    var sErr = this._runValidation(a, sVal);
+                    if (sErr) { aErrors.push("\u2022 " + a.description + ": " + sErr); }
                 }
             }.bind(this));
 
@@ -2023,7 +2152,7 @@ sap.ui.define([
             var bDirty = this._oRt.getProperty("/started");
             var fnGo = function () {
                 this._onRouteMatched();
-                this.getOwnerComponent().getRouter().navTo("fieldMaster");
+                this.getOwnerComponent().getRouter().navTo("home", {}, true);
             }.bind(this);
             if (bDirty) {
                 MessageBox.confirm("Discard this request?", {
