@@ -82,6 +82,50 @@ class MDMPortalService extends cds.ApplicationService {
         //  IN_APPROVAL → soft cancel: sets status = CANCELLED
         //  APPROVED / POSTED → not allowed
         // =====================================================================
+        // =====================================================================
+        //  SAVE CR ATTACHMENTS
+        //  Saves file metadata for documents attached to a Change Request.
+        //  The actual file bytes are handled client-side (e.g. stored in
+        //  localStorage / IndexedDB or a future object store); this saves
+        //  the metadata record so the detail view can list the attachments.
+        // =====================================================================
+        this.on('SaveCRAttachments', async (req) => {
+            const { cr_id, attachments = [] } = req.data;
+            if (!cr_id)              { return req.error(400, 'cr_id is required'); }
+            if (!attachments.length) { return { success: true, message: 'No attachments to save.', saved: 0 }; }
+
+            const actor = req.user?.id || 'system';
+            const dNow  = new Date().toISOString();
+
+            // Verify CR exists
+            const cr = await SELECT.one.from('mdm.portal.CRHeader').where({ cr_id });
+            if (!cr) { return req.error(404, `Change request ${cr_id} not found`); }
+
+            // Delete existing attachments before re-inserting — prevents duplicates
+            // when Save Draft is clicked multiple times on the same draft.
+            await DELETE.from('mdm.portal.CRAttachment').where({ cr_cr_id: cr_id });
+
+            const aRows = attachments.map(a => ({
+                attachment_id    : uuid(),       // uses the uuid package imported at top of file
+                cr_cr_id         : cr_id,
+                file_name        : a.file_name        || 'unknown',
+                mime_type        : a.mime_type        || 'application/octet-stream',
+                size_bytes       : a.size_bytes       || 0,
+                object_store_uri : a.object_store_uri || '',
+                description      : a.description      || '',
+                uploaded_by      : actor,
+                uploaded_at      : dNow,
+                createdAt        : dNow,
+                createdBy        : actor,
+                modifiedAt       : dNow,
+                modifiedBy       : actor
+            }));
+
+            await INSERT.into('mdm.portal.CRAttachment').entries(aRows);
+            console.log(`[SaveCRAttachments] saved ${aRows.length} row(s) for ${cr_id}`);
+            return { success: true, message: `${aRows.length} attachment(s) saved.`, saved: aRows.length };
+        });
+
         this.on('DeleteChangeRequest', async (req) => {
             const { cr_id, reason } = req.data;
             const db = cds.db;
@@ -107,6 +151,8 @@ class MDMPortalService extends cds.ApplicationService {
                 await DELETE.from('mdm.portal.CRFieldValue')
                     .where({ cr_cr_id: cr_id });
                 await DELETE.from('mdm.portal.CRBPRole')
+                    .where({ cr_cr_id: cr_id });
+                await DELETE.from('mdm.portal.CRAttachment')
                     .where({ cr_cr_id: cr_id });
                 await DELETE.from('mdm.portal.CRHeader')
                     .where({ cr_id: cr_id });

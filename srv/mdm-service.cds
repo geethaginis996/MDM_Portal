@@ -230,6 +230,22 @@ service MDMPortalService {
     //  CUSTOM ACTIONS & FUNCTIONS - CHANGE REQUESTS
     // =========================================================================
 
+    // Save one or more attachments against a Change Request
+    action SaveCRAttachments(
+        cr_id       : String(20),
+        attachments : array of {
+            file_name       : String(200);
+            mime_type       : String(80);
+            size_bytes      : Integer64;
+            object_store_uri: String(500);
+            description     : String(500);
+        }
+    ) returns {
+        success : Boolean;
+        message : String;
+        saved   : Integer;
+    };
+
     // Delete (DRAFT) or Cancel (IN_APPROVAL) a change request
     action DeleteChangeRequest(
         cr_id   : String,

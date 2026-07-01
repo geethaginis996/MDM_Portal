@@ -177,9 +177,15 @@ sap.ui.define([
                 }
 
                 // ── 2. Restore role selections ────────────────────────
-                var aRoles    = (oData.bp_roles || []).filter(function (r) { return !r.auto_pulled; });
-                var aRoleKeys = aRoles.map(function (r) { return r.role_role_id; });
+                var aAllRoles  = (oData.bp_roles || []);
+                var aPickedRoles = aAllRoles.filter(function (r) { return !r.auto_pulled; });
+                var aPrereqRoles = aAllRoles.filter(function (r) { return  r.auto_pulled; });
+                var aRoleKeys    = aPickedRoles.map(function (r) { return r.role_role_id; });
+                var aPrereqKeys  = aPrereqRoles.map(function (r) { return r.role_role_id; });
+
                 oRt.setProperty("/roleKeys", aRoleKeys);
+                // Show both picked and prereq roles as tokens immediately on load
+                oRt.setProperty("/roleTokens", this._buildRoleTokens(aRoleKeys, aPrereqKeys));
 
                 // Mark selected roles in the roles model
                 var aAllItems = this.getView().getModel("roles").getProperty("/items") || [];
@@ -219,7 +225,41 @@ sap.ui.define([
                     });
                 }.bind(this));
 
-                // ── 5. Trigger role resolution and form build ─────────
+                // ── 5. Load existing attachments into the atts model ─────
+                // So they're visible when editing, and included on re-save
+                // without the user having to re-attach them.
+                var oModel   = this.getOwnerComponent().getModel();
+                var sBase    = oModel.getServiceUrl().replace(/\/$/, "");
+                fetch(sBase + "/CRAttachments?$filter=cr_cr_id eq '" +
+                    encodeURIComponent(sCrId) + "'&$select=file_name,mime_type,size_bytes",
+                    { headers: { Accept: "application/json" } })
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    var aRows = (d && d.value) || [];
+                    if (aRows.length && this._oAttsModel) {
+                        // Format size the same way _onFilesSelected does
+                        var aItems = aRows.map(function (a) {
+                            var iBytes = a.size_bytes || 0;
+                            var sSize;
+                            if (iBytes < 1024)             { sSize = iBytes + " B"; }
+                            else if (iBytes < 1024 * 1024) { sSize = Math.round(iBytes / 1024) + " KB"; }
+                            else                           { sSize = (iBytes / (1024 * 1024)).toFixed(1) + " MB"; }
+                            return {
+                                name     : a.file_name || "",
+                                size     : sSize,
+                                mimeType : a.mime_type || "application/octet-stream",
+                                sizeBytes: iBytes,
+                                fromServer: true   // flag: already persisted, keep on re-save
+                            };
+                        });
+                        this._oAttsModel.setProperty("/items", aItems);
+                        if (this._oAttachmentsTab) {
+                            this._oAttachmentsTab.setCount(String(aItems.length));
+                        }
+                    }
+                }.bind(this)).catch(function () {});
+
+                // ── 6. Trigger role resolution and form build ─────────
                 if (aRoleKeys.length) {
                     this._onRoleKeysChanged(aRoleKeys);
                 }
@@ -696,7 +736,8 @@ sap.ui.define([
 
         _onRoleKeysChanged: function (aKeys) {
             this._oRt.setProperty("/roleKeys", aKeys);
-            this._oRt.setProperty("/roleTokens", this._buildRoleTokens(aKeys));
+            // Initially show only picked roles as tokens; updated after prereq resolution below
+            this._oRt.setProperty("/roleTokens", this._buildRoleTokens(aKeys, []));
 
             if (!aKeys.length) {
                 this._oRt.setProperty("/roleDisp", "\u2014");
@@ -710,28 +751,41 @@ sap.ui.define([
                 aPairs.forEach(function (p) {
                     if (aResolved.indexOf(p.prerequisite) < 0) { aResolved.push(p.prerequisite); }
                 });
+                // Now we know the full resolved list — update tokens to include prereqs
+                var aPrereqOnly = aResolved.filter(function (k) { return aKeys.indexOf(k) < 0; });
+                this._oRt.setProperty("/roleTokens", this._buildRoleTokens(aKeys, aPrereqOnly));
+
                 var aDisp = aKeys.slice();
-                aResolved.forEach(function (k) {
-                    if (aKeys.indexOf(k) < 0) { aDisp.push(k + " (prereq)"); }
-                });
+                aPrereqOnly.forEach(function (k) { aDisp.push(k + " (prereq)"); });
                 this._oRt.setProperty("/roleDisp", aDisp.join(", "));
                 this._buildTabs(aResolved, aKeys);
                 this._recomputeCanSave();
             }.bind(this));
         },
 
-        // Build the Token list shown in the BP Roles MultiInput.
-        // Only the roles the user explicitly picked are shown as removable
-        // chips here — auto-pulled prerequisite roles are not independently
-        // removable from this field (removing the role that needs them takes
-        // the prerequisite with it automatically).
-        _buildRoleTokens: function (aKeys) {
+        // Build Token chips shown in the BP Roles MultiInput.
+        // aPickedKeys  — roles the user explicitly selected (removable ×)
+        // aPrereqKeys  — roles auto-pulled as prerequisites (shown but not removable)
+        _buildRoleTokens: function (aPickedKeys, aPrereqKeys) {
             var aAllItems = this.getView().getModel("roles").getProperty("/items") || [];
-            return aKeys.map(function (sKey) {
+            var aTokens   = [];
+
+            // Picked roles — removable
+            aPickedKeys.forEach(function (sKey) {
                 var oItem = aAllItems.find(function (i) { return i.key === sKey; });
                 var sText = oItem ? (sKey + " \u2014 " + oItem.description) : sKey;
-                return { key: sKey, text: sText };
+                aTokens.push({ key: sKey, text: sText, isPrereq: false });
             });
+
+            // Prereq (auto-pulled) roles — shown with "(prereq)" suffix, not removable
+            (aPrereqKeys || []).forEach(function (sKey) {
+                if (aPickedKeys.indexOf(sKey) >= 0) { return; } // already shown
+                var oItem = aAllItems.find(function (i) { return i.key === sKey; });
+                var sText = oItem ? (sKey + " \u2014 " + oItem.description + " (prereq)") : sKey + " (prereq)";
+                aTokens.push({ key: sKey, text: sText, isPrereq: true });
+            });
+
+            return aTokens;
         },
 
         // Fires when a token is removed (✕ clicked) directly from the
@@ -1602,7 +1656,12 @@ sap.ui.define([
             if (!aFiles || !aFiles.length) { return; }
             var aItems = this._oAttsModel.getProperty("/items").slice();
             for (var i = 0; i < aFiles.length; i++) {
-                aItems.push({ name: aFiles[i].name, size: this._formatFileSize(aFiles[i].size) });
+                aItems.push({
+                    name     : aFiles[i].name,
+                    size     : this._formatFileSize(aFiles[i].size),
+                    mimeType : aFiles[i].type || "application/octet-stream",
+                    sizeBytes: aFiles[i].size || 0
+                });
             }
             this._oAttsModel.setProperty("/items", aItems);
             this._oAttachmentsTab.setCount(String(aItems.length));
@@ -2078,6 +2137,35 @@ sap.ui.define([
                 return oResp.json();
             })
             .then(function (oData) {
+                var sCrId = oData && oData.value && oData.value.cr_id;
+
+                // ── Save attachment metadata if any files were attached ──
+                var aAtts = this._oAttsModel ? this._oAttsModel.getProperty("/items") : [];
+                if (sCrId && aAtts.length) {
+                    var sAttsUrl = sServiceUrl.replace(/\/$/, "") + "/SaveCRAttachments";
+                    fetch(sAttsUrl, {
+                        method : "POST",
+                        headers: { "Content-Type": "application/json", "Accept": "application/json" },
+                        body   : JSON.stringify({
+                            cr_id      : sCrId,
+                            attachments: aAtts.map(function (a) {
+                                return {
+                                    file_name       : a.name        || a.file_name || "",
+                                    mime_type       : a.mimeType    || a.mime_type || "application/octet-stream",
+                                    size_bytes      : a.sizeBytes   || a.size_bytes || 0,
+                                    object_store_uri: "",
+                                    description     : ""
+                                };
+                            })
+                        })
+                    }).then(function (r) {
+                        return r.json().then(function (d) {
+                            console.log("[SaveCRAttachments] response:", d);
+                        });
+                    }).catch(function (e) {
+                        console.error("[SaveCRAttachments] failed:", e.message);
+                    });
+                }
                 oRt.setProperty("/busy", false);
                 // CAP wraps action return in { value: { ... } }
                 var oResult = (oData && oData.value) ? oData.value : oData;

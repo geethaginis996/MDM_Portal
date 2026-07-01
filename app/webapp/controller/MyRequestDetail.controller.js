@@ -12,6 +12,10 @@ sap.ui.define([
     "sap/m/Text",
     "sap/m/Input",
     "sap/m/Select",
+    "sap/m/Table",
+    "sap/m/Column",
+    "sap/m/ColumnListItem",
+    "sap/m/ObjectIdentifier",
     "sap/ui/core/Item",
     "sap/m/VBox",
     "sap/m/HBox",
@@ -20,7 +24,8 @@ sap.ui.define([
 ], function (
     Controller, JSONModel, MessageBox, MessageToast,
     Token, SegmentedButtonItem, IconTabFilter,
-    Panel, Title, Label, Text, Input, Select, CoreItem,
+    Panel, Title, Label, Text, Input, Select,
+    Table, Column, ColumnListItem, ObjectIdentifier, CoreItem,
     VBox, HBox, Toolbar, ToolbarSpacer
 ) {
     "use strict";
@@ -47,12 +52,13 @@ sap.ui.define([
             this.getView().setModel(this._oViewModel, "view");
 
             // Stores the loaded data for re-rendering on role switch
-            this._aRoles     = [];
-            this._aFieldVals = [];
-            this._mSavedVals = {};   // "roleId|fieldId" → { new_value, prereq_indicator }
-            this._mRoleMeta  = {};   // role_id → description
-            this._mFieldMeta = {};   // field_id → { description, mainGroup, subGroup }
-            this._mGroupMeta = {};   // group_id → { description, parentId, sequence, icon }
+            this._aRoles       = [];
+            this._aFieldVals   = [];
+            this._aAttachments = [];
+            this._mSavedVals   = {};
+            this._mRoleMeta    = {};
+            this._mFieldMeta   = {};
+            this._mGroupMeta   = {};
 
             var oRouter = this.getOwnerComponent().getRouter();
             oRouter.getRoute("myRequestDetail").attachPatternMatched(this._onRouteMatched, this);
@@ -96,11 +102,21 @@ sap.ui.define([
                 .then(function (d) { return (d && d.value) || []; })
                 .catch(function () { return []; });
 
-            Promise.all([pHeader, pRoles, pFvs])
+            // Also fetch attachments saved against this CR
+            var pAtts = fetch(
+                sBase + "/CRAttachments?$filter=cr_cr_id eq " + sCrKey +
+                "&$select=attachment_id,file_name,size_bytes,mime_type,description,uploaded_by,uploaded_at&$top=200",
+                { headers: { Accept: "application/json" } })
+                .then(function (r) { return r.json(); })
+                .then(function (d) { return (d && d.value) || []; })
+                .catch(function () { return []; });
+
+            Promise.all([pHeader, pRoles, pFvs, pAtts])
             .then(function (aResults) {
                 var oData  = aResults[0];
                 var aRoles = aResults[1];
                 var aFvs   = aResults[2];
+                var aAtts  = aResults[3];
 
                 oVm.setProperty("/busy",         false);
                 oVm.setProperty("/status",       oData.status       || "\u2014");
@@ -136,6 +152,20 @@ sap.ui.define([
                         role_id    : r.role_role_id || r.role_id || "",
                         instance_no: r.instance_no,
                         auto_pulled: !!r.auto_pulled
+                    };
+                });
+
+                // Store attachments for the Attachments tab
+                that._aAttachments = aAtts.map(function (a) {
+                    return {
+                        attachment_id: a.attachment_id,
+                        file_name    : a.file_name    || "",
+                        size_bytes   : a.size_bytes   || 0,
+                        mime_type    : a.mime_type    || "",
+                        description  : a.description  || "",
+                        uploaded_by  : a.uploaded_by  || "",
+                        uploaded_at  : a.uploaded_at
+                            ? new Date(a.uploaded_at).toLocaleString() : ""
                     };
                 });
 
@@ -344,6 +374,10 @@ sap.ui.define([
 
             // Build tab content for the first active role
             this._buildRoleTabs(sFirst, oTabs);
+
+            // ── Attachments tab — CR-level, added once here (not per role switch)
+            // so it never duplicates when the user clicks a different role tab.
+            oTabs.addItem(this._buildAttachmentsTab());
         },
 
         // Build Token chips in the read-only MultiInput showing selected roles
@@ -514,6 +548,65 @@ sap.ui.define([
             if (aItems.length) { oTabs.setSelectedKey(aItems[0].getKey()); }
         },
 
+        // Build a read-only Attachments tab showing uploaded files
+        _buildAttachmentsTab: function () {
+            var aAtts = this._aAttachments || [];
+
+            var oVBox = new VBox({ class: "sapUiSmallMargin" });
+
+            oVBox.addItem(new Text({
+                text : "Supporting documents attached to this change request.",
+                class: "sapUiSmallMarginBottom"
+            }));
+
+            if (!aAtts.length) {
+                oVBox.addItem(new Text({
+                    text : "No attachments.",
+                    class: "sapUiTinyMarginTop"
+                }));
+            } else {
+                // Build a simple table matching the Create BP Attachments layout
+                var oTable = new Table({
+                    alternateRowColors: true,
+                    columns: [
+                        new Column({ header: new Label({ text: "File Name",    design: "Bold" }) }),
+                        new Column({ header: new Label({ text: "Size",         design: "Bold" }), hAlign: "End", width: "7rem" }),
+                        new Column({ header: new Label({ text: "Type",         design: "Bold" }), width: "8rem"  }),
+                        new Column({ header: new Label({ text: "Uploaded By",  design: "Bold" }), width: "9rem"  }),
+                        new Column({ header: new Label({ text: "Uploaded On",  design: "Bold" }), width: "12rem" })
+                    ]
+                });
+
+                aAtts.forEach(function (a) {
+                    // Format file size the same way CreateBP does
+                    var sSize;
+                    if (a.size_bytes < 1024)             { sSize = a.size_bytes + " B"; }
+                    else if (a.size_bytes < 1024 * 1024) { sSize = Math.round(a.size_bytes / 1024) + " KB"; }
+                    else                                  { sSize = (a.size_bytes / (1024 * 1024)).toFixed(1) + " MB"; }
+
+                    oTable.addItem(new ColumnListItem({
+                        cells: [
+                            new ObjectIdentifier({ title: a.file_name }),
+                            new Text({ text: sSize }),
+                            new Text({ text: a.mime_type }),
+                            new Text({ text: a.uploaded_by }),
+                            new Text({ text: a.uploaded_at })
+                        ]
+                    }));
+                });
+
+                oVBox.addItem(oTable);
+            }
+
+            return new IconTabFilter({
+                key    : "__attachments",
+                text   : "Attachments",
+                icon   : "sap-icon://attachment",
+                count  : aAtts.length ? String(aAtts.length) : "",
+                content: [oVBox]
+            });
+        },
+
         // Build one read-only field row: Label (FIELD_ID:*) + disabled Input (value)
         _buildFieldRow: function (fv) {
             var oFm       = this._mFieldMeta[fv.field_id] || {};
@@ -547,7 +640,19 @@ sap.ui.define([
         onDetailRoleChange: function (oEvent) {
             var sKey  = oEvent.getParameter("key");
             this._oViewModel.setProperty("/activeRole", sKey);
-            this._buildRoleTabs(sKey, this.byId("detailRoleTabs"));
+
+            var oTabs = this.byId("detailRoleTabs");
+            // Remove all tabs EXCEPT the Attachments tab (last item — we don't
+            // want to rebuild it on every role switch since it's CR-level)
+            var aItems    = oTabs.getItems();
+            var oAttsTab  = aItems[aItems.length - 1]; // save the Attachments tab
+            oTabs.destroyItems();
+
+            // Rebuild field tabs for the newly active role
+            this._buildRoleTabs(sKey, oTabs);
+
+            // Re-add the preserved Attachments tab at the end
+            if (oAttsTab) { oTabs.addItem(oAttsTab); }
         },
 
         onDetailTabChange: function () { /* tabs are static per role */ },

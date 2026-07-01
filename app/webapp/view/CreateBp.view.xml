@@ -94,7 +94,8 @@
                                 valueHelpRequest=".onBpRoleValueHelp"
                                 tokenUpdate=".onBpRoleTokenUpdate">
                         <tokens>
-                            <Token key="{rt>key}" text="{rt>text}"/>
+                            <Token key="{rt>key}" text="{rt>text}"
+                                   editable="{= !${rt>isPrereq} }"/>
                         </tokens>
                     </MultiInput>
 
