@@ -642,17 +642,20 @@ sap.ui.define([
             this._oViewModel.setProperty("/activeRole", sKey);
 
             var oTabs = this.byId("detailRoleTabs");
-            // Remove all tabs EXCEPT the Attachments tab (last item — we don't
-            // want to rebuild it on every role switch since it's CR-level)
-            var aItems    = oTabs.getItems();
-            var oAttsTab  = aItems[aItems.length - 1]; // save the Attachments tab
+
+            // NOTE: oTabs.destroyItems() destroys every child control in the
+            // aggregation (including their content), so a previously-held
+            // reference to the Attachments tab becomes a destroyed control —
+            // re-adding it afterwards silently fails to render. Instead,
+            // always rebuild the Attachments tab fresh, same as CreateBp's
+            // _renderTabsForActiveRole does.
             oTabs.destroyItems();
 
             // Rebuild field tabs for the newly active role
             this._buildRoleTabs(sKey, oTabs);
 
-            // Re-add the preserved Attachments tab at the end
-            if (oAttsTab) { oTabs.addItem(oAttsTab); }
+            // Re-add a freshly built Attachments tab at the end
+            oTabs.addItem(this._buildAttachmentsTab());
         },
 
         onDetailTabChange: function () { /* tabs are static per role */ },

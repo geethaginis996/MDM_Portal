@@ -331,6 +331,16 @@ sap.ui.define([
             if (this._oRoleVHDialog)    { this._oRoleVHDialog.destroy();    this._oRoleVHDialog    = null; }
             if (this._oFieldVHDialog)   { this._oFieldVHDialog.destroy();   this._oFieldVHDialog   = null; }
 
+            // Clear any attachments left over from a previously viewed/edited
+            // request — _oAttsModel is created lazily and lives on the
+            // controller instance, which is reused across route navigations,
+            // so without this reset a new request would start out showing
+            // the previous request's attached files. _onRouteMatchedEdit
+            // calls this first and then loads the correct attachments for
+            // the draft being edited, so clearing here is always safe.
+            if (this._oAttsModel) { this._oAttsModel.setProperty("/items", []); }
+            this._oAttachmentsTab = null;
+
             // Reload lookups on every visit so newly created roles/account groups
             // are picked up without requiring a page refresh
             this._loadLookups();
@@ -2137,7 +2147,12 @@ sap.ui.define([
                 return oResp.json();
             })
             .then(function (oData) {
-                var sCrId = oData && oData.value && oData.value.cr_id;
+                // CAP may or may not wrap the action result in a "value" key
+                // depending on how the endpoint is invoked — normalize once
+                // here and reuse everywhere below, instead of re-deriving
+                // this inconsistently in two places.
+                var oResult = (oData && oData.value) ? oData.value : oData;
+                var sCrId   = (oResult && oResult.cr_id) || "";
 
                 // ── Save attachment metadata if any files were attached ──
                 var aAtts = this._oAttsModel ? this._oAttsModel.getProperty("/items") : [];
@@ -2167,9 +2182,6 @@ sap.ui.define([
                     });
                 }
                 oRt.setProperty("/busy", false);
-                // CAP wraps action return in { value: { ... } }
-                var oResult = (oData && oData.value) ? oData.value : oData;
-                var sCrId   = oResult.cr_id || "";
                 oRt.setProperty("/crId",   sCrId);
                 oRt.setProperty("/status", bSubmit ? "Submitted" : "Draft");
 

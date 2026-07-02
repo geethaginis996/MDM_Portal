@@ -5,61 +5,47 @@
 const cds = require('@sap/cds');
 const { v4: uuid } = require('uuid');
 
-// Maps a BPCategory.category_id value to the short, fixed-length prefix
-// used inside the CR ID (e.g. CR-ORG-2026-000001 for "Organization").
-// A lookup table is used instead of algorithmically truncating the
-// category name, so the prefix stays stable and unambiguous even if
-// category descriptions change or new categories are added later with
-// similar leading letters.
-const CATEGORY_PREFIX = {
-    Organization: 'ORG',
-    Person      : 'PER',
-    Group       : 'GRP'
-};
-const DEFAULT_CATEGORY_PREFIX = 'GEN';   // fallback for an unmapped/blank category
+// Width of the zero-padded running sequence used for CR IDs, e.g. "0000000001".
+// 10 digits comfortably supports up to 9,999,999,999 requests; the column
+// itself (CRHeader.cr_id, String(20)) has headroom well beyond that if the
+// sequence ever needs to grow past this width — padStart below simply stops
+// padding once the number itself is longer than SEQ_WIDTH digits.
+const SEQ_WIDTH = 10;
 
 /**
- * Generates the next sequential Change Request ID for the given BP
- * category and year, in the form CR-{CAT}-{YYYY}-{NNNNNN} (3-letter
- * category prefix + 6-digit zero-padded running sequence).
+ * Generates the next sequential Change Request ID as a single global,
+ * zero-padded running number — no category or year prefix (e.g. "0000000001",
+ * "0000000002", ...). All change requests share one sequence regardless of
+ * category, so IDs stay strictly increasing and sortable over the life of
+ * the system.
  *
- * The sequence is scoped per category AND per year — each category gets
- * its own independent counter, so e.g. Organization and Person requests
- * don't share or skip numbers because of each other's volume. Reads the
- * highest existing sequence number for that exact category+year prefix
- * and increments it — wrapped in a retry loop by the caller to stay safe
- * under concurrent requests (SQLite has no native sequence object, so we
- * rely on optimistic retry on a unique-key violation).
- *
- * Examples: CR-ORG-2026-000001, CR-ORG-2026-000002, CR-PER-2026-000001,
- *           CR-ORG-2027-000001 (resets when the year changes)
+ * Reads the highest existing purely-numeric cr_id and increments it —
+ * wrapped in a retry loop by the caller to stay safe under concurrent
+ * requests (SQLite has no native sequence object, so we rely on optimistic
+ * retry on a unique-key violation). Rows left over from the old
+ * "CR-{CAT}-{YYYY}-{NNNNNN}" format are simply ignored by the numeric-only
+ * filter, so the new sequence starts clean at 1 alongside any legacy data.
  */
-async function generateNextCrId(db, sCategoryId) {
-    const sCatPrefix = CATEGORY_PREFIX[sCategoryId] || DEFAULT_CATEGORY_PREFIX;
-    const sYear   = String(new Date().getFullYear());
-    const sPrefix = `CR-${sCatPrefix}-${sYear}-`;
-
-    // Find the highest existing sequence number for this exact
-    // category+year prefix. cr_id format is always
-    // CR-{CAT}-{YYYY}-{NNNNNN}, so a simple string max works because the
-    // numeric part is fixed-width zero-padded.
+async function generateNextCrId(db) {
+    // .where() is parsed as CDS query language (CQL), not raw SQL, so
+    // SQLite-specific operators like GLOB can't be pushed down there.
+    // Instead, read every cr_id (just that one column, so this stays cheap
+    // even as the table grows) and compute the numeric max in JS — this
+    // also naturally ignores old prefixed IDs like "CR-ORG-2026-000001",
+    // since they simply fail the /^\d+$/ numeric test below.
     const aExisting = await db.run(
-        SELECT.from('mdm.portal.CRHeader')
-            .columns('cr_id')
-            .where(`cr_id like '${sPrefix}%'`)
-            .orderBy('cr_id desc')
-            .limit(1)
+        SELECT.from('mdm.portal.CRHeader').columns('cr_id')
     );
 
-    let iNext = 1;
-    if (aExisting && aExisting.length) {
-        const sLast = aExisting[0].cr_id;                 // e.g. CR-ORG-2026-000042
-        const sSeqPart = sLast.slice(sPrefix.length);      // e.g. 000042
-        const iLast = parseInt(sSeqPart, 10);
-        if (!isNaN(iLast)) { iNext = iLast + 1; }
-    }
+    let iMax = 0;
+    (aExisting || []).forEach(function (r) {
+        if (r.cr_id && /^\d+$/.test(r.cr_id)) {
+            const iVal = parseInt(r.cr_id, 10);
+            if (iVal > iMax) { iMax = iVal; }
+        }
+    });
 
-    return sPrefix + String(iNext).padStart(6, '0');
+    return String(iMax + 1).padStart(SEQ_WIDTH, '0');
 }
 
 class MDMPortalService extends cds.ApplicationService {
@@ -613,7 +599,7 @@ class MDMPortalService extends cds.ApplicationService {
             const { data } = req;
 
             // Set defaults
-            data.cr_id = data.cr_id || await generateNextCrId(cds.db, data.bp_category_category_id);
+            data.cr_id = data.cr_id || await generateNextCrId(cds.db);
             data.status = 'DRAFT';
             data.requester = req.user.id;
 
@@ -804,7 +790,7 @@ class MDMPortalService extends cds.ApplicationService {
 
             const isNew   = !existingCrId;
             let sCrId     = isNew
-                ? await generateNextCrId(cds.db, bp_category)
+                ? await generateNextCrId(cds.db)
                 : existingCrId;
             const sStatus   = submit ? 'IN_APPROVAL' : 'DRAFT';
             // CRHeader.priority is a CRPriority enum (NORMAL | HIGH) — guard
@@ -855,7 +841,7 @@ class MDMPortalService extends cds.ApplicationService {
                             const sMsg = String(eInsert && eInsert.message || '').toLowerCase();
                             const bIsDupKey = sMsg.includes('unique') || sMsg.includes('constraint') || sMsg.includes('primary key');
                             if (bIsDupKey && iAttempt === 0) {
-                                sCrId = await generateNextCrId(cds.db, bp_category);
+                                sCrId = await generateNextCrId(cds.db);
                                 continue;
                             }
                             throw eInsert;
