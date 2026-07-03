@@ -265,9 +265,10 @@
                                             <ObjectStatus
                                                 text="{= ${assignedFields>active} ? 'Active' : 'Inactive'}"
                                                 state="{= ${assignedFields>active} ? 'Success' : 'Error'}"/>
-                                            <Button icon="sap-icon://slim-arrow-right"
+                                            <Button icon="sap-icon://decline"
                                                     type="Transparent"
-                                                    press=".onFieldRowPress"/>
+                                                    tooltip="Remove from group"
+                                                    press=".onRemoveFieldFromGroup"/>
                                         </cells>
                                     </ColumnListItem>
                                 </items>

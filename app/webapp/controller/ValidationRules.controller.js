@@ -6,10 +6,12 @@ sap.ui.define([
     "sap/m/MessageToast",
     "sap/m/MessageBox",
     "sap/m/ActionSheet",
-    "sap/m/Button"
+    "sap/m/Button",
+    "mdm/portal/util/ColumnSettings"
 ], function (
     Controller, Filter, FilterOperator,
-    JSONModel, MessageToast, MessageBox, ActionSheet, Button
+    JSONModel, MessageToast, MessageBox, ActionSheet, Button,
+    ColumnSettings
 ) {
     "use strict";
 
@@ -27,6 +29,23 @@ sap.ui.define([
 
             var oRouter = this.getOwnerComponent().getRouter();
             oRouter.getRoute("validationRules").attachPatternMatched(this._onRouteMatched, this);
+
+            this._oColumnSettings = ColumnSettings(this, {
+                storageKey: "mdmportal.validationRules.columnVisibility",
+                columns: [
+                    { id: "colFunction", label: "Function Name" },
+                    { id: "colP1",       label: "Input Param 1" },
+                    { id: "colP2",       label: "Input Param 2" },
+                    { id: "colP3",       label: "Input Param 3" },
+                    { id: "colTrigger",  label: "Trigger" },
+                    { id: "colLinked",   label: "Linked Fields" }
+                ]
+            });
+            this._oColumnSettings.init();
+        },
+
+        onColumnSettings: function () {
+            this._oColumnSettings.open();
         },
 
         // ── Linked-field counts (fields per validation rule) ─────────

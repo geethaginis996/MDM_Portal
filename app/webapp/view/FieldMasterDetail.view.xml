@@ -19,14 +19,14 @@
         <content>
 
             <!-- Header strip -->
-            <VBox class="sapUiMediumMarginBeginEnd sapUiSmallMarginBottom">
+            <!-- <VBox class="sapUiMediumMarginBeginEnd sapUiSmallMarginBottom">
                 <HBox wrap="Wrap" class="sapUiSmallMarginTop" alignItems="Center">
                     <ObjectAttribute id="attrStatus"   title="Status"        text=""/>
                     <ObjectAttribute id="attrCreated"  title="{i18n>lbl.createdBy}"    text="" class="sapUiSmallMarginBegin"/>
                     <ObjectAttribute id="attrDate"     title="{i18n>lbl.createdOn}"    text="" class="sapUiSmallMarginBegin"/>
                     <ObjectAttribute id="attrModified" title="{i18n>lbl.modifiedOn}" text="" class="sapUiSmallMarginBegin"/>
                 </HBox>
-            </VBox>
+            </VBox> -->
 
             <!-- Tab bar -->
             <IconTabBar id="detailTabs" select=".onTabSelect" expanded="true"
@@ -219,7 +219,7 @@
                     <IconTabFilter text="{i18n>tab.changeLog}" key="changelog" icon="sap-icon://history">
                         <VBox class="sapUiSmallMarginBeginEnd sapUiSmallMarginTop sapUiSmallMarginBottom">
                             <Title text="{i18n>lbl.recordInfo}" level="H5" class="sapUiTinyMarginBottom"/>
-                            <HBox wrap="Wrap">
+                            <!-- <HBox wrap="Wrap">
                                 <VBox width="12rem" class="sapUiTinyMarginEnd">
                                     <Label text="{i18n>lbl.createdOn}" design="Bold"/>
                                     <Text id="clCreatedAt" text="{view>/clCreatedAt}" wrapping="false"/>
@@ -236,7 +236,7 @@
                                     <Label text="{i18n>lbl.modifiedBy}" design="Bold"/>
                                     <Text id="clModifiedBy" text="{view>/clModifiedBy}" wrapping="false"/>
                                 </VBox>
-                            </HBox>
+                            </HBox> -->
                         </VBox>
                         <Table id="logTable"
                                noDataText="No changes recorded yet."

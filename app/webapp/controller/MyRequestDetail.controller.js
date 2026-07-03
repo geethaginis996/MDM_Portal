@@ -607,11 +607,15 @@ sap.ui.define([
             });
         },
 
-        // Build one read-only field row: Label (FIELD_ID:*) + disabled Input (value)
+        // Build one read-only field row: Label (Description*) + disabled Input (value)
         _buildFieldRow: function (fv) {
             var oFm       = this._mFieldMeta[fv.field_id] || {};
             var bRequired = (fv.field_status === "REQUIRED");
-            var sLabel    = fv.field_id + ":";
+            // Show the human-readable description (e.g. "Sales Division")
+            // rather than the raw technical field_id (e.g. "SPART") — fall
+            // back to the technical id only if metadata failed to load for
+            // this field, so the row never renders blank.
+            var sLabel    = (oFm.description || fv.field_id) + ":";
 
             return new HBox({
                 alignItems: "Center",
@@ -620,7 +624,7 @@ sap.ui.define([
                     new Label({
                         text    : sLabel,
                         required: bRequired,
-                        tooltip : oFm.description || "",
+                        tooltip : fv.field_id || "",
                         width   : "14rem",
                         class   : "sapUiTinyMarginEnd"
                     }),

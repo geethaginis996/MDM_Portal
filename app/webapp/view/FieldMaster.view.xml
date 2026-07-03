@@ -111,7 +111,7 @@
                             </Select>
                         </VBox>
                     </l:content>
-                    <l:content>
+                    <!-- <l:content>
                         <VBox>
                             <Label text="{i18n>filter.mainGroup}"
                                    labelFor="filterMainGroup" design="Bold"/>
@@ -122,7 +122,7 @@
                                 <core:ListItem key="{filters>key}" text="{filters>text}"/>
                             </Select>
                         </VBox>
-                    </l:content>
+                    </l:content> -->
                     <l:content>
                         <VBox>
                             <Label text="{i18n>filter.displayType}"
@@ -170,13 +170,15 @@
                     The browser respects the exact widths and clips overflowing
                     text with an ellipsis — every row stays exactly one line tall.
 
-                    Total column widths: 7+9+5+8+8+4+6+7+6+6+3 = 69rem
-                    At 11px font (CSS override below), 1rem ≈ 14px → ~966px total.
-                    Available content area on a 1366px screen minus the icon sidebar
-                    (~80px) and DynamicPage padding (~32px) ≈ 1254px — fits cleanly.
-
-                    Font size is reduced to 11px via the scoped CSS class
-                    "mdmCondensedTable" defined in FieldMaster.css.
+                    Main Group / Sub Group columns removed from display (2026-07) —
+                    their freed width (7rem + 6rem = 13rem) has been redistributed
+                    across Field ID, Description, Data Type, Length and Display Type
+                    below so the table still fills the same overall space.
+                    main_group/sub_group are still fetched via $expand/$select on
+                    the items binding below — the Export feature (onExport in the
+                    controller) still reads main_group/description and
+                    sub_group/description from each row's context even though the
+                    columns are no longer shown here.
                 -->
                 <Table
                     id="fieldTable"
@@ -236,28 +238,20 @@
                     -->
                     <columns>
                         <Column id="colFieldName"
-                                width="6rem" vAlign="Middle" importance="High">
+                                width="8rem" vAlign="Middle" importance="High">
                             <Label text="{i18n>col.fieldId}" design="Bold"/>
                         </Column>
                         <Column id="colDescription"
-                                width="8rem" vAlign="Middle" importance="High">
+                                width="16rem" vAlign="Middle" importance="High">
                             <Label text="{i18n>col.description}" design="Bold"/>
                         </Column>
                         <Column id="colDataType"
-                                width="4rem" vAlign="Middle" hAlign="Center"
+                                width="5rem" vAlign="Middle" hAlign="Center"
                                 importance="Medium">
                             <Label text="{i18n>col.dataType}" design="Bold"/>
                         </Column>
-                        <Column id="colMainGroup"
-                                width="7rem" vAlign="Middle" importance="Medium">
-                            <Label text="{i18n>filter.mainGroup}" design="Bold"/>
-                        </Column>
-                        <Column id="colSubGroup"
-                                width="6rem" vAlign="Middle" importance="Low">
-                            <Label text="{i18n>col.subGroup}" design="Bold"/>
-                        </Column>
                         <Column id="colLength"
-                                width="3rem" vAlign="Middle" hAlign="End"
+                                width="4rem" vAlign="Middle" hAlign="End"
                                 importance="Low">
                             <Label text="{i18n>col.length}" design="Bold"/>
                         </Column>
@@ -267,7 +261,7 @@
                             <Label text="{i18n>col.valueTable}" design="Bold"/>
                         </Column>
                         <Column id="colDisplayType"
-                                width="6rem" vAlign="Middle" importance="Low">
+                                width="7rem" vAlign="Middle" importance="Low">
                             <Label text="{i18n>filter.displayType}" design="Bold"/>
                         </Column>
                         <Column id="colValidation"
@@ -298,12 +292,6 @@
 
                                 <Text text="{= ${data_type} ? ${data_type} : '—'}"
                                       wrapping="false"/>
-
-                                <Text text="{main_group/description}"
-                                      wrapping="false" maxLines="1"/>
-
-                                <Text text="{sub_group/description}"
-                                      wrapping="false" maxLines="1"/>
 
                                 <Text text="{= ${length} ? ${length} : '—'}"
                                       wrapping="false"/>

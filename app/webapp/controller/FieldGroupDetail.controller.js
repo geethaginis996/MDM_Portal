@@ -498,11 +498,13 @@ sap.ui.define([
                     if (oSeen[sFid]) { return; }
                     oSeen[sFid] = true;
                     aItems.push({
-                        field_id    : sFid,
-                        description : c.getProperty("description"),
-                        data_type   : c.getProperty("data_type"),
-                        display_type: c.getProperty("display_type"),
-                        active      : c.getProperty("active")
+                        field_id            : sFid,
+                        description         : c.getProperty("description"),
+                        data_type           : c.getProperty("data_type"),
+                        display_type        : c.getProperty("display_type"),
+                        active              : c.getProperty("active"),
+                        main_group_group_id : c.getProperty("main_group_group_id"),
+                        sub_group_group_id  : c.getProperty("sub_group_group_id")
                     });
                 });
                 this.getView().getModel("assignedFields").setProperty("/items", aItems);
@@ -660,6 +662,62 @@ sap.ui.define([
             });
         },
 
+        // Unassign a field from the group shown on this page — mirrors
+        // onAssignFgConfirm, but clears the FK instead of setting it.
+        // A field can appear in a MAIN group's list either because its own
+        // main_group_group_id is this group, or because its sub_group is one
+        // of this main group's sub-groups (see _loadAssignedFields) — so we
+        // clear whichever FK actually matches, not always main_group blindly.
+        onRemoveFieldFromGroup: function (oEvent) {
+            var oItem = oEvent.getSource().getBindingContext("assignedFields").getObject();
+            var sFieldId = oItem.field_id;
+
+            var oGroupCtx = this.getView().getBindingContext();
+            if (!oGroupCtx) { return; }
+            var sGroupId = oGroupCtx.getProperty("group_id");
+
+            var sFieldToClear;
+            if (oItem.main_group_group_id === sGroupId) {
+                sFieldToClear = "main_group_group_id";
+            } else if (oItem.sub_group_group_id === sGroupId) {
+                sFieldToClear = "sub_group_group_id";
+            } else {
+                // Main-group page showing a field via one of its sub-groups
+                // (see _loadAssignedFields) — the sub-group FK is what
+                // actually ties it here, not sGroupId itself.
+                sFieldToClear = "sub_group_group_id";
+            }
+
+            MessageBox.confirm(
+                "Remove \"" + sFieldId + "\" from this group?",
+                {
+                    title: "Remove Field",
+                    onClose: function (sAction) {
+                        if (sAction !== MessageBox.Action.OK) { return; }
+
+                        var oModel = this.getOwnerComponent().getModel();
+                        oModel.bindList("/FieldMasters", null, null, [
+                            new Filter("field_id", FilterOperator.EQ, sFieldId)
+                        ], {
+                            $select        : "field_id," + sFieldToClear,
+                            $$updateGroupId: "fieldGroupRemove"
+                        }).requestContexts(0, 1).then(function (aCtxs) {
+                            if (!aCtxs.length) {
+                                throw new Error("Field " + sFieldId + " not found.");
+                            }
+                            aCtxs[0].setProperty(sFieldToClear, null);
+                            return oModel.submitBatch("fieldGroupRemove");
+                        }).then(function () {
+                            MessageToast.show("\"" + sFieldId + "\" removed from group.");
+                            this._loadAssignedFields();
+                        }.bind(this)).catch(function (oErr) {
+                            MessageBox.error("Could not remove field: " + (oErr.message || oErr));
+                        });
+                    }.bind(this)
+                }
+            );
+        },
+
         // ── Change log tab ───────────────────────────────────────────
         _loadChangeLog: function () {
             var oCtx = this.getView().getBindingContext();
@@ -740,13 +798,15 @@ sap.ui.define([
                 if (sMDT) {
                     oCtx.setProperty("master_data_type_master_data_type_id", sMDT);
                 }
-                // parent is nullable (main groups have none). Only write it on a
-                // transient create or when it actually changed, to avoid issuing a
-                // key-touching PATCH on a persisted row.
-                if (bTransient) {
-                    oCtx.setProperty("parent_group_id_group_id",
-                        this.byId("selParentGroup").getSelectedKey() || null);
-                }
+                // parent_group_id_group_id is a plain nullable FK (NOT part of the
+                // key — group_id is the only key field), so it's always safe to
+                // write back on both create and update. Previously this was gated
+                // behind `if (bTransient)`, which meant changing the Parent Group
+                // select on an already-saved group (e.g. converting a Main Group
+                // into a Sub Group, or vice versa by clearing it) was silently
+                // discarded on Save for any existing record.
+                oCtx.setProperty("parent_group_id_group_id",
+                    this.byId("selParentGroup").getSelectedKey() || null);
             }
 
             var oModel = this.getOwnerComponent().getModel();

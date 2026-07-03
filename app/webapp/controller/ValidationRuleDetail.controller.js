@@ -37,8 +37,11 @@ sap.ui.define([
 
             this._oViewModel.setProperty("/isDirty", false);
             this._oViewModel.setProperty("/selectedTab", "general");
+            this._oViewModel.setProperty("/usageCount", "0");
             this.byId("detailTabs").setSelectedKey("general");
             this.getView().getModel("usage").setProperty("/items", []);
+            var oAttrUsage = this.byId("attrUsage");
+            if (oAttrUsage) { oAttrUsage.setText(""); }
 
             if (sId === "NEW") {
                 this._createNew();
@@ -153,6 +156,15 @@ sap.ui.define([
             ], {
                 $select: "field_id,description,data_type,active,main_group_group_id,sub_group_group_id,validation_validation_id"
             }).requestContexts(0, Infinity).then(function (aCtx) {
+                // Guard against the view (or this control specifically) having
+                // been torn down while this async request was in flight — e.g.
+                // the user navigated away or switched to a different rule
+                // right after selecting this tab. Without this check,
+                // this.byId("attrUsage") can return undefined here and crash
+                // with "Cannot read properties of undefined (reading 'setText')".
+                var oView = this.getView();
+                if (!oView || oView.bIsDestroyed) { return; }
+
                 var aItems = aCtx.map(function (c) {
                     return {
                         field_id    : c.getProperty("field_id"),
@@ -163,9 +175,13 @@ sap.ui.define([
                         active      : c.getProperty("active")
                     };
                 });
-                this.getView().getModel("usage").setProperty("/items", aItems);
+                oView.getModel("usage").setProperty("/items", aItems);
                 this._oViewModel.setProperty("/usageCount", String(aItems.length));
-                this.byId("attrUsage").setText(aItems.length + " field" + (aItems.length !== 1 ? "s" : ""));
+
+                var oAttrUsage = this.byId("attrUsage");
+                if (oAttrUsage) {
+                    oAttrUsage.setText(aItems.length + " field" + (aItems.length !== 1 ? "s" : ""));
+                }
             }.bind(this)).catch(function (e) {
                 MessageBox.error("Could not load linked fields: " + e.message);
             });

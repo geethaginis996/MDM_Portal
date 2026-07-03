@@ -7,10 +7,12 @@ sap.ui.define([
     "sap/m/MessageToast",
     "sap/m/ActionSheet",
     "sap/m/Button",
-    "sap/m/MessageBox"
+    "sap/m/MessageBox",
+    "mdm/portal/util/ColumnSettings"
 ], function (
     Controller, Filter, FilterOperator, Sorter,
-    JSONModel, MessageToast, ActionSheet, Button, MessageBox
+    JSONModel, MessageToast, ActionSheet, Button, MessageBox,
+    ColumnSettings
 ) {
     "use strict";
 
@@ -38,6 +40,20 @@ sap.ui.define([
 
             var oRouter = this.getOwnerComponent().getRouter();
             oRouter.getRoute("fieldMaster").attachPatternMatched(this._onRouteMatched, this);
+
+            this._oColumnSettings = ColumnSettings(this, {
+                storageKey: "mdmportal.fieldMaster.columnVisibility",
+                columns: [
+                    { id: "colDescription", label: "Description" },
+                    { id: "colDataType",    label: "Data Type" },
+                    { id: "colLength",      label: "Length" },
+                    { id: "colValueTable",  label: "Value Table" },
+                    { id: "colDisplayType", label: "Display Type" },
+                    { id: "colValidation",  label: "Validation" },
+                    { id: "colStatus",      label: "Status" }
+                ]
+            });
+            this._oColumnSettings.init();
         },
 
         // ── Route matched ────────────────────────────────────────────────
@@ -334,8 +350,13 @@ _applyFilters: function () {
                 .catch(function (oErr) { MessageBox.error("Activation failed: " + oErr.message); });
         },
 
+        // ── Column settings ──────────────────────────────────────────────
+        // Field ID and the trailing Actions column are structural (always
+        // shown) — everything else can be toggled on/off. Behaviour lives in
+        // the shared ColumnSettings util (see app/webapp/util/ColumnSettings.js),
+        // reused across Field Master, Validation Rules and Field Groups.
         onColumnSettings: function () {
-            MessageToast.show("Column personalisation — coming soon!");
+            this._oColumnSettings.open();
         },
 
         // ── Navigation ───────────────────────────────────────────────────

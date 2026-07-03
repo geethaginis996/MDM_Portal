@@ -176,6 +176,13 @@
                                 </layoutData>
                             </Button>
                             <ToolbarSeparator id="bulkSeparator" visible="false"/>
+                            <Button icon="sap-icon://action-settings"
+                                    type="Transparent" tooltip="Column settings"
+                                    press=".onColumnSettings">
+                                <layoutData>
+                                    <OverflowToolbarLayoutData priority="Low"/>
+                                </layoutData>
+                            </Button>
                         </OverflowToolbar>
                     </headerToolbar>
 

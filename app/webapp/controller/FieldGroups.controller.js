@@ -7,10 +7,12 @@ sap.ui.define([
     "sap/m/MessageToast",
     "sap/m/MessageBox",
     "sap/m/ActionSheet",
-    "sap/m/Button"
+    "sap/m/Button",
+    "mdm/portal/util/ColumnSettings"
 ], function (
     Controller, Filter, FilterOperator, Sorter,
-    JSONModel, MessageToast, MessageBox, ActionSheet, Button
+    JSONModel, MessageToast, MessageBox, ActionSheet, Button,
+    ColumnSettings
 ) {
     "use strict";
 
@@ -39,6 +41,25 @@ sap.ui.define([
 
             var oRouter = this.getOwnerComponent().getRouter();
             oRouter.getRoute("fieldGroups").attachPatternMatched(this._onRouteMatched, this);
+
+            this._oColumnSettings = ColumnSettings(this, {
+                storageKey: "mdmportal.fieldGroups.columnVisibility",
+                columns: [
+                    { id: "colDescription", label: "Description" },
+                    { id: "colType",        label: "Type" },
+                    { id: "colParent",      label: "Parent Group" },
+                    { id: "colIcon",        label: "Icon" },
+                    { id: "colSequence",    label: "Sequence" },
+                    { id: "colSubGroups",   label: "Sub Groups" },
+                    { id: "colFields",      label: "Fields" },
+                    { id: "colStatus",      label: "Status" }
+                ]
+            });
+            this._oColumnSettings.init();
+        },
+
+        onColumnSettings: function () {
+            this._oColumnSettings.open();
         },
 
         _onRouteMatched: function () {
