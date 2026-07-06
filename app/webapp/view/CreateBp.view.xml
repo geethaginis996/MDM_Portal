@@ -7,40 +7,30 @@
     controllerName="mdm.portal.controller.CreateBP"
     displayBlock="true">
 
-    <Page id="createBpPage" showHeader="false" busy="{rt>/busy}" busyIndicatorDelay="0">
-        <content>
-            <!-- ── Header bar with breadcrumb ─────────────────────────── -->
-            <VBox>
-                <Bar class="sapMPageHeader">
-                    <contentLeft>
-                        <Button icon="sap-icon://nav-back" type="Transparent" press=".onCancel"/>
-                        <Breadcrumbs separatorStyle="Slash" class="sapUiTinyMarginBegin">
-                            <Link text="Home" press=".onCancel"/>
-                            <Link text="Create Business Partner"/>
-                        </Breadcrumbs>
-                    </contentLeft>
-                </Bar>
-            </VBox>
+    <Page id="createBpPage" busy="{rt>/busy}" busyIndicatorDelay="0"
+          showNavButton="true" navButtonPress=".onCancel">
 
-            <!-- ── Title + object key strip ───────────────────────────── -->
+        <customHeader>
+            <Bar>
+                <contentLeft>
+                    <Button icon="sap-icon://nav-back" type="Transparent" press=".onCancel"/>
+                    <Title id="pageTitle" text="Create Business Partner" level="H4"/>
+                </contentLeft>
+            </Bar>
+        </customHeader>
+
+        <content>
+            <!-- ── Subtitle + object key strip ────────────────────────── -->
             <VBox class="sapUiMediumMarginBeginEnd sapUiSmallMarginTop">
-                <HBox alignItems="Center">
-                    <core:Icon src="sap-icon://add-contact" size="2rem" color="Accent8"
-                               class="sapUiSmallMarginEnd"/>
-                    <VBox>
-                        <Title text="Create Business Partner" level="H2" wrapping="false"/>
-                        <Text text="{rt>/subtitle}"
-                              class="sapUiTinyMarginTop mdmSubtitleText"/>
-                    </VBox>
-                </HBox>
-                <HBox wrap="Wrap" class="sapUiSmallMarginTop" alignItems="Center">
+                <Text text="{rt>/subtitle}" class="mdmSubtitleText"/>
+                <!-- <HBox wrap="Wrap" class="sapUiSmallMarginTop" alignItems="Center">
                     <ObjectAttribute title="BP Category"      text="{rt>/catDisp}"  class="sapUiMediumMarginEnd"/>
                     <ObjectAttribute title="BP Roles"         text="{rt>/roleDisp}" class="sapUiMediumMarginEnd"/>
                     <ObjectAttribute title="BP Account Group" text="{rt>/bpAgDisp}" class="sapUiMediumMarginEnd"/>
                     <ObjectAttribute title="Number Range"     text="{rt>/nrDisp}"   class="sapUiMediumMarginEnd"/>
                     <ObjectAttribute title="Prerequisites"    text="{rt>/preqDisp}" class="sapUiMediumMarginEnd"/>
                     <ObjectStatus    title="Status" text="{rt>/status}" state="Information"/>
-                </HBox>
+                </HBox> -->
             </VBox>
 
             <HBox class="sapUiTinyMarginTop sapUiMediumMarginBeginEnd">

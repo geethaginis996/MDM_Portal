@@ -17,11 +17,11 @@
                 <f:heading>
                     <VBox>
                         <Title text="BP Categories" level="H2" wrapping="false"/>
-                        <HBox class="sapUiTinyMarginTop">
+                        <!-- <HBox class="sapUiTinyMarginTop">
                             <ObjectStatus id="countTotal" text="{ui>/totalCount} system categories"
                                           state="Information" class="sapUiTinyMarginEnd"/>
                             <ObjectStatus text="Person · Organization · Group" state="None"/>
-                        </HBox>
+                        </HBox> -->
                     </VBox>
                 </f:heading>
                 <f:snappedHeading>
@@ -33,11 +33,11 @@
                                 type="Transparent" press=".onExport">
                             <layoutData><OverflowToolbarLayoutData priority="Low" overflowText="Export"/></layoutData>
                         </Button>
-                        <Button id="addBtn" text="New Category" icon="sap-icon://add"
+                        <!-- <Button id="addBtn" text="New Category" icon="sap-icon://add"
                                 type="Default" enabled="false"
                                 tooltip="BP categories are system-defined and cannot be created">
                             <layoutData><OverflowToolbarLayoutData priority="NeverOverflow"/></layoutData>
-                        </Button>
+                        </Button> -->
                     </OverflowToolbar>
                 </f:actions>
             </f:DynamicPageTitle>

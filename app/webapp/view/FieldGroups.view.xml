@@ -22,12 +22,12 @@
                 <f:heading>
                     <VBox>
                         <Title text="{i18n>fieldGroups.title}" level="H2" wrapping="false"/>
-                        <HBox class="sapUiTinyMarginTop">
+                        <!-- <HBox class="sapUiTinyMarginTop">
                             <ObjectStatus id="countMain" text="{ui>/mainCount} main"
                                           state="Information" class="sapUiTinyMarginEnd"/>
                             <ObjectStatus id="countSub"  text="{ui>/subCount} sub"
                                           state="None"/>
-                        </HBox>
+                        </HBox> -->
                     </VBox>
                 </f:heading>
 

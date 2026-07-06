@@ -26,15 +26,8 @@
                     <core:Icon id="headerIcon" src="sap-icon://customer" size="2rem" color="Accent8"
                                class="sapUiSmallMarginEnd"/>
                     <VBox>
-                        <Title id="pageTitle" text="" level="H2" wrapping="false"/>
-                        
+                        <Title id="pageTitle" text="" level="H2" wrapping="false"/> 
                     </VBox>
-                </HBox>
-                <HBox wrap="Wrap" class="sapUiSmallMarginTop" alignItems="Center">
-                    <ObjectStatus id="attrStatus" text="Active" state="Success"/>
-                    <Text text="&#183;" class="sapUiTinyMarginBegin sapUiTinyMarginEnd"
-                          style="color: var(--sapContent_LabelColor);"/>
-                    <ObjectAttribute id="attrFields" title="Additional fields" text=""/>
                 </HBox>
             </VBox>
 

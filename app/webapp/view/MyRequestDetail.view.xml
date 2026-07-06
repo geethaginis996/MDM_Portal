@@ -2,54 +2,34 @@
     controllerName="mdm.portal.controller.MyRequestDetail"
     xmlns:mvc="sap.ui.core.mvc"
     xmlns="sap.m"
-    xmlns:f="sap.f"
     xmlns:core="sap.ui.core">
 
-    <f:DynamicPage id="detailPage" fitContent="true" busy="{view>/busy}" busyIndicatorDelay="0"
-                   toggleHeaderOnTitleClick="false" pinnable="false">
+    <Page id="detailPage" busy="{view>/busy}" busyIndicatorDelay="0"
+          showNavButton="true" navButtonPress=".onNavBack">
 
-        <f:title>
-            <f:DynamicPageTitle>
-                <f:heading>
-                    <VBox>
-                        <Title id="pageTitle" text="{view>/crId}" level="H2"/>
-                        <Text text="{view>/subtitle}" class="mdmSubtitleText sapUiTinyMarginTop"/>
-                        <Breadcrumbs id="pageBreadcrumb"
-                                     currentLocationText="{view>/crId}"
-                                     separatorStyle="Slash" class="sapUiTinyMarginTop">
-                            <links>
-                                <Link text="Home"        press=".onNavHome"/>
-                                <Link text="My Requests" press=".onNavList"/>
-                            </links>
-                        </Breadcrumbs>
-                    </VBox>
-                </f:heading>
-                <f:actions>
-                    <Button id="btnEdit"   text="Edit Draft"      icon="sap-icon://edit"
-                            visible="{= ${view>/status} === 'DRAFT'}"
-                            press=".onEditDraft"/>
-                    <Button id="btnSubmit" text="Submit"          icon="sap-icon://paper-plane"
-                            type="Emphasized"
-                            visible="{= ${view>/status} === 'DRAFT'}"
-                            press=".onSubmit"/>
-                    <Button id="btnCancel" text="Cancel Request"  icon="sap-icon://decline"
-                            visible="{= ${view>/status} === 'DRAFT' || ${view>/status} === 'IN_APPROVAL'}"
-                            press=".onCancelRequest"/>
-                </f:actions>
-            </f:DynamicPageTitle>
-        </f:title>
+        <customHeader>
+            <Bar>
+                <contentLeft>
+                    <Button icon="sap-icon://nav-back" type="Transparent" press=".onNavBack"/>
+                    <Title id="pageTitle" text="{view>/crId}" level="H4"/>
+                </contentLeft>
+            </Bar>
+        </customHeader>
 
-        <f:content>
+        <content>
             <VBox class="sapUiMediumMarginBeginEnd sapUiSmallMarginTop sapUiSmallMarginBottom">
 
+                <!-- ── Subtitle ─────────────────────────────────────────── -->
+                <!-- <Text text="{view>/subtitle}" class="mdmSubtitleText sapUiTinyMarginBottom"/> -->
+
                 <!-- ── Header metadata attributes ──────────────────────── -->
-                <HBox wrap="Wrap" class="sapUiSmallMarginBottom" alignItems="Center">
+                <!-- <HBox wrap="Wrap" class="sapUiSmallMarginBottom" alignItems="Center">
                     <ObjectAttribute title="Status"        text="{view>/status}"      class="sapUiMediumMarginEnd"/>
                     <ObjectAttribute title="Type"          text="{view>/type}"        class="sapUiMediumMarginEnd"/>
                     <ObjectAttribute title="Requester"     text="{view>/requester}"   class="sapUiMediumMarginEnd"/>
                     <ObjectAttribute title="Created On"    text="{view>/createdAt}"   class="sapUiMediumMarginEnd"/>
                     <ObjectAttribute title="BP Number"     text="{view>/bpNumber}"    class="sapUiMediumMarginEnd"/>
-                </HBox>
+                </HBox> -->
 
                 <core:HTML content="&lt;hr style='border:none;border-top:1px solid var(--sapGroup_TitleBorderColor);margin:0 0 0.75rem 0;width:100%'/&gt;"/>
 
@@ -112,10 +92,27 @@
                 <!-- ── Field tabs (built dynamically per active role) ────── -->
                 <IconTabBar id="detailRoleTabs"
                             expanded="true"
+                            class="sapUiResponsiveContentPadding"
                             select=".onDetailTabChange"/>
 
             </VBox>
-        </f:content>
-    </f:DynamicPage>
+        </content>
+
+        <footer>
+            <OverflowToolbar>
+                <ToolbarSpacer/>
+                <Button id="btnEdit"   text="Edit Draft"      icon="sap-icon://edit"
+                        visible="{= ${view>/status} === 'DRAFT'}"
+                        press=".onEditDraft"/>
+                <Button id="btnSubmit" text="Submit"          icon="sap-icon://paper-plane"
+                        type="Emphasized"
+                        visible="{= ${view>/status} === 'DRAFT'}"
+                        press=".onSubmit"/>
+                <Button id="btnCancel" text="Cancel Request"  icon="sap-icon://decline"
+                        visible="{= ${view>/status} === 'DRAFT' || ${view>/status} === 'IN_APPROVAL'}"
+                        press=".onCancelRequest"/>
+            </OverflowToolbar>
+        </footer>
+    </Page>
 
 </mvc:View>

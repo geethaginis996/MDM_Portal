@@ -17,10 +17,10 @@
                 <f:heading>
                     <VBox>
                         <Title text="Validation Rules" level="H2" wrapping="false"/>
-                        <HBox class="sapUiTinyMarginTop">
+                        <!-- <HBox class="sapUiTinyMarginTop">
                             <ObjectStatus id="countTotal" text="{ui>/totalCount} rules"
                                           state="Information"/>
-                        </HBox>
+                        </HBox> -->
                     </VBox>
                 </f:heading>
                 <f:snappedHeading>

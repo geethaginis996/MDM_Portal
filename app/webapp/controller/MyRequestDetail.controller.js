@@ -755,6 +755,13 @@ sap.ui.define([
 
         onNavList: function () {
             this.getOwnerComponent().getRouter().navTo("myRequests");
+        },
+
+        // Back button in the standard customHeader — same target as the
+        // former "My Requests" breadcrumb link, kept consistent with the
+        // onNavBack pattern used across the other detail screens.
+        onNavBack: function () {
+            this.getOwnerComponent().getRouter().navTo("myRequests");
         }
     });
 });

@@ -20,10 +20,10 @@
                 <f:heading>
                     <VBox>
                         <Title text="Value Tables" level="H2" wrapping="false"/>
-                        <HBox class="sapUiTinyMarginTop">
+                        <!-- <HBox class="sapUiTinyMarginTop">
                             <ObjectStatus id="countTotal" text="{ui>/totalCount} value tables"
                                           state="Information"/>
-                        </HBox>
+                        </HBox> -->
                     </VBox>
                 </f:heading>
                 <f:snappedHeading>
@@ -122,6 +122,13 @@
                                 <layoutData><OverflowToolbarLayoutData priority="NeverOverflow"/></layoutData>
                             </Button>
                             <ToolbarSeparator id="bulkSeparator" visible="false"/>
+                            <Button icon="sap-icon://action-settings"
+                                    type="Transparent" tooltip="Column settings"
+                                    press=".onColumnSettings">
+                                <layoutData>
+                                    <OverflowToolbarLayoutData priority="Low"/>
+                                </layoutData>
+                            </Button>
                         </OverflowToolbar>
                     </headerToolbar>
 

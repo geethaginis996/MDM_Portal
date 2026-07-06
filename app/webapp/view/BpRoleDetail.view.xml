@@ -7,43 +7,18 @@
     controllerName="mdm.portal.controller.BPRoleDetail"
     displayBlock="true">
 
-    <Page busy="{view>/busy}" busyIndicatorDelay="0" id="detailPage" showHeader="false">
+    <Page busy="{view>/busy}" busyIndicatorDelay="0" id="detailPage" showNavButton="true" navButtonPress=".onNavBack">
+
+        <customHeader>
+            <Bar>
+                <contentLeft>
+                    <Button icon="sap-icon://nav-back" type="Transparent" press=".onNavBack"/>
+                    <Title id="pageTitle" text="" level="H4"/>
+                </contentLeft>
+            </Bar>
+        </customHeader>
+
         <content>
-            <VBox>
-                <Bar class="sapMPageHeader">
-                    <contentLeft>
-                        <Button icon="sap-icon://nav-back" type="Transparent" press=".onNavBack"/>
-                        <Breadcrumbs id="pageBreadcrumb" separatorStyle="Slash" class="sapUiTinyMarginBegin">
-                            <Link text="Configuration" press=".onNavBack"/>
-                            <Link text="BP Roles" press=".onNavBack"/>
-                        </Breadcrumbs>
-                    </contentLeft>
-                </Bar>
-            </VBox>
-
-            <VBox class="sapUiMediumMarginBeginEnd sapUiSmallMarginTop">
-                <HBox alignItems="Center">
-                    <core:Icon src="sap-icon://employee-rejections" size="2rem" color="Accent8"
-                               class="sapUiSmallMarginEnd"/>
-                    <VBox>
-                        <Title id="pageTitle" text="" level="H2" wrapping="false"/>
-                        <Text id="pageSubtitle" text=""
-                              class="sapUiTinyMarginTop mdmSubtitleText"/>
-                    </VBox>
-                </HBox>
-                <HBox wrap="Wrap" class="sapUiSmallMarginTop" alignItems="Center">
-                    <ObjectStatus id="attrStatus" text="Active" state="Success"/>
-                    <Text text="·" class="sapUiTinyMarginBegin sapUiTinyMarginEnd mdmSeparatorDot"/>
-                    <ObjectAttribute id="attrMDT" title="Master Data Type" text=""/>
-                    <Text text="·" class="sapUiTinyMarginBegin sapUiTinyMarginEnd mdmSeparatorDot"/>
-                    <ObjectAttribute id="attrFields" title="Assigned fields" text=""/>
-                </HBox>
-            </VBox>
-
-            <HBox class="sapUiTinyMarginTop sapUiMediumMarginBeginEnd">
-                <core:HTML content="&lt;hr style='border:none;border-top:1px solid var(--sapGroup_TitleBorderColor);margin:0 0 0.5rem 0;width:100%'/&gt;"/>
-            </HBox>
-
             <IconTabBar id="detailTabs" select=".onTabSelect" expanded="true"
                         class="sapUiResponsiveContentPadding">
                 <items>
@@ -104,11 +79,11 @@
 
                     <!-- TAB 2 - Field Assignment -->
                     <IconTabFilter id="tabFields" text="Field Assignment" key="fields"
-                                   count="{ui>/fieldCount}" icon="sap-icon://form">
+                                   count="{view>/fieldCount}" icon="sap-icon://form">
                         <VBox>
                             <Toolbar class="sapUiSmallMarginTop">
                                 <Title text="Field Assignment" level="H4"/>
-                                <Text text="{ui>/fieldCount} fields · grouped by Main / Sub Group"
+                                <Text text="{view>/fieldCount} fields · grouped by Main / Sub Group"
                                       class="sapUiSmallMarginBegin mdmSubtitleText"/>
                                 <ToolbarSpacer/>
                                 <Button text="Assign Fields" icon="sap-icon://add" type="Emphasized"
@@ -164,7 +139,7 @@
 
                     <!-- TAB 3 - Prerequisite Fields -->
                     <IconTabFilter id="tabPrereq" text="Prerequisite Fields" key="prereq"
-                                   count="{ui>/prereqCount}" icon="sap-icon://chain-link">
+                                   count="{view>/prereqCount}" icon="sap-icon://chain-link">
                         <VBox class="sapUiMediumMarginBeginEnd">
                        
                             <Toolbar>
@@ -205,7 +180,7 @@
 
                     <!-- TAB 4 - Prerequisite Roles -->
                     <IconTabFilter id="tabPrereqRoles" text="Prerequisite Roles" key="prereqroles"
-                                   count="{ui>/prereqRolesCount}" icon="sap-icon://org-chart">
+                                   count="{view>/prereqRolesCount}" icon="sap-icon://org-chart">
                         <VBox class="sapUiMediumMarginBeginEnd">
                             <Toolbar class="sapUiSmallMarginTop">
                                 <Title text="Prerequisite Roles" level="H4"/>

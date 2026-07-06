@@ -27,19 +27,10 @@
                                class="sapUiSmallMarginEnd"/>
                     <VBox>
                         <Title id="pageTitle" text="" level="H2" wrapping="false"/>
-                        <Text id="pageSubtitle" text="" class="sapUiTinyMarginTop"
-                              style="color: var(--sapContent_LabelColor); font-size: 0.875rem;"/>
+                       
                     </VBox>
                 </HBox>
-                <HBox wrap="Wrap" class="sapUiSmallMarginTop" alignItems="Center">
-                    <ObjectStatus id="attrStatus" text="Active" state="Success"/>
-                    <Text text="·" class="sapUiTinyMarginBegin sapUiTinyMarginEnd"
-                          style="color: var(--sapContent_LabelColor);"/>
-                    <ObjectAttribute id="attrType" title="Type" text=""/>
-                    <Text text="·" class="sapUiTinyMarginBegin sapUiTinyMarginEnd"
-                          style="color: var(--sapContent_LabelColor);"/>
-                    <ObjectAttribute id="attrFields" title="Additional fields" text=""/>
-                </HBox>
+              
             </VBox>
 
             <IconTabBar id="detailTabs" select=".onTabSelect" expanded="true"

@@ -30,21 +30,11 @@
                                class="sapUiSmallMarginEnd"/>
                     <VBox>
                         <Title id="pageTitle" text="" level="H2" wrapping="false"/>
-                        <Text id="pageSubtitle" text="" class="sapUiTinyMarginTop"
-                              style="color: var(--sapContent_LabelColor); font-size: 0.875rem;"/>
                     </VBox>
                 </HBox>
 
                 <!-- Object key strip -->
-                <HBox wrap="Wrap" class="sapUiSmallMarginTop" alignItems="Center">
-                    <ObjectStatus id="attrStatus" text="Active" state="Success"/>
-                    <Text text="\u00b7" class="sapUiTinyMarginBegin sapUiTinyMarginEnd"
-                          style="color: var(--sapContent_LabelColor);"/>
-                    <ObjectAttribute id="attrSource" title="Backend Table" text=""/>
-                    <Text text="\u00b7" class="sapUiTinyMarginBegin sapUiTinyMarginEnd"
-                          style="color: var(--sapContent_LabelColor);"/>
-                    <ObjectAttribute id="attrUsage" title="Used by" text=""/>
-                </HBox>
+                
             </VBox>
 
             <HBox class="sapUiTinyMarginTop sapUiMediumMarginBeginEnd">

@@ -17,12 +17,12 @@
                 <f:heading>
                     <VBox>
                         <Title text="Account Groups" level="H2" wrapping="false"/>
-                        <HBox class="sapUiTinyMarginTop">
+                        <!-- <HBox class="sapUiTinyMarginTop">
                             <ObjectStatus id="countCustomer" text="{ui>/customerCount} customer"
                                           state="Information" class="sapUiTinyMarginEnd"/>
                             <ObjectStatus id="countVendor" text="{ui>/vendorCount} vendor"
                                           state="Information"/>
-                        </HBox>
+                        </HBox> -->
                     </VBox>
                 </f:heading>
                 <f:snappedHeading>

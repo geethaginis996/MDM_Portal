@@ -35,27 +35,12 @@
                                color="Default" class="sapUiSmallMarginEnd"/>
                     <VBox>
                         <Title id="pageTitle" text="" level="H2" wrapping="false"/>
-                        <Text id="pageSubtitle" text="" class="sapUiTinyMarginTop"
-/>
+                       
                     </VBox>
                 </HBox>
 
                 <!-- Status + metadata strip -->
-                <HBox wrap="Wrap" class="sapUiSmallMarginTop" alignItems="Center">
-                    <ObjectStatus id="attrStatus"   text="{i18n>lbl.active}"  state="Success"/>
-                    <Text text="·" class="sapUiTinyMarginBegin sapUiTinyMarginEnd"
-/>
-                    <ObjectAttribute id="attrType"     title="{i18n>lbl.type}"     text="{i18n>lbl.mainGroupType}"/>
-                    <Text text="·" class="sapUiTinyMarginBegin sapUiTinyMarginEnd"
-/>
-                    <ObjectAttribute id="attrParent"   title="{i18n>col.parent}"   text="{i18n>lbl.parentGroupPlaceholder}"/>
-                    <Text text="·" class="sapUiTinyMarginBegin sapUiTinyMarginEnd"
-/>
-                    <ObjectAttribute id="attrSequence" title="{i18n>lbl.sequence}" text=""/>
-                    <Text text="·" class="sapUiTinyMarginBegin sapUiTinyMarginEnd"
-/>
-                    <ObjectAttribute id="attrSubCount" title="{i18n>col.subGroups}" text=""/>
-                </HBox>
+               
             </VBox>
 
             <HBox class="sapUiTinyMarginTop sapUiMediumMarginBeginEnd">

@@ -6,10 +6,12 @@ sap.ui.define([
     "sap/m/MessageToast",
     "sap/m/MessageBox",
     "sap/m/ActionSheet",
-    "sap/m/Button"
+    "sap/m/Button",
+    "mdm/portal/util/ColumnSettings"
 ], function (
     Controller, Filter, FilterOperator,
-    JSONModel, MessageToast, MessageBox, ActionSheet, Button
+    JSONModel, MessageToast, MessageBox, ActionSheet, Button,
+    ColumnSettings
 ) {
     "use strict";
 
@@ -28,6 +30,26 @@ sap.ui.define([
 
             var oRouter = this.getOwnerComponent().getRouter();
             oRouter.getRoute("valueTables").attachPatternMatched(this._onRouteMatched, this);
+
+            this._oColumnSettings = ColumnSettings(this, {
+                storageKey: "mdmportal.valueTables.columnVisibility",
+                columns: [
+                    { id: "colDescription", label: "Description" },
+                    { id: "colSourceTable", label: "Backend Table" },
+                    { id: "colInput1",      label: "Input 1" },
+                    { id: "colInput2",      label: "Input 2" },
+                    { id: "colInput3",      label: "Input 3" },
+                    { id: "colOutputKey",   label: "Output Key" },
+                    { id: "colOutputDesc",  label: "Output Description" },
+                    { id: "colUsedBy",      label: "Used By" },
+                    { id: "colStatus",      label: "Status" }
+                ]
+            });
+            this._oColumnSettings.init();
+        },
+
+        onColumnSettings: function () {
+            this._oColumnSettings.open();
         },
 
         // ── Used-by counts (fields per value table) ──────────────────

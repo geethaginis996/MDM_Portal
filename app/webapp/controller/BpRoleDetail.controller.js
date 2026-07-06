@@ -191,18 +191,9 @@ sap.ui.define([
             var sId   = oData.role_id || "";
             var sDesc = oData.description || "";
             var sTitle = sId ? (sId + (sDesc ? " \u2014 " + sDesc : "")) : "New BP Role";
-            this.byId("pageTitle").setText(sTitle);
 
-            var oBreadcrumb = this.byId("pageBreadcrumb");
-            if (oBreadcrumb) { oBreadcrumb.setCurrentLocationText(sId || "New BP Role"); }
-
-            var sScope = this._scopeLabel(oData.account_scope);
-            this.byId("pageSubtitle").setText("Role Name: " + (sId || "\u2014") + (sScope ? " \u00b7 Master Data Type: " + sScope : ""));
-
-            var bActive = this._truthy(oData.active);
-            this.byId("attrStatus").setText(bActive ? "Active" : "Inactive");
-            this.byId("attrStatus").setState(bActive ? "Success" : "Error");
-            this.byId("attrMDT").setText(sScope || "\u2014");
+            var oTitle = this.byId("pageTitle");
+            if (oTitle) { oTitle.setText(sTitle); }
         },
 
         _truthy: function (v) {
@@ -275,6 +266,15 @@ sap.ui.define([
                         $select: "role_role_id,field_field_id,field_status,sequence"
                     }
                 ).requestContexts(0, Infinity).then(function (aCtx) {
+                    // Guard against the view having been torn down while this
+                    // async request was in flight — e.g. the user switched to
+                    // a different role or navigated away right after opening
+                    // the Field Assignment tab. Without this check, controls
+                    // like the "fieldsTable" can be undefined here and crash
+                    // with "Cannot read properties of undefined (reading 'setText')".
+                    var oView = this.getView();
+                    if (!oView || oView.bIsDestroyed) { return; }
+
                     var aItems = aCtx.map(function (c) {
                         var sMain = c.getProperty("field/main_group_group_id") || "";
                         var sSub  = c.getProperty("field/sub_group_group_id")  || "";
@@ -305,7 +305,6 @@ sap.ui.define([
 
                     this.getView().getModel("assigned").setProperty("/items", aItems);
                     this._oViewModel.setProperty("/fieldCount", String(aItems.length));
-                    this.byId("attrFields").setText(aItems.length + " field" + (aItems.length !== 1 ? "s" : ""));
 
                     // Apply grouping to the table binding
                     this._applyFieldTableGrouping();
