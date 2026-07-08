@@ -1,0 +1,3 @@
+strategy_strategy_id,characteristic_characteristic_id,operator,value_text
+RS001,RC001,EQ,1000
+RS002,RC001,EQ,2000

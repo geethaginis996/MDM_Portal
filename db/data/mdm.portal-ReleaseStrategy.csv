@@ -1,0 +1,3 @@
+strategy_id,description,master_data_type_master_data_type_id,priority,active,valid_from,valid_to
+RS001,Business Partner - Sales Org 1000,BUSINESS PARTNER,10,true,2026-01-01,
+RS002,Business Partner - Sales Org 2000,BUSINESS PARTNER,20,true,2026-01-01,

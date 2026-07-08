@@ -97,6 +97,9 @@ sap.ui.define([
             this.getView().getModel("assigned").setProperty("/items", []);
             this.getView().getModel("prereq").setProperty("/items", []);
             this.getView().getModel("prereqroles").setProperty("/items", []);
+            this._oViewModel.setProperty("/fieldCount", "0");
+            this._oViewModel.setProperty("/prereqCount", "0");
+            this._oViewModel.setProperty("/prereqRolesCount", "0");
 
             if (sId === "NEW") {
                 this._createNew();
@@ -135,6 +138,11 @@ sap.ui.define([
                             if (!oData) { return; }
                             this._refreshHeader(oData);
                             this.byId("selMDT").setSelectedIndex(this.formatScopeIndex(oData.account_scope));
+                            // Load all three tab badge counts eagerly, right when
+                            // the record loads — not lazily on tab-select.
+                            this._loadAssignedFields();
+                            this._loadPrereqFields();
+                            this._loadPrereqRoles();
                         }.bind(this));
                     }.bind(this)
                 }

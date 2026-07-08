@@ -1,0 +1,8 @@
+characteristic_id,master_data_type_master_data_type_id,description,field_field_id,data_type,active
+RC001,BUSINESS PARTNER,Sales Organisation,VKORG,STRING,true
+RC002,BUSINESS PARTNER,Company Code,BUKRS,STRING,true
+RC003,BUSINESS PARTNER,Distribution Channel,VTWEG,STRING,true
+RC004,BUSINESS PARTNER,Division,SPART,STRING,true
+RC005,BUSINESS PARTNER,Delivering Plant,VWERK,STRING,true
+RC006,BUSINESS PARTNER,BP Kind,BPKIND,STRING,true
+RC007,BUSINESS PARTNER,Authorization Group,AUGRP,STRING,true

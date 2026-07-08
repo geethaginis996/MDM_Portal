@@ -135,7 +135,25 @@
                                 </layout:content>
                             </layout:Grid>
 
-                         
+                            <Panel headerText="{i18n>lbl.valueTablePreview}"
+                                   class="sapUiTinyMarginTop" expandable="false">
+                                <layout:Grid defaultSpan="L4 M4 S12" hSpacing="2">
+                                    <layout:content>
+                                        <VBox>
+                                            <Label text="{i18n>lbl.sourceTable}"/>
+                                            <Text id="vtSource" text="—"/>
+                                        </VBox>
+                                        <VBox>
+                                            <Label text="{i18n>lbl.outputKey}"/>
+                                            <Text id="vtOutputKey" text="—"/>
+                                        </VBox>
+                                        <VBox>
+                                            <Label text="{i18n>lbl.outputDesc}"/>
+                                            <Text id="vtOutputDesc" text="—"/>
+                                        </VBox>
+                                    </layout:content>
+                                </layout:Grid>
+                            </Panel>
                         </VBox>
                     </IconTabFilter>
 
@@ -170,7 +188,37 @@
                             </layout:Grid>
 
                             <!-- Validation rule detail panel -->
-                            
+                            <Panel headerText="{i18n>lbl.validationPreview}"
+                                   class="sapUiTinyMarginTop" expandable="false">
+                                <layout:Grid defaultSpan="L4 M4 S12" hSpacing="2">
+                                    <layout:content>
+                                        <VBox>
+                                            <Label text="{i18n>lbl.functionName}"/>
+                                            <Text id="valFnName" text="—"/>
+                                        </VBox>
+                                        <VBox>
+                                            <Label text="{i18n>lbl.description}"/>
+                                            <Text id="valDesc" text="—"/>
+                                        </VBox>
+                                        <VBox>
+                                            <Label text="{i18n>lbl.errorMessage}"/>
+                                            <Text id="valErrMsg" text="—"/>
+                                        </VBox>
+                                        <VBox>
+                                            <Label text="{i18n>lbl.inputParam1}"/>
+                                            <Text id="valParam1" text="—"/>
+                                        </VBox>
+                                        <VBox>
+                                            <Label text="{i18n>lbl.inputParam2}"/>
+                                            <Text id="valParam2" text="—"/>
+                                        </VBox>
+                                        <VBox>
+                                            <Label text="{i18n>lbl.inputParam3}"/>
+                                            <Text id="valParam3" text="—"/>
+                                        </VBox>
+                                    </layout:content>
+                                </layout:Grid>
+                            </Panel>
                         </VBox>
                     </IconTabFilter>
 

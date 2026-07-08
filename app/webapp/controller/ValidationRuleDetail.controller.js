@@ -79,6 +79,9 @@ sap.ui.define([
                             this._refreshHeader(oData);
                             var oSel = this.byId("selTrigger");
                             if (oSel) { oSel.setSelectedKey(oData.trigger_on || ""); }
+                            // Load usage count eagerly, right when the record loads
+                            // — not lazily on tab-select.
+                            this._loadUsage();
                         }.bind(this));
                         this.byId("inId").setEditable(false);
                     }.bind(this)

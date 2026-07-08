@@ -44,6 +44,7 @@ sap.ui.define([
             this._oViewModel.setProperty("/selectedTab", "general");
             this.byId("detailTabs").setSelectedKey("general");
             this.getView().getModel("usage").setProperty("/items", []);
+            this._oViewModel.setProperty("/usageCount", "0");
 
             if (sId === "NEW") {
                 this._createNew();
@@ -81,6 +82,9 @@ sap.ui.define([
                         }
                         oCtx.requestObject().then(function (oData) {
                             if (oData) { this._refreshHeader(oData); }
+                            // Load usage count eagerly, right when the record loads
+                            // — not lazily on tab-select.
+                            this._loadUsage();
                         }.bind(this));
                         // ID is the key — not editable on existing record
                         this.byId("inId").setEditable(false);
@@ -188,7 +192,6 @@ sap.ui.define([
                 });
                 this.getView().getModel("usage").setProperty("/items", aItems);
                 this._oViewModel.setProperty("/usageCount", String(aItems.length));
-                this.byId("attrUsage").setText(aItems.length + " field" + (aItems.length !== 1 ? "s" : ""));
             }.bind(this)).catch(function (e) {
                 MessageBox.error("Could not load usage: " + e.message);
             });

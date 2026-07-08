@@ -289,6 +289,13 @@ entity StrategyCharacteristic : managed {
         field               : Association to FieldMaster not null;
         data_type           : StrategyDataType not null;
         active              : Boolean          not null default true;
+        values              : Composition of many StrategyCharacteristicValue on values.characteristic = $self;
+}
+
+entity StrategyCharacteristicValue : managed {
+    key characteristic  : Association to StrategyCharacteristic not null;
+    key value_key       : String(40);
+        description     : String(100) not null;
 }
 
 entity ReleaseCode : managed {
@@ -505,6 +512,7 @@ annotate CRHeader with @(
 
 annotate ReleaseCode     with @(title: 'Release Code');
 annotate ReleaseStrategy with @(title: 'Release Strategy');
+annotate StrategyCharacteristic with @(title: 'Release Criteria');
 annotate BPRole          with @(title: 'BP Role');
 annotate FieldMaster     with @(title: 'Field Master');
 

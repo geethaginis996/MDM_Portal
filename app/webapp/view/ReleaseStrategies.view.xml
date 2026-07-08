@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mvc:View
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core"
+    controllerName="mdm.portal.controller.ReleaseStrategies"
+    displayBlock="true">
+
+    <Page id="releaseStrategiesPage" showHeader="false">
+        <content>
+            <VBox class="sapUiMediumMarginBeginEnd sapUiSmallMarginTop">
+                <Bar class="sapMPageHeader">
+                    <contentLeft>
+                        <Breadcrumbs separatorStyle="Slash">
+                            <Link text="Release Strategy" enabled="false"/>
+                            <Link text="Release Strategies" enabled="false"/>
+                        </Breadcrumbs>
+                    </contentLeft>
+                </Bar>
+            </VBox>
+
+            <VBox class="welcome" style="min-height:400px" justifyContent="Center" alignItems="Center">
+                <VBox class="welcome-inner" alignItems="Center">
+                    <core:Icon src="sap-icon://route" size="2.5rem" color="Neutral" class="sapUiSmallMarginBottom"/>
+                    <Title text="Release Strategies" level="H2" class="sapUiTinyMarginBottom"/>
+                    <Text text="This module isn't built out yet — it will let you combine Release Criteria value combinations with Release Code approval steps to determine which approval path a change request takes."
+                          textAlign="Center" width="26rem"/>
+                    <Link text="Back to Release Criteria" press=".onBackToCriteria" class="sapUiSmallMarginTop"/>
+                </VBox>
+            </VBox>
+        </content>
+    </Page>
+</mvc:View>

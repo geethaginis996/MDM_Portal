@@ -293,19 +293,42 @@ sap.ui.define(
       // ── Header helpers ───────────────────────────────────────────
 
       _updateHeader: function (oData) {
+        // Guard against late-resolving promises firing after the view has
+        // been destroyed or rebound to a different field (route changed,
+        // user navigated away/back quickly, etc.) — mirrors the same
+        // destroyed-view race-condition fix already applied on the
+        // BP Roles detail screen.
+        var oView = this.getView();
+        if (!oView || oView.bIsDestroyed) { return; }
+
+        var oTitle = this.byId("pageTitle");
+        if (!oTitle) { return; }
+
         var sTitle = oData.field_id
           ? oData.field_id +
             (oData.description ? " — " + oData.description : "")
           : "New Field";
-        this.byId("pageTitle").setText(sTitle);
-        this.byId("attrStatus").setText(oData.active ? "Active" : "Inactive");
-        this.byId("attrCreated").setText(oData.createdBy || "—");
-        this.byId("attrDate").setText(
-          oData.createdAt ? oDateFmt.format(new Date(oData.createdAt)) : "—",
-        );
-        this.byId("attrModified").setText(
-          oData.modifiedAt ? oDateFmt.format(new Date(oData.modifiedAt)) : "—",
-        );
+        oTitle.setText(sTitle);
+
+        var oStatus = this.byId("attrStatus");
+        if (oStatus) { oStatus.setText(oData.active ? "Active" : "Inactive"); }
+
+        var oCreated = this.byId("attrCreated");
+        if (oCreated) { oCreated.setText(oData.createdBy || "—"); }
+
+        var oDate = this.byId("attrDate");
+        if (oDate) {
+          oDate.setText(
+            oData.createdAt ? oDateFmt.format(new Date(oData.createdAt)) : "—",
+          );
+        }
+
+        var oModified = this.byId("attrModified");
+        if (oModified) {
+          oModified.setText(
+            oData.modifiedAt ? oDateFmt.format(new Date(oData.modifiedAt)) : "—",
+          );
+        }
       },
 
       // ── Dirty flag ───────────────────────────────────────────────

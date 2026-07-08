@@ -30,11 +30,14 @@
                                class="sapUiSmallMarginEnd"/>
                     <VBox>
                         <Title id="pageTitle" text="" level="H2" wrapping="false"/>
-                        
+                        <Text id="pageSubtitle" text="" class="sapUiTinyMarginTop"
+                              style="color:var(--sapContent_LabelColor);"/>
                     </VBox>
                 </HBox>
 
-               
+                <HBox alignItems="Center" class="sapUiTinyMarginTop">
+                    <ObjectAttribute id="attrTrigger" title="Trigger" text=""/>
+                </HBox>
             </VBox>
 
             <HBox class="sapUiTinyMarginTop sapUiMediumMarginBeginEnd">
@@ -137,7 +140,7 @@
 
                     <!-- TAB 3 - Linked Fields -->
                     <IconTabFilter id="tabUsage" text="Linked Fields" key="usage"
-                                   count="{ui>/usageCount}" icon="sap-icon://connected">
+                                   count="{view>/usageCount}" icon="sap-icon://connected">
                         <VBox>
                             <Toolbar class="sapUiSmallMarginTop">
                                 <Title text="Fields Using This Validation" level="H4"/>

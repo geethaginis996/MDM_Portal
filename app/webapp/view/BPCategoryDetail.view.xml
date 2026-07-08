@@ -26,7 +26,8 @@
                     <core:Icon id="headerIcon" src="sap-icon://customer" size="2rem" color="Accent8"
                                class="sapUiSmallMarginEnd"/>
                     <VBox>
-                        <Title id="pageTitle" text="" level="H2" wrapping="false"/> 
+                        <Title id="pageTitle" text="" level="H2" wrapping="false"/>
+                        <ObjectStatus id="attrStatus" text="" state="None" class="sapUiTinyMarginTop"/>
                     </VBox>
                 </HBox>
             </VBox>
@@ -80,7 +81,7 @@
 
                     <!-- TAB 2 - Field Assignments -->
                     <IconTabFilter id="tabFields" text="Field Assignments" key="fields"
-                                   count="{ui>/fieldCount}" icon="sap-icon://form">
+                                   count="{view>/fieldCount}" icon="sap-icon://form">
                         <VBox>
                             <Toolbar class="sapUiSmallMarginTop">
                                 <Title text="Category Field Assignments" level="H4"/>

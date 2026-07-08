@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mvc:View
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core"
+    controllerName="mdm.portal.controller.ReleaseCodes"
+    displayBlock="true">
+
+    <Page id="releaseCodesPage" showHeader="false">
+        <content>
+            <VBox class="sapUiMediumMarginBeginEnd sapUiSmallMarginTop">
+                <Bar class="sapMPageHeader">
+                    <contentLeft>
+                        <Breadcrumbs separatorStyle="Slash">
+                            <Link text="Release Strategy" enabled="false"/>
+                            <Link text="Release Codes" enabled="false"/>
+                        </Breadcrumbs>
+                    </contentLeft>
+                </Bar>
+            </VBox>
+
+            <VBox class="welcome" style="min-height:400px" justifyContent="Center" alignItems="Center">
+                <VBox class="welcome-inner" alignItems="Center">
+                    <core:Icon src="sap-icon://key" size="2.5rem" color="Neutral" class="sapUiSmallMarginBottom"/>
+                    <Title text="Release Codes" level="H2" class="sapUiTinyMarginBottom"/>
+                    <Text text="This module isn't built out yet — it will let you define the approver codes (e.g. Sales Manager, Purchasing Manager) used as steps in a release strategy, along with SLA hours and escalation rules."
+                          textAlign="Center" width="26rem"/>
+                    <Link text="Back to Release Criteria" press=".onBackToCriteria" class="sapUiSmallMarginTop"/>
+                </VBox>
+            </VBox>
+        </content>
+    </Page>
+</mvc:View>

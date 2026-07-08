@@ -98,7 +98,7 @@
 
                     <!-- TAB 2 - Additional Fields -->
                     <IconTabFilter id="tabFields" text="Additional Fields" key="fields"
-                                   count="{ui>/fieldCount}" icon="sap-icon://form">
+                                   count="{view>/fieldCount}" icon="sap-icon://form">
                         <VBox>
                             <Toolbar class="sapUiSmallMarginTop">
                                 <Title text="Additional Field Assignment" level="H4"/>

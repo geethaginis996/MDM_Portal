@@ -54,6 +54,53 @@ body, .sapUiBody {
     -webkit-font-smoothing: antialiased;
 }
 
+/* Browser text-selection highlight — replace the OS default (harsh
+   dark navy / white text, especially jarring on blue links) with the
+   same light, elegant palette used for row selection.
+   NOTE: specificity is intentionally raised (html body ..., plus
+   explicit control-class selectors) so this reliably wins over the
+   sap_horizon theme's own ::selection rule regardless of which
+   stylesheet finishes loading last. */
+html body ::selection,
+html body ::-moz-selection {
+    background-color: var(--mdm-blue-hover) !important;
+    color:             var(--mdm-ink) !important;
+}
+a::selection, a::-moz-selection,
+.sapMLnk::selection, .sapMLnk::-moz-selection,
+.sapMText::selection, .sapMText::-moz-selection,
+.sapMListTblCell::selection, .sapMListTblCell::-moz-selection {
+    background-color: var(--mdm-blue-hover) !important;
+    color:             var(--mdm-ink) !important;
+}
+
+/* ── Link focus color (confirmed via DevTools) ───────────────────────
+   The dark-navy box on a clicked Field ID / link is the sap_horizon
+   theme's own focus style, shipped in UI5's library.css:
+
+     html.sap-desktop .sapMLnk:not(.sapMLnkDsbl):focus {
+         background-color: #0032a5; color: #fff; outline: none;
+     }
+
+   Clicking a link naturally focuses it, so this fires on every click,
+   looks identical in every browser (it's page CSS, not a browser
+   default), and needs the *exact* selector matched — :focus, not
+   :focus-visible — to be overridden. The extra repeated .sapMLnk
+   class below raises specificity just above the theme's rule so this
+   wins regardless of stylesheet load order. */
+html.sap-desktop .sapMLnk.sapMLnk:not(.sapMLnkDsbl):focus,
+.sapMLnk.sapMLnk:focus {
+    background-color: var(--mdm-blue-light) !important;
+    color:             var(--mdm-ink) !important;
+    text-shadow:       none !important;
+    outline:           none !important;
+    border-radius:     0.2rem !important;
+}
+.sapMLnk:active {
+    background-color: var(--mdm-blue-hover) !important;
+}
+
+
 .sapTntToolPage { height: 100%; }
 .sapTntToolPageContentWrapper .sapFDynamicPage {
     width: 100% !important;
@@ -497,6 +544,31 @@ body, .sapUiBody {
 }
 .sapMDMFormalTable .sapMLIBSelected {
     background-color: var(--mdm-blue-light) !important;
+}
+
+/* ── Global row selection — applies to EVERY sap.m.Table / List in the
+   app, including Detail-screen tables that don't carry the
+   .sapMDMFormalTable class (fieldsTable, subGroupTable, usageTable,
+   logTable, prereqTable, prereqRolesTable, mdtTable, crTable, etc.)
+   Keeps selection/hover consistent and light across the whole portal
+   instead of falling back to the theme's default darker blue. ─────── */
+.sapMLIB:not(.sapMLIBSelected):hover,
+.sapMListTblRow:not(.sapMLIBSelected):hover {
+    background-color: #f3f7ff !important;
+    cursor: pointer;
+}
+.sapMLIBSelected,
+.sapMListTblRow.sapMLIBSelected {
+    background-color: var(--mdm-blue-light) !important;
+}
+.sapMLIBSelected:hover,
+.sapMListTblRow.sapMLIBSelected:hover {
+    background-color: var(--mdm-blue-hover) !important;
+}
+/* The left accent bar UI5 draws on a selected row — tone it down to
+   match the light palette instead of the theme's saturated default */
+.sapMLIBSelected .sapMLIBSelectedBorder {
+    background-color: var(--mdm-blue) !important;
 }
 
 /* Table toolbar — "Fields" title */

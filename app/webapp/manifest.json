@@ -184,6 +184,26 @@
                     "name": "myRequestDetail",
                     "pattern": "myrequests/{crId}",
                     "target": "myRequestDetail"
+                },
+                {
+                    "pattern": "releasecriteria",
+                    "name": "releaseCriteria",
+                    "target": "releaseCriteria"
+                },
+                {
+                    "pattern": "releasecriteria/{criteriaId}",
+                    "name": "releaseCriteriaDetail",
+                    "target": "releaseCriteriaDetail"
+                },
+                {
+                    "pattern": "releasecodes",
+                    "name": "releaseCodes",
+                    "target": "releaseCodes"
+                },
+                {
+                    "pattern": "releasestrategies",
+                    "name": "releaseStrategies",
+                    "target": "releaseStrategies"
                 }
             ],
             "targets": {
@@ -228,11 +248,11 @@
                     "viewLevel": 1
                 },
                 "releaseCodes": {
-                    "viewName": "FieldMaster",
+                    "viewName": "ReleaseCodes",
                     "viewLevel": 1
                 },
                 "releaseStrategies": {
-                    "viewName": "FieldMaster",
+                    "viewName": "ReleaseStrategies",
                     "viewLevel": 1
                 },
                 "myRequests": {
@@ -274,6 +294,14 @@
                 "createBP": {
                     "viewName": "CreateBP",
                     "viewLevel": 1
+                },
+                "releaseCriteria": {
+                    "viewName": "ReleaseCriteria",
+                    "viewLevel": 1
+                },
+                "releaseCriteriaDetail": {
+                    "viewName": "ReleaseCriteriaDetail",
+                    "viewLevel": 2
                 }
             }
         }

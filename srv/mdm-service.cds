@@ -82,7 +82,11 @@ service MDMPortalService {
     //  RELEASE STRATEGY CONFIGURATION
     // =========================================================================
     
-    entity StrategyCharacteristics as projection on portal.StrategyCharacteristic;
+    entity StrategyCharacteristics as projection on portal.StrategyCharacteristic {
+        *,
+        values : redirected to StrategyCharacteristicValues
+    };
+    entity StrategyCharacteristicValues as projection on portal.StrategyCharacteristicValue;
     entity ReleaseCodes as projection on portal.ReleaseCode;
     entity ReleaseCodeUsers as projection on portal.ReleaseCodeUser;
     entity ReleaseCodeScopes as projection on portal.ReleaseCodeScope;

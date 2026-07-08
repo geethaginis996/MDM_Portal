@@ -38,6 +38,7 @@ sap.ui.define([
             this._oViewModel.setProperty("/selectedTab", "general");
             this.byId("detailTabs").setSelectedKey("general");
             this.getView().getModel("assigned").setProperty("/items", []);
+            this._oViewModel.setProperty("/fieldCount", "0");
 
             if (sId === "NEW") {
                 this._createNew();
@@ -77,6 +78,10 @@ sap.ui.define([
                             this._setTypeRadio(oData.type);
                             var oSel = this.byId("selNumberRange");
                             if (oSel) { oSel.setSelectedKey(oData.assignment_mode || "INTERNAL"); }
+                            // Load the field-assignment count eagerly, right when
+                            // the record loads — not lazily on tab-select — so the
+                            // "Additional Fields" badge is correct immediately.
+                            this._loadFields();
                         }.bind(this));
                     }.bind(this)
                 }
@@ -216,7 +221,6 @@ sap.ui.define([
                     });
                     this.getView().getModel("assigned").setProperty("/items", aItems);
                     this._oViewModel.setProperty("/fieldCount", String(aItems.length));
-                    this.byId("attrFields").setText(aItems.length + " field" + (aItems.length !== 1 ? "s" : ""));
                 }.bind(this));
             }.bind(this)).catch(function (e) {
                 MessageBox.error("Could not load assigned fields: " + e.message);

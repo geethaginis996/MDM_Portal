@@ -113,6 +113,11 @@ sap.ui.define([
             this.byId("detailTabs").setSelectedKey("general");
             this.getView().getModel("subGroups").setProperty("/items", []);
             this.getView().getModel("assignedFields").setProperty("/items", []);
+            // Also reset the tab badge counts themselves — otherwise the
+            // PREVIOUS record's counts stay visible on the tab icons until
+            // the user happens to click into that tab for the new record.
+            this._oViewModel.setProperty("/subGroupCount", "0");
+            this._oViewModel.setProperty("/assignedFieldCount", "0");
 
             if (sGroupId === "NEW") {
                 this._createNew(null);
@@ -173,6 +178,12 @@ sap.ui.define([
                             if (oParSel) {
                                 oParSel.setSelectedKey(oData.parent_group_id_group_id || "");
                             }
+                            // Load tab badge counts eagerly, right when the record
+                            // loads — not lazily on tab-select — so "Sub Groups" and
+                            // "Assigned Fields" show the correct count immediately,
+                            // regardless of which tab happens to be active.
+                            this._loadSubGroups();
+                            this._loadAssignedFields();
                         }.bind(this));
                         // Group ID should not be changed on edit
                         this.byId("inGroupId").setEditable(false);
@@ -334,7 +345,6 @@ sap.ui.define([
                 });
                 this.getView().getModel("subGroups").setProperty("/items", aItems);
                 this._oViewModel.setProperty("/subGroupCount", String(aItems.length));
-                this.byId("attrSubCount").setText(String(aItems.length));
             }.bind(this)).catch(function (e) {
                 MessageBox.error("Could not load sub groups: " + e.message);
             });

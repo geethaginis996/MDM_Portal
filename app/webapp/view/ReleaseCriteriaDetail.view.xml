@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mvc:View
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core"
+    xmlns:l="sap.ui.layout"
+    controllerName="mdm.portal.controller.ReleaseCriteriaDetail"
+    displayBlock="true">
+
+    <Page busy="{view>/busy}" busyIndicatorDelay="0" id="detailPage" showHeader="false">
+
+        <content>
+            <!-- Top bar with breadcrumb -->
+            <VBox>
+                <Bar class="sapMPageHeader">
+                    <contentLeft>
+                        <Button icon="sap-icon://nav-back" type="Transparent" press=".onNavBack"/>
+                        <Breadcrumbs id="pageBreadcrumb" separatorStyle="Slash" class="sapUiTinyMarginBegin">
+                            <Link text="Release Strategy" press=".onNavBack"/>
+                            <Link text="Release Criteria" press=".onNavBack"/>
+                        </Breadcrumbs>
+                    </contentLeft>
+                </Bar>
+            </VBox>
+
+            <!-- Page heading -->
+            <VBox class="sapUiMediumMarginBeginEnd sapUiSmallMarginTop">
+                <HBox alignItems="Center">
+                    <core:Icon src="sap-icon://filter-fields" size="2rem" color="Accent8"
+                               class="sapUiSmallMarginEnd"/>
+                    <VBox>
+                        <Title id="pageTitle" text="" level="H2" wrapping="false"/>
+                    </VBox>
+                </HBox>
+                <HBox class="sapUiTinyMarginTop">
+                    <ObjectAttribute id="attrStatus"   title="Status"     text=""/>
+                    <ObjectAttribute id="attrCreated"  title="Created By" text="" class="sapUiSmallMarginBegin"/>
+                    <ObjectAttribute id="attrDate"     title="Created On" text="" class="sapUiSmallMarginBegin"/>
+                </HBox>
+            </VBox>
+
+            <HBox class="sapUiTinyMarginTop sapUiMediumMarginBeginEnd">
+                <core:HTML content="&lt;hr style='border:none;border-top:1px solid var(--sapGroup_TitleBorderColor);margin:0 0 0.5rem 0;width:100%'/&gt;"/>
+            </HBox>
+
+            <!-- Icon Tab Bar -->
+            <IconTabBar id="detailTabs" select=".onTabSelect" expanded="true"
+                        class="sapUiResponsiveContentPadding">
+                <items>
+
+                    <!-- TAB 1 - General -->
+                    <IconTabFilter text="General" key="general" icon="sap-icon://hint">
+                        <VBox class="sapUiMediumMarginBeginEnd">
+                            <Title text="General Properties" level="H4"
+                                   class="sapUiSmallMarginTop sapUiSmallMarginBottom"/>
+                            <l:Grid defaultSpan="L6 M6 S12" hSpacing="2">
+                                <l:content>
+                                    <VBox>
+                                        <Label text="Criteria ID" required="true" labelFor="inId"/>
+                                        <Input id="inId" value="{characteristic_id}" placeholder="e.g. RC008"
+                                               editable="{view>/isNew}"
+                                               maxLength="20" liveChange=".onFieldChange"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Description" required="true" labelFor="inDescription"/>
+                                        <Input id="inDescription" value="{description}" placeholder="e.g. Sales Organisation"
+                                               maxLength="100" liveChange=".onFieldChange"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Applies To" required="true" labelFor="selAppliesTo"/>
+                                        <Select id="selAppliesTo" width="100%" change=".onFieldChange" forceSelection="false"
+                                                items="{path: '/MasterDataTypes', sorter: {path: 'sequence'}}">
+                                            <core:Item key="{master_data_type_id}" text="{description}"/>
+                                        </Select>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Source Field" required="true" labelFor="selField"/>
+                                        <Select id="selField" width="100%" change=".onFieldChange" forceSelection="false"
+                                                items="{path: '/FieldMasters', sorter: {path: 'field_id'}}">
+                                            <core:Item key="{field_id}" text="{field_id} — {description}"/>
+                                        </Select>
+                                        <Text text="The field on the change request whose value is read to evaluate this criteria."
+                                              class="sapUiTinyMarginTop" style="color:var(--sapContent_LabelColor); font-size: 0.8rem;"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Data Type" required="true" labelFor="selDataType"/>
+                                        <Select id="selDataType" width="100%" change=".onFieldChange" forceSelection="false">
+                                            <core:Item key="STRING"  text="String"/>
+                                            <core:Item key="INTEGER" text="Integer"/>
+                                        </Select>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Active"/>
+                                        <Switch id="swActive" state="{active}" change=".onFieldChange"/>
+                                    </VBox>
+                                </l:content>
+                            </l:Grid>
+                            <MessageStrip type="Information" showIcon="true" class="sapUiMediumMarginTop"
+                                          text="How this is used: when a change request is submitted, the portal reads the value of this criteria from the request and matches it against the value combinations defined on each release strategy. Exactly one strategy is selected per request."/>
+                        </VBox>
+                    </IconTabFilter>
+
+                    <!-- TAB 2 - Allowed Values -->
+                    <IconTabFilter id="tabValues" text="Allowed Values" key="values"
+                                   count="{view>/valueCount}" icon="sap-icon://list">
+                        <VBox class="sapUiMediumMarginBeginEnd">
+                            <Toolbar class="sapUiSmallMarginTop">
+                                <Title text="Allowed Values" level="H4"/>
+                                <ToolbarSpacer/>
+                                <Button text="Add Value" icon="sap-icon://add" type="Transparent" press=".onAddValue"/>
+                            </Toolbar>
+                            <Table id="valuesTable" noDataText="No allowed values defined yet."
+                                   fixedLayout="true" alternateRowColors="true"
+                                   items="{values>/items}">
+                                <columns>
+                                    <Column width="8rem"><Label text="Key" design="Bold"/></Column>
+                                    <Column><Label text="Description" design="Bold"/></Column>
+                                    <Column width="3rem" hAlign="End"/>
+                                </columns>
+                                <items>
+                                    <ColumnListItem>
+                                        <cells>
+                                            <ObjectIdentifier text="{values>value_key}"/>
+                                            <Text text="{values>description}" wrapping="false"/>
+                                            <Button icon="sap-icon://delete" type="Transparent"
+                                                    tooltip="Delete value" press=".onDeleteValue"/>
+                                        </cells>
+                                    </ColumnListItem>
+                                </items>
+                            </Table>
+                        </VBox>
+                    </IconTabFilter>
+
+                    <!-- TAB 3 - Used By Strategies -->
+                    <IconTabFilter id="tabUsage" text="Used By Strategies" key="usage"
+                                   count="{view>/usageCount}" icon="sap-icon://chain-link">
+                        <VBox class="sapUiMediumMarginBeginEnd">
+                            <Toolbar class="sapUiSmallMarginTop">
+                                <Title text="Release Strategies Using This Criteria" level="H4"/>
+                                <ToolbarSpacer/>
+                            </Toolbar>
+                            <Table id="usageTable" noDataText="Not used by any release strategy yet."
+                                   fixedLayout="true" alternateRowColors="true"
+                                   items="{usage>/items}">
+                                <columns>
+                                    <Column width="8rem"><Label text="Strategy ID" design="Bold"/></Column>
+                                    <Column><Label text="Description" design="Bold"/></Column>
+                                    <Column width="10rem"><Label text="Applies To" design="Bold"/></Column>
+                                    <Column width="6rem" hAlign="Center"><Label text="Status" design="Bold"/></Column>
+                                </columns>
+                                <items>
+                                    <ColumnListItem>
+                                        <cells>
+                                            <ObjectIdentifier text="{usage>strategy_id}"/>
+                                            <Text text="{usage>description}" wrapping="false"/>
+                                            <Text text="{= ${usage>master_data_type} === 'BUSINESS PARTNER' ? 'Business Partner' : ${usage>master_data_type}}" wrapping="false"/>
+                                            <ObjectStatus text="{= ${usage>active} ? 'Active' : 'Inactive'}"
+                                                          state="{= ${usage>active} ? 'Success' : 'Error'}"/>
+                                        </cells>
+                                    </ColumnListItem>
+                                </items>
+                            </Table>
+                            <MessageStrip type="Information" showIcon="true" class="sapUiMediumMarginTop"
+                                          text="Release Strategies is a placeholder module for now — this list previews which strategies reference this criteria once that module is built out."/>
+                        </VBox>
+                    </IconTabFilter>
+
+                </items>
+            </IconTabBar>
+        </content>
+
+        <footer>
+            <OverflowToolbar>
+                <ToolbarSpacer/>
+                <Button id="btnCancel" text="Cancel" type="Default" press=".onCancel"/>
+                <Button id="btnSave" text="Save" type="Emphasized" press=".onSave"/>
+            </OverflowToolbar>
+        </footer>
+
+    </Page>
+</mvc:View>

@@ -35,6 +35,7 @@ sap.ui.define([
             this._oViewModel.setProperty("/selectedTab", "general");
             this.byId("detailTabs").setSelectedKey("general");
             this.getView().getModel("assigned").setProperty("/items", []);
+            this._oViewModel.setProperty("/fieldCount", "0");
             this._bindCategory(sId);
         },
 
@@ -60,6 +61,9 @@ sap.ui.define([
                         }
                         oCtx.requestObject().then(function (oData) {
                             if (oData) { this._refreshHeader(oData); }
+                            // Load field-assignment count eagerly, right when the
+                            // record loads — not lazily on tab-select.
+                            this._loadFields();
                         }.bind(this));
                     }.bind(this)
                 }
@@ -146,7 +150,6 @@ sap.ui.define([
                 });
                 this.getView().getModel("assigned").setProperty("/items", aItems);
                 this._oViewModel.setProperty("/fieldCount", String(aItems.length));
-                this.byId("attrFields").setText(aItems.length + " field" + (aItems.length !== 1 ? "s" : ""));
             }.bind(this)).catch(function (e) {
                 MessageBox.error("Could not load category fields: " + e.message);
             });
