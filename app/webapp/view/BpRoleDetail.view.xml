@@ -42,6 +42,11 @@
                                                placeholder="e.g. Vendor (Fin. Accounting)"
                                                maxLength="100" liveChange=".onFieldChange"/>
                                     </VBox>
+                                </l:content>
+                            </l:Grid>
+
+                            <l:Grid defaultSpan="L12 M12 S12" hSpacing="2" class="sapUiSmallMarginTop">
+                                <l:content>
                                     <VBox>
                                         <Label text="Master Data Type" required="true" labelFor="selMDT"/>
                                         <RadioButtonGroup id="selMDT" columns="3" width="100%"
@@ -50,8 +55,12 @@
                                             <RadioButton text="Vendor"/>
                                             <RadioButton text="Both"/>
                                         </RadioButtonGroup>
-                                        
                                     </VBox>
+                                </l:content>
+                            </l:Grid>
+
+                            <l:Grid defaultSpan="L6 M6 S12" hSpacing="2" class="sapUiSmallMarginTop">
+                                <l:content>
                                     <VBox>
                                         <Label text="Sequence" required="true" labelFor="inSequence"/>
                                         <Input id="inSequence" value="{sequence}" type="Number"
@@ -63,12 +72,16 @@
                                                 customTextOn="Yes" customTextOff="No"
                                                 change=".onFieldChange"/>
                                     </VBox>
+                                </l:content>
+                            </l:Grid>
+
+                            <l:Grid defaultSpan="L6 M6 S12" hSpacing="2" class="sapUiSmallMarginTop">
+                                <l:content>
                                     <VBox>
                                         <Label text="Initial BP Required" labelFor="swInitBP"/>
                                         <Switch id="swInitBP" state="{initial_bp_required}"
                                                 customTextOn="Yes" customTextOff="No"
                                                 change=".onFieldChange"/>
-                                        
                                     </VBox>
                                 </l:content>
                             </l:Grid>

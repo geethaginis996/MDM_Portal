@@ -117,6 +117,7 @@
                                     <Column width="6rem" hAlign="Center"><Label text="Field Status" design="Bold"/></Column>
                                     <Column width="6rem" hAlign="Center"><Label text="Overrides BP Role?" design="Bold"/></Column>
                                     <Column width="4rem" hAlign="End"><Label text="Seq" design="Bold"/></Column>
+                                    <Column width="3rem" hAlign="Center"/>
                                 </columns>
                                 <items>
                                     <ColumnListItem type="Active" press=".onFieldRowPress">
@@ -131,6 +132,9 @@
                                                 text="{= ${assigned>overrides} ? 'Yes' : '—'}"
                                                 state="{= ${assigned>overrides} ? 'Warning' : 'None'}"/>
                                             <Text text="{assigned>sequence}" wrapping="false"/>
+                                            <Button icon="sap-icon://decline" type="Transparent"
+                                                    tooltip="Remove field from this account group"
+                                                    press=".onRemoveField"/>
                                         </cells>
                                     </ColumnListItem>
                                 </items>

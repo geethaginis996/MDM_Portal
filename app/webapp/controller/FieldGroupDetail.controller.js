@@ -249,7 +249,8 @@ sap.ui.define([
                 ? (sGroupId + (sDesc ? " — " + sDesc : ""))
                 : "New Group";
 
-            this.byId("pageTitle").setText(sTitle);
+            var oTitle = this.byId("pageTitle");
+            if (oTitle) { oTitle.setText(sTitle); }
 
             // Update breadcrumb last item
             var oBreadcrumb = this.byId("pageBreadcrumb");
@@ -267,19 +268,28 @@ sap.ui.define([
             if (oData.master_data_type && oData.master_data_type.description) {
                 sSubtitle += " · " + oData.master_data_type.description;
             }
-            this.byId("pageSubtitle").setText(sSubtitle);
+            var oSubtitle = this.byId("pageSubtitle");
+            if (oSubtitle) { oSubtitle.setText(sSubtitle); }
 
             // Status strip
-            this.byId("attrStatus").setText(oData.active ? "Active" : "Inactive");
-            this.byId("attrStatus").setState(oData.active ? "Success" : "Error");
-            this.byId("attrType").setText(sType);
-            this.byId("attrParent").setText(
-                oData.parent_group_id_group_id
-                    ? oData.parent_group_id_group_id
-                    : "— (Main Group)"
-            );
-            if (oData.sequence !== undefined) {
-                this.byId("attrSequence").setText(String(oData.sequence));
+            var oAttrStatus = this.byId("attrStatus");
+            if (oAttrStatus) {
+                oAttrStatus.setText(oData.active ? "Active" : "Inactive");
+                oAttrStatus.setState(oData.active ? "Success" : "Error");
+            }
+            var oAttrType = this.byId("attrType");
+            if (oAttrType) { oAttrType.setText(sType); }
+            var oAttrParent = this.byId("attrParent");
+            if (oAttrParent) {
+                oAttrParent.setText(
+                    oData.parent_group_id_group_id
+                        ? oData.parent_group_id_group_id
+                        : "— (Main Group)"
+                );
+            }
+            var oAttrSequence = this.byId("attrSequence");
+            if (oAttrSequence && oData.sequence !== undefined) {
+                oAttrSequence.setText(String(oData.sequence));
             }
         },
 

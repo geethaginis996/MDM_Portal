@@ -30,15 +30,7 @@
                                class="sapUiSmallMarginEnd"/>
                     <VBox>
                         <Title id="pageTitle" text="" level="H2" wrapping="false"/>
-                        <Text id="pageSubtitle" text="" class="sapUiTinyMarginTop"
-                              style="color:var(--sapContent_LabelColor);"/>
                     </VBox>
-                </HBox>
-
-                <!-- Object key strip -->
-                <HBox alignItems="Center" class="sapUiTinyMarginTop">
-                    <ObjectStatus id="attrStatus" text="" state="None" class="sapUiSmallMarginEnd"/>
-                    <ObjectAttribute id="attrSource" title="Source Table" text=""/>
                 </HBox>
             </VBox>
 
@@ -78,8 +70,7 @@
                                     </VBox>
                                     <VBox>
                                         <Label text="Status" labelFor="swStatus"/>
-                                        <Switch id="swStatus" state="{= ${status} === 'ACTIVE'}"
-                                                customTextOn="Active" customTextOff="Inactive"
+                                        <Switch id="swStatus" state="false"
                                                 change=".onStatusChange"/>
                                     </VBox>
                                 </l:content>
@@ -199,8 +190,7 @@
 
         <footer>
             <OverflowToolbar>
-                <Button id="btnTestQuery" text="Test Query" icon="sap-icon://lab"
-                        type="Transparent" press=".onTestQuery"/>
+               
                 <ToolbarSpacer/>
                 <Button id="btnCopy" text="Copy" icon="sap-icon://copy"
                         type="Transparent" press=".onCopy"/>

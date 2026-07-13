@@ -30,13 +30,7 @@
                                class="sapUiSmallMarginEnd"/>
                     <VBox>
                         <Title id="pageTitle" text="" level="H2" wrapping="false"/>
-                        <Text id="pageSubtitle" text="" class="sapUiTinyMarginTop"
-                              style="color:var(--sapContent_LabelColor);"/>
                     </VBox>
-                </HBox>
-
-                <HBox alignItems="Center" class="sapUiTinyMarginTop">
-                    <ObjectAttribute id="attrTrigger" title="Trigger" text=""/>
                 </HBox>
             </VBox>
 

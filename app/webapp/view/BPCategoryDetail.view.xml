@@ -27,7 +27,6 @@
                                class="sapUiSmallMarginEnd"/>
                     <VBox>
                         <Title id="pageTitle" text="" level="H2" wrapping="false"/>
-                        <ObjectStatus id="attrStatus" text="" state="None" class="sapUiTinyMarginTop"/>
                     </VBox>
                 </HBox>
             </VBox>

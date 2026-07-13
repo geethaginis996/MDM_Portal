@@ -62,6 +62,8 @@ sap.ui.define([
             this.getView().bindObject({
                 path      : sPath,
                 parameters: {
+                    $select: "value_table_id,description,source_table,input_1,input_2,input_3," +
+                             "output_key,output_desc,status",
                     $$updateGroupId: "valueTableUpdate"
                 },
                 events: {
@@ -126,7 +128,8 @@ sap.ui.define([
             var sDesc = oData.description || "";
             var sTitle = sId ? (sId + (sDesc ? " — " + sDesc : "")) : "New Value Table";
 
-            this.byId("pageTitle").setText(sTitle);
+            var oTitle = this.byId("pageTitle");
+            if (oTitle) { oTitle.setText(sTitle); }
 
             var oBreadcrumb = this.byId("pageBreadcrumb");
             if (oBreadcrumb) {
@@ -134,12 +137,30 @@ sap.ui.define([
             }
 
             var bActive = oData.status === "ACTIVE";
-            this.byId("pageSubtitle").setText(
-                "Value table" + (oData.source_table ? " · source " + oData.source_table : "")
-            );
-            this.byId("attrStatus").setText(bActive ? "Active" : "Inactive");
-            this.byId("attrStatus").setState(bActive ? "Success" : "Error");
-            this.byId("attrSource").setText(oData.source_table || "—");
+
+            var oSubtitle = this.byId("pageSubtitle");
+            if (oSubtitle) {
+                oSubtitle.setText(
+                    "Value table" + (oData.source_table ? " · source " + oData.source_table : "")
+                );
+            }
+            var oAttrStatus = this.byId("attrStatus");
+            if (oAttrStatus) {
+                oAttrStatus.setText(bActive ? "Active" : "Inactive");
+                oAttrStatus.setState(bActive ? "Success" : "Error");
+            }
+            var oAttrSource = this.byId("attrSource");
+            if (oAttrSource) { oAttrSource.setText(oData.source_table || "—"); }
+
+            // The Switch's state is normally driven by the expression binding
+            // {= ${status} === 'ACTIVE'} in the view, but OData V4's automatic
+            // $select detection doesn't reliably pick up properties that are
+            // only referenced inside an expression binding, so on initial load
+            // "status" can remain unfetched for this control specifically even
+            // though it's already resolved here. Set it explicitly so the
+            // switch is always correct regardless of that timing quirk.
+            var oSwStatus = this.byId("swStatus");
+            if (oSwStatus) { oSwStatus.setState(bActive); }
         },
 
         // ── Dirty flag ───────────────────────────────────────────────

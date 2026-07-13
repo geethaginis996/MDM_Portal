@@ -73,7 +73,8 @@ sap.ui.define([
         _refreshHeader: function (oData) {
             var sId   = oData.category_id || "";
             var sDesc = oData.description || "";
-            this.byId("pageTitle").setText(sId + (sDesc ? " — " + sDesc : ""));
+            var oTitle = this.byId("pageTitle");
+            if (oTitle) { oTitle.setText(sId + (sDesc ? " — " + sDesc : "")); }
 
             var oBreadcrumb = this.byId("pageBreadcrumb");
             if (oBreadcrumb) { oBreadcrumb.setCurrentLocationText(sId); }
@@ -84,8 +85,11 @@ sap.ui.define([
             }
 
             var bActive = this._truthy(oData.active);
-            this.byId("attrStatus").setText(bActive ? "Active" : "Inactive");
-            this.byId("attrStatus").setState(bActive ? "Success" : "Error");
+            var oAttrStatus = this.byId("attrStatus");
+            if (oAttrStatus) {
+                oAttrStatus.setText(bActive ? "Active" : "Inactive");
+                oAttrStatus.setState(bActive ? "Success" : "Error");
+            }
         },
 
         _truthy: function (v) {

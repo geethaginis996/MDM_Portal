@@ -62,11 +62,10 @@
             </VBox>
         </content>
 
-        <beginButton>
-            <Button text="Save" type="Emphasized" press=".onFieldAssignmentSave"/>
-        </beginButton>
-        <endButton>
+        <buttons>
+            <Button text="Remove" type="Reject" icon="sap-icon://delete" press=".onFieldAssignmentRemove"/>
             <Button text="Cancel" press=".onFieldAssignmentCancel"/>
-        </endButton>
+            <Button text="Save" type="Emphasized" press=".onFieldAssignmentSave"/>
+        </buttons>
     </Dialog>
 </core:FragmentDefinition>

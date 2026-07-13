@@ -5,7 +5,7 @@
   "main": "srv/server.js",
   "scripts": {
     "start": "cds run",
-    "dev": "cds watch",
+    "dev": "cds watch --exclude db/*.sqlite*,db/*.db,*.log",
     "build": "cds build --production"
   },
   "keywords": [],

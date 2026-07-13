@@ -121,17 +121,20 @@ sap.ui.define([
             var sFn = oData.function_name || "";
             var sTitle = sId ? (sId + (sFn ? " — " + sFn : "")) : "New Validation Rule";
 
-            this.byId("pageTitle").setText(sTitle);
+            var oTitle = this.byId("pageTitle");
+            if (oTitle) { oTitle.setText(sTitle); }
 
             var oBreadcrumb = this.byId("pageBreadcrumb");
             if (oBreadcrumb) {
                 oBreadcrumb.setCurrentLocationText(sId || "New Validation Rule");
             }
-            this.byId("pageSubtitle").setText("Validation Rule");
+            var oSubtitle = this.byId("pageSubtitle");
+            if (oSubtitle) { oSubtitle.setText("Validation Rule"); }
 
             var sTrigger = oData.trigger_on === "SAVE" ? "On Save" :
                            oData.trigger_on === "FIELD" ? "On Field Change" : "\u2014";
-            this.byId("attrTrigger").setText(sTrigger);
+            var oAttrTrigger = this.byId("attrTrigger");
+            if (oAttrTrigger) { oAttrTrigger.setText(sTrigger); }
         },
 
         // ── Dirty flag ───────────────────────────────────────────────

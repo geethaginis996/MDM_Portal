@@ -245,6 +245,34 @@ sap.ui.define([
             this.getOwnerComponent().getRouter().navTo("fieldMasterDetail", { fieldId: encodeURIComponent(sFieldId.toLowerCase()) });
         },
 
+        onRemoveField: function (oEvent) {
+            var oRowCtx   = oEvent.getSource().getBindingContext("assigned");
+            var sFieldId  = oRowCtx.getProperty("field_id");
+            var sDesc     = oRowCtx.getProperty("description");
+            var sGroupId  = this._groupId();
+
+            MessageBox.confirm(
+                "Remove field \"" + sFieldId + " \u2014 " + sDesc + "\" from this account group?", {
+                title  : "Confirm Removal",
+                onClose: function (sAction) {
+                    if (sAction !== MessageBox.Action.OK) { return; }
+
+                    var oModel = this.getOwnerComponent().getModel();
+                    oModel.bindContext(
+                        "/AccountGroupFields(account_group_account_group_id='" + sGroupId +
+                        "',field_field_id='" + sFieldId + "')"
+                    ).getBoundContext().delete("$auto")
+                        .then(function () {
+                            MessageToast.show("Field removed.");
+                            this._loadFields();
+                        }.bind(this))
+                        .catch(function (e) {
+                            MessageBox.error("Could not remove field: " + (e.message || "Unknown error"));
+                        }.bind(this));
+                }.bind(this)
+            });
+        },
+
         onAssignFields: function () {
             var sId = this._groupId();
             if (!sId) { MessageToast.show("Save the account group first."); return; }

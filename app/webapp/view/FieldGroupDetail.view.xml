@@ -35,18 +35,10 @@
                                color="Default" class="sapUiSmallMarginEnd"/>
                     <VBox>
                         <Title id="pageTitle" text="" level="H2" wrapping="false"/>
-                        <Text id="pageSubtitle" text="" class="sapUiTinyMarginTop"
-                              style="color:var(--sapContent_LabelColor);"/>
                     </VBox>
                 </HBox>
 
-                <!-- Status + metadata strip -->
-                <HBox alignItems="Center" class="sapUiTinyMarginTop">
-                    <ObjectStatus id="attrStatus" text="" state="None" class="sapUiSmallMarginEnd"/>
-                    <ObjectAttribute id="attrType"     title="Type"         text="" class="sapUiSmallMarginEnd"/>
-                    <ObjectAttribute id="attrParent"   title="Parent Group" text="" class="sapUiSmallMarginEnd"/>
-                    <ObjectAttribute id="attrSequence" title="Sequence"     text=""/>
-                </HBox>
+              
             </VBox>
 
             <HBox class="sapUiTinyMarginTop sapUiMediumMarginBeginEnd">

@@ -148,6 +148,30 @@ sap.ui.define([
 
         onFieldAssignmentCancel: function () {
             if (this._oFieldEditDialog) { this._oFieldEditDialog.close(); }
+        },
+
+        onFieldAssignmentRemove: function () {
+            var oCfg = this._fieldEditCfg;
+            var oData = this.getView().getModel("fieldEdit").getData();
+
+            MessageBox.confirm(
+                "Remove field \"" + oData.field_id + " \u2014 " + oData.description + "\" from this assignment?", {
+                title  : "Confirm Removal",
+                onClose: function (sAction) {
+                    if (sAction !== MessageBox.Action.OK) { return; }
+
+                    var oCtx = this._oFieldEditCtx;
+                    oCtx.delete("$auto")
+                        .then(function () {
+                            MessageToast.show("Field removed.");
+                            this._oFieldEditDialog.close();
+                            if (typeof oCfg.onDone === "function") { oCfg.onDone(); }
+                        }.bind(this))
+                        .catch(function (e) {
+                            MessageBox.error("Could not remove field: " + (e.message || "Unknown error"));
+                        }.bind(this));
+                }.bind(this)
+            });
         }
     };
 });
