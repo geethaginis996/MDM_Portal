@@ -40,7 +40,8 @@
         <f:header>
             <f:DynamicPageHeader pinnable="false" backgroundDesign="Translucent">
                 <VBox>
-                                        <l:Grid defaultSpan="XL3 L3 M6 S12" hSpacing="1" vSpacing="0.5"
+                   
+                    <l:Grid defaultSpan="XL3 L3 M6 S12" hSpacing="1" vSpacing="0.5"
                             class="sapUiSmallMarginBeginEnd sapUiSmallMarginTopBottom">
                         <l:content>
                             <VBox>
@@ -53,9 +54,8 @@
                             <VBox>
                                 <Label text="Applies To" labelFor="filterAppliesTo" design="Bold"/>
                                 <Select id="filterAppliesTo" width="100%" change=".onFilterChange" forceSelection="false"
-                                        items="{path: '/MasterDataTypes', sorter: {path: 'sequence'}}">
-                                    <core:Item key="" text="All"/>
-                                    <core:Item key="{master_data_type_id}" text="{description}"/>
+                                        items="{lookups>/appliesTo}">
+                                    <core:Item key="{lookups>key}" text="{lookups>text}"/>
                                 </Select>
                             </VBox>
                         </l:content>

@@ -1,11 +1,13 @@
 sap.ui.define([
     "sap/ui/core/mvc/Controller",
+    "sap/ui/model/json/JSONModel",
     "sap/ui/model/Filter",
     "sap/ui/model/FilterOperator",
+    "sap/ui/model/Sorter",
     "sap/m/MessageToast",
     "sap/m/MessageBox"
 ], function (
-    Controller, Filter, FilterOperator,
+    Controller, JSONModel, Filter, FilterOperator, Sorter,
     MessageToast, MessageBox
 ) {
     "use strict";
@@ -14,6 +16,29 @@ sap.ui.define([
 
         // ── Lifecycle ────────────────────────────────────────────────
         onInit: function () {
+            // "Applies To" filter options — built as a single local array
+            // (starting with a synthetic "All" entry) rather than binding
+            // the Select directly to the OData /MasterDataTypes collection,
+            // since mixing a static <core:Item> with a bound aggregation on
+            // the same control triggers "list bindings support only a
+            // single template object".
+            var oLookups = new JSONModel({ appliesTo: [{ key: "", text: "All" }] });
+            this.getView().setModel(oLookups, "lookups");
+
+            var oModel = this.getOwnerComponent().getModel();
+            oModel.bindList("/MasterDataTypes", null, [new Sorter("sequence")])
+                .requestContexts(0, Infinity).then(function (aCtx) {
+                    var aItems = oLookups.getProperty("/appliesTo").concat(
+                        aCtx.map(function (c) {
+                            return {
+                                key : c.getProperty("master_data_type_id"),
+                                text: c.getProperty("description")
+                            };
+                        })
+                    );
+                    oLookups.setProperty("/appliesTo", aItems);
+                }).catch(function () { /* filter just won't have extra options */ });
+
             var oRouter = this.getOwnerComponent().getRouter();
             oRouter.getRoute("releaseCriteria").attachPatternMatched(this._onRouteMatched, this);
         },

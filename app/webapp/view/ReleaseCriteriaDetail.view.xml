@@ -32,11 +32,11 @@
                         <Title id="pageTitle" text="" level="H2" wrapping="false"/>
                     </VBox>
                 </HBox>
-                <HBox class="sapUiTinyMarginTop">
+                <!-- <HBox class="sapUiTinyMarginTop">
                     <ObjectAttribute id="attrStatus"   title="Status"     text=""/>
                     <ObjectAttribute id="attrCreated"  title="Created By" text="" class="sapUiSmallMarginBegin"/>
                     <ObjectAttribute id="attrDate"     title="Created On" text="" class="sapUiSmallMarginBegin"/>
-                </HBox>
+                </HBox> -->
             </VBox>
 
             <HBox class="sapUiTinyMarginTop sapUiMediumMarginBeginEnd">
@@ -79,8 +79,7 @@
                                                 items="{path: '/FieldMasters', sorter: {path: 'field_id'}}">
                                             <core:Item key="{field_id}" text="{field_id} — {description}"/>
                                         </Select>
-                                        <Text text="The field on the change request whose value is read to evaluate this criteria."
-                                              class="sapUiTinyMarginTop" style="color:var(--sapContent_LabelColor); font-size: 0.8rem;"/>
+                                       
                                     </VBox>
                                     <VBox>
                                         <Label text="Data Type" required="true" labelFor="selDataType"/>
@@ -95,8 +94,7 @@
                                     </VBox>
                                 </l:content>
                             </l:Grid>
-                            <MessageStrip type="Information" showIcon="true" class="sapUiMediumMarginTop"
-                                          text="How this is used: when a change request is submitted, the portal reads the value of this criteria from the request and matches it against the value combinations defined on each release strategy. Exactly one strategy is selected per request."/>
+                           
                         </VBox>
                     </IconTabFilter>
 
@@ -160,8 +158,7 @@
                                     </ColumnListItem>
                                 </items>
                             </Table>
-                            <MessageStrip type="Information" showIcon="true" class="sapUiMediumMarginTop"
-                                          text="Release Strategies is a placeholder module for now — this list previews which strategies reference this criteria once that module is built out."/>
+                           
                         </VBox>
                     </IconTabFilter>
 
