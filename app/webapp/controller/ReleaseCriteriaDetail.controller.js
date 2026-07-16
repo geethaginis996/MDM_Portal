@@ -3,17 +3,18 @@ sap.ui.define([
     "sap/ui/model/json/JSONModel",
     "sap/ui/model/Filter",
     "sap/ui/model/FilterOperator",
-    "sap/ui/model/Sorter",
     "sap/m/MessageToast",
     "sap/m/MessageBox",
     "sap/m/Dialog",
     "sap/m/Button",
     "sap/m/Input",
     "sap/m/Label",
+    "sap/m/Select",
+    "sap/ui/core/Item",
     "sap/ui/layout/form/SimpleForm"
 ], function (
-    Controller, JSONModel, Filter, FilterOperator, Sorter,
-    MessageToast, MessageBox, Dialog, Button, Input, Label, SimpleForm
+    Controller, JSONModel, Filter, FilterOperator,
+    MessageToast, MessageBox, Dialog, Button, Input, Label, Select, Item, SimpleForm
 ) {
     "use strict";
 
@@ -30,7 +31,6 @@ sap.ui.define([
                 usageCount : "0"
             });
             this.getView().setModel(this._oViewModel, "view");
-            this.getView().setModel(new JSONModel({ items: [] }), "values");
             this.getView().setModel(new JSONModel({ items: [] }), "usage");
 
             var oRouter = this.getOwnerComponent().getRouter();
@@ -39,32 +39,43 @@ sap.ui.define([
 
         // ── Route matched ────────────────────────────────────────────
         _onRouteMatched: function (oEvent) {
-            var sRaw = decodeURIComponent(oEvent.getParameter("arguments").criteriaId);
-            var sId  = (sRaw === "NEW") ? sRaw : sRaw.toUpperCase();
+            var oArgs = oEvent.getParameter("arguments");
+            var sRaw  = decodeURIComponent(oArgs.criteriaId);
+            var sId   = (sRaw === "NEW") ? sRaw : sRaw.toUpperCase();
+            var sMdt  = (sRaw === "NEW") ? "NEW" : decodeURIComponent(oArgs.appliesTo);
 
             try { this.getOwnerComponent().getModel().resetChanges("releaseCriteriaUpdate"); } catch (e) { /* no pending */ }
+            try { this.getOwnerComponent().getModel().resetChanges("releaseCriteriaValuesUpdate"); } catch (e) { /* no pending */ }
 
             this._oViewModel.setProperty("/isDirty", false);
             this._oViewModel.setProperty("/selectedTab", "general");
             this._oViewModel.setProperty("/valueCount", "0");
             this._oViewModel.setProperty("/usageCount", "0");
             this.byId("detailTabs").setSelectedKey("general");
-            this.getView().getModel("values").setProperty("/items", []);
             this.getView().getModel("usage").setProperty("/items", []);
 
             if (sId === "NEW") {
                 this._createNew();
             } else {
-                this._bindCriteria(sId);
+                this._bindCriteria(sId, sMdt);
             }
         },
 
         // ── Bind existing ────────────────────────────────────────────
-        _bindCriteria: function (sId) {
+        _bindCriteria: function (sId, sMdt) {
             this._oViewModel.setProperty("/isNew", false);
             this._oViewModel.setProperty("/busy",  true);
 
-            var sPath = "/StrategyCharacteristics('" + sId + "')";
+            // StrategyCharacteristic has a composite key (characteristic_id +
+            // master_data_type) — both parts are required to address a
+            // single record via OData. Values like "BUSINESS PARTNER" contain
+            // a space, which MUST be percent-encoded here: this path gets
+            // embedded as a raw "GET <path> HTTP/1.1" request-line inside the
+            // $batch body, and an unescaped space breaks HTTP request-line
+            // parsing (HPE_INVALID_CONSTANT), even though the same value
+            // would be fine in an ordinary standalone request.
+            var sPath = "/StrategyCharacteristics(characteristic_id='" + encodeURIComponent(sId) +
+                        "',master_data_type_master_data_type_id='" + encodeURIComponent(sMdt) + "')";
             this.getView().bindObject({
                 path      : sPath,
                 parameters: {
@@ -116,30 +127,56 @@ sap.ui.define([
         // ── Create new ───────────────────────────────────────────────
         _createNew: function () {
             this._oViewModel.setProperty("/isNew", true);
-            this._oViewModel.setProperty("/busy",  false);
+            this._oViewModel.setProperty("/busy",  true);
 
             this.getView().unbindObject();
 
-            var oModel = this.getOwnerComponent().getModel();
-            var oListBinding = oModel.bindList("/StrategyCharacteristics", null, [], [], {
-                $$updateGroupId: "releaseCriteriaUpdate"
-            });
-            var oContext = oListBinding.create({
-                characteristic_id: "",
-                description       : "",
-                data_type         : "STRING",
-                active            : true,
-                master_data_type_master_data_type_id: null,
-                field_field_id    : null
-            });
-            this._oCreateListBinding = oListBinding;
-            this.getView().setBindingContext(oContext);
-            this._refreshHeader({ characteristic_id: "", description: "", active: true });
+            this._generateNextCriteriaId().then(function (sNextId) {
+                var oView = this.getView();
+                if (!oView || oView.bIsDestroyed) { return; }
 
-            this.byId("inId").setEditable(true);
-            this.byId("selAppliesTo").setSelectedKey("");
-            this.byId("selField").setSelectedKey("");
-            this.byId("selDataType").setSelectedKey("STRING");
+                var oModel = this.getOwnerComponent().getModel();
+                var oListBinding = oModel.bindList("/StrategyCharacteristics", null, [], [], {
+                    $$updateGroupId: "releaseCriteriaUpdate"
+                });
+                var oContext = oListBinding.create({
+                    characteristic_id: sNextId,
+                    description       : "",
+                    data_type         : "STRING",
+                    active            : true,
+                    master_data_type_master_data_type_id: null,
+                    field_field_id    : null
+                });
+                this._oCreateListBinding = oListBinding;
+                this.getView().setBindingContext(oContext);
+                this._refreshHeader({ characteristic_id: sNextId, description: "", active: true });
+
+                this.byId("selAppliesTo").setSelectedKey("");
+                this.byId("selField").setSelectedKey("");
+                this.byId("selDataType").setSelectedKey("STRING");
+                this._oViewModel.setProperty("/busy", false);
+            }.bind(this));
+        },
+
+        // Finds the highest existing "RC###" id and returns the next one
+        // (e.g. RC007 in use → returns "RC008"). Falls back to RC001 if
+        // none exist yet, or if anything goes wrong reading existing ones.
+        _generateNextCriteriaId: function () {
+            var oModel = this.getOwnerComponent().getModel();
+            return oModel.bindList("/StrategyCharacteristics", null, null, null, {
+                $select: "characteristic_id"
+            }).requestContexts(0, Infinity).then(function (aCtx) {
+                var iMax = 0;
+                aCtx.forEach(function (c) {
+                    var sId = c.getProperty("characteristic_id") || "";
+                    var oMatch = /^RC(\d+)$/.exec(sId);
+                    if (oMatch) { iMax = Math.max(iMax, parseInt(oMatch[1], 10)); }
+                });
+                var iNext = iMax + 1;
+                return "RC" + String(iNext).padStart(3, "0");
+            }).catch(function () {
+                return "RC001";
+            });
         },
 
         // ── Header refresh ───────────────────────────────────────────
@@ -186,26 +223,21 @@ sap.ui.define([
 
         // ── Allowed Values tab ───────────────────────────────────────
         _loadValues: function () {
-            var oCtx = this.getView().getBindingContext();
-            if (!oCtx) { return; }
+            var oTable = this.byId("valuesTable");
+            if (!oTable) { return; }
+            var oBinding = oTable.getBinding("items");
+            if (!oBinding) { return; }
 
-            var oModel = this.getOwnerComponent().getModel();
-            oModel.bindList(oCtx.getPath() + "/values", null, [new Sorter("value_key")]).requestContexts(0, Infinity)
-                .then(function (aCtx) {
+            var oHeaderCtx = oBinding.getHeaderContext && oBinding.getHeaderContext();
+            if (oHeaderCtx) {
+                oHeaderCtx.requestProperty("$count").then(function (iCount) {
                     var oView = this.getView();
                     if (!oView || oView.bIsDestroyed) { return; }
-
-                    var aItems = aCtx.map(function (c) {
-                        return {
-                            value_key  : c.getProperty("value_key"),
-                            description: c.getProperty("description")
-                        };
-                    });
-                    oView.getModel("values").setProperty("/items", aItems);
-                    this._oViewModel.setProperty("/valueCount", String(aItems.length));
+                    this._oViewModel.setProperty("/valueCount", String(iCount || 0));
                 }.bind(this)).catch(function () {
                     // New/unsaved record has no nav path yet — leave empty, no error.
                 });
+            }
         },
 
         onAddValue: function () {
@@ -213,17 +245,57 @@ sap.ui.define([
                 MessageToast.show("Save the criteria first before adding allowed values.");
                 return;
             }
-            if (!this._oAddValueDialog) {
-                var oKeyInput  = new Input({ placeholder: "e.g. DOM", maxLength: 40 });
-                var oDescInput = new Input({ placeholder: "e.g. Domestic Customer", maxLength: 100 });
+            this._openValueDialog(null);
+        },
 
-                this._oAddValueDialog = new Dialog({
+        onValueRowPress: function (oEvent) {
+            this._openValueDialog(oEvent.getSource().getBindingContext());
+        },
+
+        // oExistingCtx: null → "Add" mode (create a new row).
+        //               a row's live context → "Edit" mode (update that row).
+        _openValueDialog: function (oExistingCtx) {
+            var bEdit = !!oExistingCtx;
+
+            if (!this._oValueDialog) {
+                var oTypeSelect = new Select({
+                    selectedKey: "EQ",
+                    items: [
+                        new Item({ key: "EQ",      text: "Single Value" }),
+                        new Item({ key: "BETWEEN", text: "Range" })
+                    ],
+                    change: function () {
+                        var bRange = oTypeSelect.getSelectedKey() === "BETWEEN";
+                        oValueLabel.setText(bRange ? "From" : "Value");
+                        oToLabel.setVisible(bRange);
+                        oToInput.setVisible(bRange);
+                    }
+                });
+                var oValueLabel = new Label({ text: "Value", required: true });
+                var oValueInput = new Input({ placeholder: "e.g. 1000", maxLength: 200 });
+                var oToLabel     = new Label({ text: "To", required: true, visible: false });
+                var oToInput     = new Input({ placeholder: "e.g. 4999", maxLength: 200, visible: false });
+                var oDescInput   = new Input({ placeholder: "e.g. Domestic Customer", maxLength: 100 });
+
+                var fnReset = function () {
+                    oTypeSelect.setSelectedKey("EQ");
+                    oValueLabel.setText("Value");
+                    oToLabel.setVisible(false);
+                    oToInput.setVisible(false);
+                    oValueInput.setValue("");
+                    oToInput.setValue("");
+                    oDescInput.setValue("");
+                };
+
+                this._oValueDialog = new Dialog({
                     title  : "Add Allowed Value",
                     content: new SimpleForm({
                         editable: true,
                         layout  : "ResponsiveGridLayout",
                         content : [
-                            new Label({ text: "Key", required: true }), oKeyInput,
+                            new Label({ text: "Type", required: true }), oTypeSelect,
+                            oValueLabel, oValueInput,
+                            oToLabel, oToInput,
                             new Label({ text: "Description", required: true }), oDescInput
                         ]
                     }),
@@ -231,74 +303,200 @@ sap.ui.define([
                         text: "Add",
                         type: "Emphasized",
                         press: function () {
-                            var sKey  = oKeyInput.getValue().trim();
-                            var sDesc = oDescInput.getValue().trim();
-                            if (!sKey || !sDesc) {
-                                MessageBox.error("Both Key and Description are required.");
+                            var sOperator = oTypeSelect.getSelectedKey();
+                            var sFrom     = oValueInput.getValue().trim();
+                            var sTo       = oToInput.getValue().trim();
+                            var sDesc     = oDescInput.getValue().trim();
+                            var oCtxBeingEdited = this._oValueDialog._oEditingCtx;
+
+                            if (!sFrom || !sDesc || (sOperator === "BETWEEN" && !sTo)) {
+                                MessageBox.error(
+                                    sOperator === "BETWEEN"
+                                        ? "From, To, and Description are all required for a range."
+                                        : "Both Value and Description are required."
+                                );
                                 return;
                             }
-                            this._createValue(sKey, sDesc);
-                            oKeyInput.setValue("");
-                            oDescInput.setValue("");
-                            this._oAddValueDialog.close();
+                            if (sOperator === "BETWEEN" && sFrom === sTo) {
+                                MessageBox.error("From and To cannot be the same value \u2014 use \"Single Value\" instead.");
+                                return;
+                            }
+
+                            // Unlike the previous design (where value_key was
+                            // itself the primary key), "counter" is just a
+                            // row number now, so the database no longer
+                            // prevents two rows describing the same value or
+                            // the exact same range. Check explicitly here —
+                            // excluding the row currently being edited from
+                            // the comparison, since it's allowed to keep its
+                            // own value_from/value_to (or change to a
+                            // genuinely different one).
+                            var iEditingCounter = oCtxBeingEdited ? oCtxBeingEdited.getProperty("counter") : null;
+                            var aExistingRows = this._getLoadedValueRows().filter(function (o) {
+                                return o.counter !== iEditingCounter;
+                            });
+                            var bDuplicate = aExistingRows.some(function (o) {
+                                if (o.operator !== sOperator) { return false; }
+                                if (sOperator === "EQ") { return o.value_from === sFrom; }
+                                return o.value_from === sFrom && o.value_to === sTo;
+                            });
+                            if (bDuplicate) {
+                                MessageBox.error(
+                                    sOperator === "BETWEEN"
+                                        ? "The range " + sFrom + " \u2013 " + sTo + " is already defined for this characteristic."
+                                        : "Value \"" + sFrom + "\" is already defined for this characteristic."
+                                );
+                                return;
+                            }
+
+                            var sValueTo = sOperator === "BETWEEN" ? sTo : "";
+                            if (oCtxBeingEdited) {
+                                this._updateValue(oCtxBeingEdited, sOperator, sFrom, sValueTo, sDesc);
+                            } else {
+                                this._createValue(sOperator, sFrom, sValueTo, sDesc);
+                            }
+
+                            fnReset();
+                            this._oValueDialog.close();
                         }.bind(this)
                     }),
                     endButton: new Button({
                         text: "Cancel",
-                        press: function () { this._oAddValueDialog.close(); }.bind(this)
+                        press: function () { this._oValueDialog.close(); }.bind(this)
                     }),
-                    afterClose: function () {
-                        oKeyInput.setValue("");
-                        oDescInput.setValue("");
-                    }
+                    afterClose: fnReset
                 });
-                this.getView().addDependent(this._oAddValueDialog);
+                this._oValueDialog._oTypeSelect = oTypeSelect;
+                this._oValueDialog._oValueLabel = oValueLabel;
+                this._oValueDialog._oValueInput = oValueInput;
+                this._oValueDialog._oToLabel    = oToLabel;
+                this._oValueDialog._oToInput    = oToInput;
+                this._oValueDialog._oDescInput  = oDescInput;
+                this.getView().addDependent(this._oValueDialog);
             }
-            this._oAddValueDialog.open();
+
+            // Configure for Add vs Edit mode
+            this._oValueDialog._oEditingCtx = oExistingCtx;
+            var oTypeSelect = this._oValueDialog._oTypeSelect;
+            var oValueLabel = this._oValueDialog._oValueLabel;
+            var oValueInput = this._oValueDialog._oValueInput;
+            var oToLabel    = this._oValueDialog._oToLabel;
+            var oToInput    = this._oValueDialog._oToInput;
+            var oDescInput  = this._oValueDialog._oDescInput;
+
+            if (bEdit) {
+                var sOperator = oExistingCtx.getProperty("operator");
+                var bRange    = sOperator === "BETWEEN";
+                this._oValueDialog.setTitle("Edit Allowed Value");
+                this._oValueDialog.getBeginButton().setText("Save");
+                oTypeSelect.setSelectedKey(sOperator);
+                oValueLabel.setText(bRange ? "From" : "Value");
+                oToLabel.setVisible(bRange);
+                oToInput.setVisible(bRange);
+                oValueInput.setValue(oExistingCtx.getProperty("value_from"));
+                oToInput.setValue(oExistingCtx.getProperty("value_to") || "");
+                oDescInput.setValue(oExistingCtx.getProperty("description"));
+            } else {
+                this._oValueDialog.setTitle("Add Allowed Value");
+                this._oValueDialog.getBeginButton().setText("Add");
+                oTypeSelect.setSelectedKey("EQ");
+                oValueLabel.setText("Value");
+                oToLabel.setVisible(false);
+                oToInput.setVisible(false);
+                oValueInput.setValue("");
+                oToInput.setValue("");
+                oDescInput.setValue("");
+            }
+
+            this._oValueDialog.open();
         },
 
-        _createValue: function (sKey, sDesc) {
-            var oCtx = this.getView().getBindingContext();
-            if (!oCtx) { return; }
+        _updateValue: function (oCtx, sOperator, sFrom, sTo, sDesc) {
+            oCtx.setProperty("operator", sOperator);
+            oCtx.setProperty("value_from", sFrom);
+            oCtx.setProperty("value_to", sTo);
+            oCtx.setProperty("description", sDesc);
 
             var oModel = this.getOwnerComponent().getModel();
-            var oListBinding = oModel.bindList(oCtx.getPath() + "/values", null, [], [], {
-                $$updateGroupId: "releaseCriteriaUpdate"
-            });
-            oListBinding.create({ value_key: sKey, description: sDesc });
+            oModel.submitBatch("releaseCriteriaValuesUpdate")
+                .then(function () {
+                    MessageToast.show("Value updated.");
+                }.bind(this))
+                .catch(function (e) {
+                    MessageBox.error("Could not update value: " + (e.message || "Unknown error"));
+                });
+        },
 
-            oModel.submitBatch("releaseCriteriaUpdate")
+        _getLoadedValueRows: function () {
+            var oTable = this.byId("valuesTable");
+            if (!oTable) { return []; }
+            var oBinding = oTable.getBinding("items");
+            if (!oBinding) { return []; }
+            return oBinding.getAllCurrentContexts().map(function (c) { return c.getObject(); });
+        },
+
+        _createValue: function (sOperator, sFrom, sTo, sDesc) {
+            var oTable = this.byId("valuesTable");
+            if (!oTable) { return; }
+            var oListBinding = oTable.getBinding("items");
+            if (!oListBinding) { return; }
+
+            // counter is the row's own key (alongside the inherited parent
+            // FK) — since a range doesn't have a natural single "key" value,
+            // each row is just numbered. Next counter = current max + 1.
+            var aExisting  = this._getLoadedValueRows();
+            var iNextCounter = aExisting.reduce(function (iMax, o) {
+                return Math.max(iMax, o.counter || 0);
+            }, 0) + 1;
+
+            // Create through the table's own LIVE binding (not a freshly
+            // manufactured, orphaned bindList) — this is what makes the new
+            // row properly tracked by the model and immediately visible,
+            // and is the same reason deletes now work reliably too (see
+            // onDeleteValue).
+            oListBinding.create({
+                counter    : iNextCounter,
+                operator   : sOperator,
+                value_from : sFrom,
+                value_to   : sTo,
+                description: sDesc
+            });
+
+            var oModel = this.getOwnerComponent().getModel();
+            oModel.submitBatch("releaseCriteriaValuesUpdate")
                 .then(function () {
                     MessageToast.show("Value added.");
                     this._loadValues();
                 }.bind(this))
                 .catch(function (e) {
-                    MessageBox.error("Could not add value: " + e.message);
+                    MessageBox.error("Could not add value: " + (e.message || "Unknown error"));
                 });
         },
 
         onDeleteValue: function (oEvent) {
-            var oRowCtx = oEvent.getSource().getBindingContext("values");
-            var sKey    = oRowCtx.getProperty("value_key");
+            // The row's OWN context, from the table's live OData binding —
+            // NOT a freshly manufactured bindContext(). A standalone context
+            // built via bindContext().getBoundContext() is never attached to
+            // anything the model considers "live", and .delete() on it can
+            // resolve successfully without ever sending a real request. The
+            // row's real context, as used by the table itself, is what
+            // actually performs and tracks the delete correctly.
+            var oRowCtx  = oEvent.getSource().getBindingContext();
+            var sDisplay = oRowCtx.getProperty("operator") === "BETWEEN"
+                ? oRowCtx.getProperty("value_from") + " \u2013 " + oRowCtx.getProperty("value_to")
+                : oRowCtx.getProperty("value_from");
 
-            MessageBox.confirm("Delete allowed value \"" + sKey + "\"?", {
+            MessageBox.confirm("Delete allowed value \"" + sDisplay + "\"?", {
                 onClose: function (sAction) {
                     if (sAction !== MessageBox.Action.OK) { return; }
 
-                    var oCtx = this.getView().getBindingContext();
-                    if (!oCtx) { return; }
-                    var sId = oCtx.getProperty("characteristic_id");
-
-                    var oModel = this.getOwnerComponent().getModel();
-                    oModel.bindContext(
-                        "/StrategyCharacteristicValues(characteristic_characteristic_id='" + sId + "',value_key='" + sKey + "')"
-                    ).getBoundContext().delete("$auto")
+                    oRowCtx.delete("$auto")
                         .then(function () {
                             MessageToast.show("Value deleted.");
                             this._loadValues();
                         }.bind(this))
                         .catch(function (e) {
-                            MessageBox.error("Delete failed: " + e.message);
+                            MessageBox.error("Delete failed: " + (e.message || "Unknown error"));
                         }.bind(this));
                 }.bind(this)
             });
@@ -308,12 +506,19 @@ sap.ui.define([
         _loadUsage: function () {
             var oCtx = this.getView().getBindingContext();
             if (!oCtx) { return; }
-            var sId = oCtx.getProperty("characteristic_id");
+            var sId  = oCtx.getProperty("characteristic_id");
+            var sMdt = oCtx.getProperty("master_data_type_master_data_type_id");
             if (!sId) { return; }
 
             var oModel = this.getOwnerComponent().getModel();
             oModel.bindList("/ReleaseStrategyValues", null, null, [
-                new Filter("characteristic_characteristic_id", FilterOperator.EQ, sId)
+                new Filter({
+                    filters: [
+                        new Filter("characteristic_characteristic_id", FilterOperator.EQ, sId),
+                        new Filter("characteristic_master_data_type_master_data_type_id", FilterOperator.EQ, sMdt)
+                    ],
+                    and: true
+                })
             ], {
                 $expand: "strategy($select=strategy_id,description,master_data_type_master_data_type_id,active)"
             }).requestContexts(0, Infinity).then(function (aCtx) {
@@ -339,15 +544,17 @@ sap.ui.define([
 
         // ── Save ─────────────────────────────────────────────────────
         onSave: function () {
-            var sId         = this.byId("inId").getValue().trim().toUpperCase();
+            // Criteria ID is auto-generated (see _generateNextCriteriaId)
+            // and the field is always read-only, so it's never something
+            // the user could mistype — just read it back.
+            var sId         = this.byId("inId").getValue().trim();
             var sDesc       = this.byId("inDescription").getValue().trim();
             var sAppliesTo  = this.byId("selAppliesTo").getSelectedKey();
             var sField      = this.byId("selField").getSelectedKey();
             var sDataType   = this.byId("selDataType").getSelectedKey();
 
-            if (!sId) { MessageBox.error("Criteria ID is required."); return; }
-            if (!/^[A-Z0-9_]+$/.test(sId)) {
-                MessageBox.error("Criteria ID must be uppercase letters, numbers, and underscores only.");
+            if (!sId) {
+                MessageBox.error("Criteria ID could not be generated. Please cancel and try again.");
                 return;
             }
             if (!sDesc)      { MessageBox.error("Description is required."); return; }
@@ -400,6 +607,7 @@ sap.ui.define([
         onCancel: function () {
             var fnGoBack = function () {
                 this.getOwnerComponent().getModel().resetChanges("releaseCriteriaUpdate");
+                try { this.getOwnerComponent().getModel().resetChanges("releaseCriteriaValuesUpdate"); } catch (e) { /* no pending */ }
                 this._oViewModel.setProperty("/isDirty", false);
                 this.onNavBack();
             }.bind(this);

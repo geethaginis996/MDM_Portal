@@ -90,7 +90,11 @@ service MDMPortalService {
     entity ReleaseCodes as projection on portal.ReleaseCode;
     entity ReleaseCodeUsers as projection on portal.ReleaseCodeUser;
     entity ReleaseCodeScopes as projection on portal.ReleaseCodeScope;
-    entity ReleaseStrategies as projection on portal.ReleaseStrategy;
+    entity ReleaseStrategies as projection on portal.ReleaseStrategy {
+        *,
+        values : redirected to ReleaseStrategyValues,
+        steps  : redirected to ReleaseStrategySteps
+    };
     entity ReleaseStrategyValues as projection on portal.ReleaseStrategyValue;
     entity ReleaseStrategySteps as projection on portal.ReleaseStrategyStep;
 

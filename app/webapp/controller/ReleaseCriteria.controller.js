@@ -145,21 +145,30 @@ sap.ui.define([
 
         // ── Navigation ───────────────────────────────────────────────
         onLinkPress: function (oEvent) {
-            var sId = oEvent.getSource().getBindingContext().getProperty("characteristic_id");
+            var oCtx = oEvent.getSource().getBindingContext();
+            var sId  = oCtx.getProperty("characteristic_id");
+            var sMdt = oCtx.getProperty("master_data_type_master_data_type_id");
             this.getOwnerComponent().getRouter().navTo("releaseCriteriaDetail", {
-                criteriaId: encodeURIComponent(sId.toLowerCase())
+                criteriaId: encodeURIComponent(sId.toLowerCase()),
+                appliesTo : encodeURIComponent(sMdt)
             });
         },
 
         onRowPress: function (oEvent) {
-            var sId = oEvent.getSource().getBindingContext().getProperty("characteristic_id");
+            var oCtx = oEvent.getSource().getBindingContext();
+            var sId  = oCtx.getProperty("characteristic_id");
+            var sMdt = oCtx.getProperty("master_data_type_master_data_type_id");
             this.getOwnerComponent().getRouter().navTo("releaseCriteriaDetail", {
-                criteriaId: encodeURIComponent(sId.toLowerCase())
+                criteriaId: encodeURIComponent(sId.toLowerCase()),
+                appliesTo : encodeURIComponent(sMdt)
             });
         },
 
         onAdd: function () {
-            this.getOwnerComponent().getRouter().navTo("releaseCriteriaDetail", { criteriaId: "NEW" });
+            this.getOwnerComponent().getRouter().navTo("releaseCriteriaDetail", {
+                criteriaId: "NEW",
+                appliesTo : "NEW"
+            });
         },
 
         // ── Export ───────────────────────────────────────────────────

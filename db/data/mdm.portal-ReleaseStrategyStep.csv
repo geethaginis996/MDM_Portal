@@ -1,0 +1,6 @@
+strategy_strategy_id,strategy_master_data_type_master_data_type_id,step_number,release_code_release_code_id,mandatory,parallel
+RS001,BUSINESS PARTNER,1,MDS,true,false
+RS001,BUSINESS PARTNER,2,SMG,true,false
+RS001,BUSINESS PARTNER,3,FIN,true,true
+RS002,BUSINESS PARTNER,1,MDS,true,false
+RS002,BUSINESS PARTNER,2,SMG,true,false

@@ -32,11 +32,6 @@
                         <Title id="pageTitle" text="" level="H2" wrapping="false"/>
                     </VBox>
                 </HBox>
-                <!-- <HBox class="sapUiTinyMarginTop">
-                    <ObjectAttribute id="attrStatus"   title="Status"     text=""/>
-                    <ObjectAttribute id="attrCreated"  title="Created By" text="" class="sapUiSmallMarginBegin"/>
-                    <ObjectAttribute id="attrDate"     title="Created On" text="" class="sapUiSmallMarginBegin"/>
-                </HBox> -->
             </VBox>
 
             <HBox class="sapUiTinyMarginTop sapUiMediumMarginBeginEnd">
@@ -56,10 +51,10 @@
                             <l:Grid defaultSpan="L6 M6 S12" hSpacing="2">
                                 <l:content>
                                     <VBox>
-                                        <Label text="Criteria ID" required="true" labelFor="inId"/>
-                                        <Input id="inId" value="{characteristic_id}" placeholder="e.g. RC008"
-                                               editable="{view>/isNew}"
-                                               maxLength="20" liveChange=".onFieldChange"/>
+                                        <Label text="Criteria ID" labelFor="inId"/>
+                                        <Input id="inId" value="{characteristic_id}"
+                                               editable="false"
+                                               maxLength="20"/>
                                     </VBox>
                                     <VBox>
                                         <Label text="Description" required="true" labelFor="inDescription"/>
@@ -79,7 +74,7 @@
                                                 items="{path: '/FieldMasters', sorter: {path: 'field_id'}}">
                                             <core:Item key="{field_id}" text="{field_id} — {description}"/>
                                         </Select>
-                                       
+                                     
                                     </VBox>
                                     <VBox>
                                         <Label text="Data Type" required="true" labelFor="selDataType"/>
@@ -94,7 +89,7 @@
                                     </VBox>
                                 </l:content>
                             </l:Grid>
-                           
+                            
                         </VBox>
                     </IconTabFilter>
 
@@ -107,19 +102,23 @@
                                 <ToolbarSpacer/>
                                 <Button text="Add Value" icon="sap-icon://add" type="Transparent" press=".onAddValue"/>
                             </Toolbar>
+                         
                             <Table id="valuesTable" noDataText="No allowed values defined yet."
                                    fixedLayout="true" alternateRowColors="true"
-                                   items="{values>/items}">
+                                   items="{path: 'values', sorter: {path: 'counter'}, parameters: {$count: true, $$updateGroupId: 'releaseCriteriaValuesUpdate'}}">
                                 <columns>
-                                    <Column width="8rem"><Label text="Key" design="Bold"/></Column>
+                                    <Column width="6rem"><Label text="Type" design="Bold"/></Column>
+                                    <Column width="10rem"><Label text="Value" design="Bold"/></Column>
                                     <Column><Label text="Description" design="Bold"/></Column>
                                     <Column width="3rem" hAlign="End"/>
                                 </columns>
                                 <items>
-                                    <ColumnListItem>
+                                    <ColumnListItem type="Active" press=".onValueRowPress">
                                         <cells>
-                                            <ObjectIdentifier text="{values>value_key}"/>
-                                            <Text text="{values>description}" wrapping="false"/>
+                                            <ObjectStatus text="{= ${operator} === 'BETWEEN' ? 'Range' : 'Single'}"
+                                                          state="{= ${operator} === 'BETWEEN' ? 'Information' : 'None'}"/>
+                                            <ObjectIdentifier text="{= ${operator} === 'BETWEEN' ? ${value_from} + ' \u2013 ' + ${value_to} : ${value_from} }"/>
+                                            <Text text="{description}" wrapping="false"/>
                                             <Button icon="sap-icon://delete" type="Transparent"
                                                     tooltip="Delete value" press=".onDeleteValue"/>
                                         </cells>
@@ -158,7 +157,7 @@
                                     </ColumnListItem>
                                 </items>
                             </Table>
-                           
+                            
                         </VBox>
                     </IconTabFilter>
 

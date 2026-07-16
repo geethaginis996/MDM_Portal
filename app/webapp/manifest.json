@@ -191,7 +191,7 @@
                     "target": "releaseCriteria"
                 },
                 {
-                    "pattern": "releasecriteria/{criteriaId}",
+                    "pattern": "releasecriteria/{criteriaId}/{appliesTo}",
                     "name": "releaseCriteriaDetail",
                     "target": "releaseCriteriaDetail"
                 },
@@ -204,6 +204,11 @@
                     "pattern": "releasestrategies",
                     "name": "releaseStrategies",
                     "target": "releaseStrategies"
+                },
+                {
+                    "pattern": "releasestrategies/{strategyId}/{appliesTo}",
+                    "name": "releaseStrategyDetail",
+                    "target": "releaseStrategyDetail"
                 }
             ],
             "targets": {
@@ -301,6 +306,10 @@
                 },
                 "releaseCriteriaDetail": {
                     "viewName": "ReleaseCriteriaDetail",
+                    "viewLevel": 2
+                },
+                "releaseStrategyDetail": {
+                    "viewName": "ReleaseStrategyDetail",
                     "viewLevel": 2
                 }
             }

@@ -1,4 +1,5 @@
-characteristic_characteristic_id,value_key,description
-RC001,1000,Domestic Sales Organization
-RC001,2000,Export Sales Organization
-RC001,3000,Intercompany Sales Organization
+characteristic_characteristic_id,characteristic_master_data_type_master_data_type_id,counter,operator,value_from,value_to,description
+RC001,BUSINESS PARTNER,1,EQ,1000,"",Domestic Sales Organization
+RC001,BUSINESS PARTNER,2,EQ,2000,"",Export Sales Organization
+RC001,BUSINESS PARTNER,3,EQ,3000,"",Intercompany Sales Organization
+RC001,BUSINESS PARTNER,4,BETWEEN,4000,4999,Reserved Range

@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mvc:View
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core"
+    xmlns:l="sap.ui.layout"
+    controllerName="mdm.portal.controller.ReleaseStrategyDetail"
+    displayBlock="true">
+
+    <Page busy="{view>/busy}" busyIndicatorDelay="0" id="detailPage" showHeader="false">
+
+        <content>
+            <!-- Top bar with breadcrumb -->
+            <VBox>
+                <Bar class="sapMPageHeader">
+                    <contentLeft>
+                        <Button icon="sap-icon://nav-back" type="Transparent" press=".onNavBack"/>
+                        <Breadcrumbs id="pageBreadcrumb" separatorStyle="Slash" class="sapUiTinyMarginBegin">
+                            <Link text="Release Strategy" press=".onNavBack"/>
+                            <Link text="Release Strategies" press=".onNavBack"/>
+                        </Breadcrumbs>
+                    </contentLeft>
+                </Bar>
+            </VBox>
+
+            <!-- Page heading -->
+            <VBox class="sapUiMediumMarginBeginEnd sapUiSmallMarginTop">
+                <HBox alignItems="Center">
+                    <core:Icon src="sap-icon://workflow-tasks" size="2rem" color="Accent8"
+                               class="sapUiSmallMarginEnd"/>
+                    <VBox>
+                        <Title id="pageTitle" text="" level="H2" wrapping="false"/>
+                    </VBox>
+                </HBox>
+               
+            </VBox>
+
+            <HBox class="sapUiTinyMarginTop sapUiMediumMarginBeginEnd">
+                <core:HTML content="&lt;hr style='border:none;border-top:1px solid var(--sapGroup_TitleBorderColor);margin:0 0 0.5rem 0;width:100%'/&gt;"/>
+            </HBox>
+
+            <!-- Icon Tab Bar -->
+            <IconTabBar id="detailTabs" select=".onTabSelect" expanded="true"
+                        class="sapUiResponsiveContentPadding">
+                <items>
+
+                    <!-- TAB 1 - General -->
+                    <IconTabFilter text="General" key="general" icon="sap-icon://hint">
+                        <VBox class="sapUiMediumMarginBeginEnd">
+                            <Title text="General Properties" level="H4"
+                                   class="sapUiSmallMarginTop sapUiSmallMarginBottom"/>
+                            <l:Grid defaultSpan="L6 M6 S12" hSpacing="2">
+                                <l:content>
+                                    <VBox>
+                                        <Label text="Strategy ID" labelFor="inId"/>
+                                        <Input id="inId" value="{strategy_id}" editable="false" maxLength="20"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Description" required="true" labelFor="inDescription"/>
+                                        <Input id="inDescription" value="{description}"
+                                               placeholder="e.g. Business Partner — Sales Org 1000"
+                                               maxLength="100" liveChange=".onFieldChange"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Applies To" required="true" labelFor="selAppliesTo"/>
+                                        <Select id="selAppliesTo" width="100%" change=".onFieldChange" forceSelection="false"
+                                                items="{path: '/MasterDataTypes', sorter: {path: 'sequence'}}">
+                                            <core:Item key="{master_data_type_id}" text="{description}"/>
+                                        </Select>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Priority" required="true" labelFor="inPriority"/>
+                                        <Input id="inPriority" value="{priority}" type="Number"
+                                               placeholder="e.g. 10" liveChange=".onFieldChange"/>
+                                       
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Valid From" required="true" labelFor="dpValidFrom"/>
+                                        <DatePicker id="dpValidFrom" value="{path: 'valid_from', type: 'sap.ui.model.odata.type.Date', constraints: {displayFormat: 'Date'}}"
+                                                    change=".onFieldChange"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Valid To" labelFor="dpValidTo"/>
+                                        <DatePicker id="dpValidTo" value="{path: 'valid_to', type: 'sap.ui.model.odata.type.Date', constraints: {displayFormat: 'Date'}}"
+                                                    placeholder="Open-ended" change=".onFieldChange"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Active"/>
+                                        <Switch id="swActive" state="false" change=".onFieldChange"/>
+                                    </VBox>
+                                </l:content>
+                            </l:Grid>
+                            
+                        </VBox>
+                    </IconTabFilter>
+
+                    <!-- TAB 2 - Criteria Values -->
+                    <IconTabFilter id="tabValues" text="Criteria Values" key="values"
+                                   count="{view>/valueCount}" icon="sap-icon://filter-fields">
+                        <VBox class="sapUiMediumMarginBeginEnd">
+                            <Toolbar class="sapUiSmallMarginTop">
+                                <Title text="Criteria Values" level="H4"/>
+                                <ToolbarSpacer/>
+                                <Button text="Add Criteria" icon="sap-icon://add" type="Transparent" press=".onAddCriteriaValue"/>
+                            </Toolbar>
+
+                            <Table id="criteriaValuesTable" noDataText="No criteria values defined yet."
+                                   fixedLayout="true" alternateRowColors="true"
+                                   items="{path: 'values', sorter: {path: 'counter'}, parameters: {$count: true, $$updateGroupId: 'releaseStrategyValuesUpdate', $expand: 'characteristic'}}">
+                                <columns>
+                                    <Column width="7rem"><Label text="Criteria" design="Bold"/></Column>
+                                    <Column><Label text="Description" design="Bold"/></Column>
+                                    <Column width="6rem"><Label text="Type" design="Bold"/></Column>
+                                    <Column width="10rem"><Label text="Value" design="Bold"/></Column>
+                                    <Column width="3rem" hAlign="End"/>
+                                </columns>
+                                <items>
+                                    <ColumnListItem type="Active" press=".onCriteriaValueRowPress">
+                                        <cells>
+                                            <ObjectIdentifier text="{characteristic_characteristic_id}"/>
+                                            <Text text="{characteristic/description}" wrapping="false"/>
+                                            <ObjectStatus text="{path: 'operator', formatter: '.formatCriteriaTypeText'}"
+                                                          state="{path: 'operator', formatter: '.formatCriteriaTypeState'}"/>
+                                            <Text text="{parts: [{path: 'operator'}, {path: 'value_from'}, {path: 'value_to'}], formatter: '.formatCriteriaValue'}" wrapping="false"/>
+                                            <Button icon="sap-icon://delete" type="Transparent"
+                                                    tooltip="Remove criteria value" press=".onDeleteCriteriaValue"/>
+                                        </cells>
+                                    </ColumnListItem>
+                                </items>
+                            </Table>
+                        </VBox>
+                    </IconTabFilter>
+
+                    <!-- TAB 3 - Release Codes (Steps) -->
+                    <IconTabFilter id="tabSteps" text="Release Codes" key="steps"
+                                   count="{view>/stepCount}" icon="sap-icon://org-chart">
+                        <VBox class="sapUiMediumMarginBeginEnd">
+                            <Toolbar class="sapUiSmallMarginTop">
+                                <Title text="Release Codes" level="H4"/>
+                                <ToolbarSpacer/>
+                                <Button text="Add Code" icon="sap-icon://add" type="Transparent" press=".onAddStep"/>
+                            </Toolbar>
+                          
+                            <Table id="stepsTable" noDataText="No release codes assigned yet."
+                                   fixedLayout="true" alternateRowColors="true"
+                                   items="{path: 'steps', sorter: {path: 'step_number'}, parameters: {$count: true, $$updateGroupId: 'releaseStrategyStepsUpdate', $expand: 'release_code'}}">
+                                <columns>
+                                    <Column width="4rem" hAlign="Center"><Label text="Seq" design="Bold"/></Column>
+                                    <Column width="6rem"><Label text="Code" design="Bold"/></Column>
+                                    <Column><Label text="Description" design="Bold"/></Column>
+                                    <Column width="6rem" hAlign="Center"><Label text="SLA" design="Bold"/></Column>
+                                    <Column width="7rem" hAlign="Center"><Label text="Flow" design="Bold"/></Column>
+                                    <Column width="7rem" hAlign="Center"><Label text="Mandatory" design="Bold"/></Column>
+                                    <Column width="3rem" hAlign="End"/>
+                                </columns>
+                                <items>
+                                    <ColumnListItem type="Active" press=".onStepRowPress">
+                                        <cells>
+                                            <ObjectIdentifier text="{step_number}"/>
+                                            <ObjectIdentifier text="{release_code_release_code_id}"/>
+                                            <Text text="{release_code/description}" wrapping="false"/>
+                                            <Text text="{path: 'release_code/sla_hours', formatter: '.formatSlaHours'}" wrapping="false"/>
+                                            <ObjectStatus text="{path: 'parallel', formatter: '.formatFlowText'}"
+                                                          state="{path: 'parallel', formatter: '.formatFlowState'}"/>
+                                            <core:Icon src="{path: 'mandatory', formatter: '.formatMandatoryIcon'}"
+                                                       color="{path: 'mandatory', formatter: '.formatMandatoryColor'}"/>
+                                            <Button icon="sap-icon://delete" type="Transparent"
+                                                    tooltip="Remove release code" press=".onDeleteStep"/>
+                                        </cells>
+                                    </ColumnListItem>
+                                </items>
+                            </Table>
+                        </VBox>
+                    </IconTabFilter>
+
+                </items>
+            </IconTabBar>
+        </content>
+
+        <footer>
+            <OverflowToolbar>
+                <ToolbarSpacer/>
+                <Button id="btnCancel" text="Cancel" type="Default" press=".onCancel"/>
+                <Button id="btnSave" text="Save" type="Emphasized" press=".onSave"/>
+            </OverflowToolbar>
+        </footer>
+
+    </Page>
+</mvc:View>

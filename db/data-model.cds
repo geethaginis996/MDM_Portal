@@ -73,7 +73,7 @@ type AuditAction            : String(20) @assert.range enum { CREATE; UPDATE; DE
 type NotificationEvent      : String(30) @assert.range enum { ASSIGNED; APPROVED; REJECTED; SENT_BACK; ESCALATED; POSTED; POSTING_FAILED; };
 type NotificationChannel    : String(10) @assert.range enum { EMAIL; IN_APP; };
 type NotificationStatus     : String(10) @assert.range enum { PENDING; SENT; FAILED; };
-type OperatorType           : String(10) @assert.range enum { EQ; NE; ![IN]; ![ANY]; };
+type OperatorType           : String(10) @assert.range enum { EQ; NE; ![IN]; ![ANY]; BETWEEN; };
 
 type CRRequestType          : String(10) @assert.range enum { CREATE; CHANGE; EXTEND; };
 type CRPriority             : String(10) @assert.range enum { NORMAL; HIGH; };
@@ -284,7 +284,7 @@ entity ReplicationLog {
 
 entity StrategyCharacteristic : managed {
     key characteristic_id   : String(20);
-        master_data_type    : Association to MasterDataType not null;
+    key master_data_type    : Association to MasterDataType not null;
         description         : String(100)     not null;
         field               : Association to FieldMaster not null;
         data_type           : StrategyDataType not null;
@@ -292,10 +292,14 @@ entity StrategyCharacteristic : managed {
         values              : Composition of many StrategyCharacteristicValue on values.characteristic = $self;
 }
 
+@assert.unique.noDuplicateValue: [characteristic, operator, value_from, value_to]
 entity StrategyCharacteristicValue : managed {
     key characteristic  : Association to StrategyCharacteristic not null;
-    key value_key       : String(40);
-        description     : String(100) not null;
+    key counter         : Integer      not null;
+        operator        : OperatorType not null default 'EQ';
+        value_from      : String(200)  not null;
+        value_to        : String(200)  not null default '';
+        description     : String(100)  not null;
 }
 
 entity ReleaseCode : managed {
@@ -325,8 +329,8 @@ entity ReleaseCodeScope : managed {
 
 entity ReleaseStrategy : managed {
     key strategy_id     : String(20);
+    key master_data_type : Association to MasterDataType not null;
         description     : String(100) not null;
-        master_data_type : Association to MasterDataType not null;
         priority        : Integer     not null;
         active          : Boolean     not null default true;
         valid_from      : Date        not null;
@@ -338,8 +342,10 @@ entity ReleaseStrategy : managed {
 entity ReleaseStrategyValue : managed {
     key strategy        : Association to ReleaseStrategy        not null;
     key characteristic  : Association to StrategyCharacteristic not null;
+    key counter         : Integer not null;
         operator        : OperatorType not null;
-        value_text      : String(200);
+        value_from      : String(200);
+        value_to        : String(200);
 }
 
 entity ReleaseStrategyStep : managed {
