@@ -327,6 +327,7 @@ entity ReleaseCodeScope : managed {
     key scope_id        : String(40) not null;
 }
 
+@assert.unique.noDuplicatePriority: [master_data_type, priority]
 entity ReleaseStrategy : managed {
     key strategy_id     : String(20);
     key master_data_type : Association to MasterDataType not null;

@@ -32,6 +32,11 @@
                         <Title id="pageTitle" text="" level="H2" wrapping="false"/>
                     </VBox>
                 </HBox>
+                <HBox class="sapUiTinyMarginTop">
+                    <ObjectAttribute id="attrStatus"   title="Status"     text=""/>
+                    <ObjectAttribute id="attrCreated"  title="Created By" text="" class="sapUiSmallMarginBegin"/>
+                    <ObjectAttribute id="attrDate"     title="Created On" text="" class="sapUiSmallMarginBegin"/>
+                </HBox>
             </VBox>
 
             <HBox class="sapUiTinyMarginTop sapUiMediumMarginBeginEnd">
@@ -74,7 +79,8 @@
                                                 items="{path: '/FieldMasters', sorter: {path: 'field_id'}}">
                                             <core:Item key="{field_id}" text="{field_id} — {description}"/>
                                         </Select>
-                                     
+                                        <Text text="The field on the change request whose value is read to evaluate this criteria."
+                                              class="sapUiTinyMarginTop" style="color:var(--sapContent_LabelColor); font-size: 0.8rem;"/>
                                     </VBox>
                                     <VBox>
                                         <Label text="Data Type" required="true" labelFor="selDataType"/>
@@ -89,7 +95,8 @@
                                     </VBox>
                                 </l:content>
                             </l:Grid>
-                            
+                            <MessageStrip type="Information" showIcon="true" class="sapUiMediumMarginTop"
+                                          text="How this is used: when a change request is submitted, the portal reads the value of this criteria from the request and matches it against the value combinations defined on each release strategy. Exactly one strategy is selected per request."/>
                         </VBox>
                     </IconTabFilter>
 
@@ -102,7 +109,8 @@
                                 <ToolbarSpacer/>
                                 <Button text="Add Value" icon="sap-icon://add" type="Transparent" press=".onAddValue"/>
                             </Toolbar>
-                         
+                            <Text text="Each row is either a single allowed value or a range. A value entered elsewhere against this criteria is valid if it matches any one row here."
+                                  class="sapUiTinyMarginBottom" style="color:var(--sapContent_LabelColor); font-size: 0.8rem;"/>
                             <Table id="valuesTable" noDataText="No allowed values defined yet."
                                    fixedLayout="true" alternateRowColors="true"
                                    items="{path: 'values', sorter: {path: 'counter'}, parameters: {$count: true, $$updateGroupId: 'releaseCriteriaValuesUpdate'}}">
@@ -157,8 +165,44 @@
                                     </ColumnListItem>
                                 </items>
                             </Table>
-                            
+                            <MessageStrip type="Information" showIcon="true" class="sapUiMediumMarginTop"
+                                          text="Release Strategies is a placeholder module for now — this list previews which strategies reference this criteria once that module is built out."/>
                         </VBox>
+                    </IconTabFilter>
+
+                    <!-- TAB 4 - Change Log -->
+                    <IconTabFilter text="Change Log" key="changelog" icon="sap-icon://history">
+                        <VBox class="sapUiSmallMarginBeginEnd sapUiSmallMarginTop sapUiSmallMarginBottom">
+                            <Title text="Record Info" level="H5" class="sapUiTinyMarginBottom"/>
+                           
+                        </VBox>
+                        <Table id="logTable"
+                               noDataText="No changes recorded yet."
+                               alternateRowColors="true"
+                               items="{path: '/AuditLogs', suspended: true}">
+                            <columns>
+                                <Column width="11rem"><Label text="Timestamp" design="Bold"/></Column>
+                                <Column width="9rem"><Label text="User" design="Bold"/></Column>
+                                <Column width="7rem"><Label text="Action" design="Bold"/></Column>
+                                <Column><Label text="Before" design="Bold"/></Column>
+                                <Column><Label text="After" design="Bold"/></Column>
+                            </columns>
+                            <items>
+                                <ColumnListItem>
+                                    <cells>
+                                        <Text text="{acted_at}" wrapping="false"/>
+                                        <Text text="{actor}"    wrapping="false"/>
+                                        <ObjectStatus
+                                            text="{action}"
+                                            state="{= ${action} === 'CREATE' ? 'Success' :
+                                                   ${action} === 'DELETE' ? 'Error'   :
+                                                   ${action} === 'UPDATE' ? 'Warning' : 'None'}"/>
+                                        <Text text="{before_value}" maxLines="3"/>
+                                        <Text text="{after_value}"  maxLines="3"/>
+                                    </cells>
+                                </ColumnListItem>
+                            </items>
+                        </Table>
                     </IconTabFilter>
 
                 </items>

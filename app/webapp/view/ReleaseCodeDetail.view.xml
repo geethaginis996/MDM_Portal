@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mvc:View
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core"
+    xmlns:l="sap.ui.layout"
+    controllerName="mdm.portal.controller.ReleaseCodeDetail"
+    displayBlock="true">
+
+    <Page busy="{view>/busy}" busyIndicatorDelay="0" id="detailPage" showHeader="false">
+
+        <content>
+            <!-- Top bar with breadcrumb -->
+            <VBox>
+                <Bar class="sapMPageHeader">
+                    <contentLeft>
+                        <Button icon="sap-icon://nav-back" type="Transparent" press=".onNavBack"/>
+                        <Breadcrumbs id="pageBreadcrumb" separatorStyle="Slash" class="sapUiTinyMarginBegin">
+                            <Link text="Release Strategy" press=".onNavBack"/>
+                            <Link text="Release Codes" press=".onNavBack"/>
+                        </Breadcrumbs>
+                    </contentLeft>
+                </Bar>
+            </VBox>
+
+            <!-- Page heading -->
+            <VBox class="sapUiMediumMarginBeginEnd sapUiSmallMarginTop">
+                <HBox alignItems="Center">
+                    <core:Icon src="sap-icon://key" size="2rem" color="Accent8"
+                               class="sapUiSmallMarginEnd"/>
+                    <VBox>
+                        <Title id="pageTitle" text="" level="H2" wrapping="false"/>
+                    </VBox>
+                </HBox>
+                <HBox class="sapUiTinyMarginTop">
+                    <ObjectStatus id="attrStatus" text="" state="None" class="sapUiSmallMarginEnd"/>
+                    <ObjectAttribute id="attrSla" title="SLA" text="" class="sapUiSmallMarginBegin"/>
+                </HBox>
+            </VBox>
+
+            <HBox class="sapUiTinyMarginTop sapUiMediumMarginBeginEnd">
+                <core:HTML content="&lt;hr style='border:none;border-top:1px solid var(--sapGroup_TitleBorderColor);margin:0 0 0.5rem 0;width:100%'/&gt;"/>
+            </HBox>
+
+            <!-- Icon Tab Bar -->
+            <IconTabBar id="detailTabs" select=".onTabSelect" expanded="true"
+                        class="sapUiResponsiveContentPadding">
+                <items>
+
+                    <!-- TAB 1 - General -->
+                    <IconTabFilter text="General" key="general" icon="sap-icon://hint">
+                        <VBox class="sapUiMediumMarginBeginEnd">
+                            <Title text="General Properties" level="H4"
+                                   class="sapUiSmallMarginTop sapUiSmallMarginBottom"/>
+                            <l:Grid defaultSpan="L6 M6 S12" hSpacing="2">
+                                <l:content>
+                                    <VBox>
+                                        <Label text="Code ID" required="true" labelFor="inId"/>
+                                        <Input id="inId" value="{release_code_id}" placeholder="e.g. MDS"
+                                               editable="{view>/isNew}"
+                                               maxLength="10" liveChange=".onFieldChange"/>
+                                        <Text text="Short mnemonic code — cannot be changed after saving."
+                                              class="sapUiTinyMarginTop" style="color:var(--sapContent_LabelColor); font-size: 0.8rem;"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Description" required="true" labelFor="inDescription"/>
+                                        <Input id="inDescription" value="{description}"
+                                               placeholder="e.g. Master Data Steward"
+                                               maxLength="100" liveChange=".onFieldChange"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Master Data Type" labelFor="selAppliesTo"/>
+                                        <Select id="selAppliesTo" width="100%" change=".onFieldChange" forceSelection="false"
+                                                items="{path: '/MasterDataTypes', sorter: {path: 'sequence'}}">
+                                            <core:Item key="" text="Any"/>
+                                            <core:Item key="{master_data_type_id}" text="{description}"/>
+                                        </Select>
+                                        <Text text="Determines whether the Scope tab shows BP roles or material views."
+                                              class="sapUiTinyMarginTop" style="color:var(--sapContent_LabelColor); font-size: 0.8rem;"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="SLA (hours)" required="true" labelFor="inSla"/>
+                                        <Input id="inSla" value="{sla_hours}" type="Number"
+                                               placeholder="e.g. 24" liveChange=".onFieldChange"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Escalate To" labelFor="inEscalateTo"/>
+                                        <Input id="inEscalateTo" value="{escalation_to}"
+                                               placeholder="e.g. manager@company.com" liveChange=".onFieldChange"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Escalation After (hours)" labelFor="inEscalateHours"/>
+                                        <Input id="inEscalateHours" value="{escalation_hours}" type="Number"
+                                               placeholder="e.g. 72" liveChange=".onFieldChange"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Label text="Active"/>
+                                        <Switch id="swActive" state="false" change=".onFieldChange"/>
+                                    </VBox>
+                                </l:content>
+                            </l:Grid>
+                            <MessageStrip type="Information" showIcon="true" class="sapUiMediumMarginTop"
+                                          text="Release Strategies reference this code as one approval step. Assign the users who can act as approver, and the scope (BP roles or material views) this code is responsible for."/>
+                        </VBox>
+                    </IconTabFilter>
+
+                    <!-- TAB 2 - Assigned Users -->
+                    <IconTabFilter id="tabUsers" text="Assigned Users" key="users"
+                                   count="{view>/userCount}" icon="sap-icon://group">
+                        <VBox class="sapUiMediumMarginBeginEnd">
+                            <Toolbar class="sapUiSmallMarginTop">
+                                <Title text="Users Assigned to This Release Code" level="H4"/>
+                                <ToolbarSpacer/>
+                                <Button text="Assign User" icon="sap-icon://add" type="Transparent" press=".onAddUser"/>
+                            </Toolbar>
+                            <MessageStrip type="Information" showIcon="true" class="sapUiTinyMarginBottom"
+                                          text="These users can act as approver whenever this release code is reached in any strategy. A user must also have the Approver function in their authorization role."/>
+                            <Table id="usersTable" noDataText="No users assigned yet."
+                                   fixedLayout="true" alternateRowColors="true"
+                                   items="{path: 'users', sorter: {path: 'user_id'}, parameters: {$count: true, $$updateGroupId: 'releaseCodeUsersUpdate'}}">
+                                <columns>
+                                    <Column><Label text="User ID" design="Bold"/></Column>
+                                    <Column width="8rem"><Label text="Type" design="Bold"/></Column>
+                                    <Column width="6rem" hAlign="Center"><Label text="Active" design="Bold"/></Column>
+                                    <Column width="3rem" hAlign="End"/>
+                                </columns>
+                                <items>
+                                    <ColumnListItem type="Active" press=".onUserRowPress">
+                                        <cells>
+                                            <ObjectIdentifier text="{user_id}"/>
+                                            <Text text="{assignment_type}" wrapping="false"/>
+                                            <core:Icon src="{path: 'active', formatter: '.formatActiveIcon'}"
+                                                       color="{path: 'active', formatter: '.formatActiveColor'}"/>
+                                            <Button icon="sap-icon://delete" type="Transparent"
+                                                    tooltip="Remove user" press=".onDeleteUser"/>
+                                        </cells>
+                                    </ColumnListItem>
+                                </items>
+                            </Table>
+                        </VBox>
+                    </IconTabFilter>
+
+                    <!-- TAB 3 - Scope -->
+                    <IconTabFilter id="tabScope" text="Scope" key="scope"
+                                   count="{view>/scopeCount}" icon="sap-icon://target-group">
+                        <VBox class="sapUiMediumMarginBeginEnd">
+                            <Toolbar class="sapUiSmallMarginTop">
+                                <Title text="Scope" level="H4"/>
+                                <ToolbarSpacer/>
+                                <Button text="Add" icon="sap-icon://add" type="Transparent" press=".onAddScope"/>
+                            </Toolbar>
+                            <MessageStrip type="Information" showIcon="true" class="sapUiTinyMarginBottom"
+                                          text="An approver releasing this code only sees and actions the parts of the request that fall in this scope. Other sections are visible but read-only for them."/>
+                            <Table id="scopeTable" noDataText="No scope defined yet."
+                                   fixedLayout="true" alternateRowColors="true"
+                                   items="{path: 'scopes', sorter: {path: 'scope_id'}, parameters: {$count: true, $$updateGroupId: 'releaseCodeScopeUpdate'}}">
+                                <columns>
+                                    <Column width="10rem"><Label text="Scope Type" design="Bold"/></Column>
+                                    <Column><Label text="Scope ID" design="Bold"/></Column>
+                                    <Column width="3rem" hAlign="End"/>
+                                </columns>
+                                <items>
+                                    <ColumnListItem type="Active" press=".onScopeRowPress">
+                                        <cells>
+                                            <ObjectStatus text="{path: 'scope_type', formatter: '.formatScopeTypeText'}" state="None"/>
+                                            <ObjectIdentifier text="{scope_id}"/>
+                                            <Button icon="sap-icon://delete" type="Transparent"
+                                                    tooltip="Remove from scope" press=".onDeleteScope"/>
+                                        </cells>
+                                    </ColumnListItem>
+                                </items>
+                            </Table>
+                        </VBox>
+                    </IconTabFilter>
+
+                    <!-- TAB 4 - Used By Strategies -->
+                    <IconTabFilter id="tabUsage" text="Used By Strategies" key="usage"
+                                   count="{view>/usageCount}" icon="sap-icon://chain-link">
+                        <VBox class="sapUiMediumMarginBeginEnd">
+                            <Toolbar class="sapUiSmallMarginTop">
+                                <Title text="Release Strategies Using This Code" level="H4"/>
+                                <ToolbarSpacer/>
+                            </Toolbar>
+                            <Table id="usageTable" noDataText="Not used by any release strategy yet."
+                                   fixedLayout="true" alternateRowColors="true"
+                                   items="{usage>/items}">
+                                <columns>
+                                    <Column width="8rem"><Label text="Strategy ID" design="Bold"/></Column>
+                                    <Column><Label text="Description" design="Bold"/></Column>
+                                    <Column width="5rem" hAlign="Center"><Label text="Seq" design="Bold"/></Column>
+                                    <Column width="7rem" hAlign="Center"><Label text="Flow" design="Bold"/></Column>
+                                    <Column width="6rem" hAlign="Center"><Label text="Status" design="Bold"/></Column>
+                                </columns>
+                                <items>
+                                    <ColumnListItem>
+                                        <cells>
+                                            <ObjectIdentifier text="{usage>strategy_id}"/>
+                                            <Text text="{usage>description}" wrapping="false"/>
+                                            <Text text="{usage>step_number}" wrapping="false"/>
+                                            <ObjectStatus text="{= ${usage>parallel} ? 'Parallel' : 'Sequential'}"
+                                                          state="{= ${usage>parallel} ? 'Information' : 'None'}"/>
+                                            <ObjectStatus text="{= ${usage>active} ? 'Active' : 'Inactive'}"
+                                                          state="{= ${usage>active} ? 'Success' : 'Error'}"/>
+                                        </cells>
+                                    </ColumnListItem>
+                                </items>
+                            </Table>
+                        </VBox>
+                    </IconTabFilter>
+
+                    <!-- TAB 5 - Change Log -->
+                    <IconTabFilter text="Change Log" key="changelog" icon="sap-icon://history">
+                        <VBox class="sapUiSmallMarginBeginEnd sapUiSmallMarginTop sapUiSmallMarginBottom">
+                            <Title text="Record Info" level="H5" class="sapUiTinyMarginBottom"/>
+                            <HBox wrap="Wrap">
+                                <VBox width="12rem" class="sapUiTinyMarginEnd">
+                                    <Label text="Created On" design="Bold"/>
+                                    <Text id="clCreatedAt" text="{view>/clCreatedAt}" wrapping="false"/>
+                                </VBox>
+                                <VBox width="12rem" class="sapUiTinyMarginEnd">
+                                    <Label text="Created By" design="Bold"/>
+                                    <Text id="clCreatedBy" text="{view>/clCreatedBy}" wrapping="false"/>
+                                </VBox>
+                                <VBox width="12rem" class="sapUiTinyMarginEnd">
+                                    <Label text="Modified On" design="Bold"/>
+                                    <Text id="clModifiedAt" text="{view>/clModifiedAt}" wrapping="false"/>
+                                </VBox>
+                                <VBox width="12rem">
+                                    <Label text="Modified By" design="Bold"/>
+                                    <Text id="clModifiedBy" text="{view>/clModifiedBy}" wrapping="false"/>
+                                </VBox>
+                            </HBox>
+                        </VBox>
+                        <Table id="logTable"
+                               noDataText="No changes recorded yet."
+                               alternateRowColors="true"
+                               items="{path: '/AuditLogs', suspended: true}">
+                            <columns>
+                                <Column width="11rem"><Label text="Timestamp" design="Bold"/></Column>
+                                <Column width="9rem"><Label text="User" design="Bold"/></Column>
+                                <Column width="7rem"><Label text="Action" design="Bold"/></Column>
+                                <Column><Label text="Before" design="Bold"/></Column>
+                                <Column><Label text="After" design="Bold"/></Column>
+                            </columns>
+                            <items>
+                                <ColumnListItem>
+                                    <cells>
+                                        <Text text="{acted_at}" wrapping="false"/>
+                                        <Text text="{actor}"    wrapping="false"/>
+                                        <ObjectStatus
+                                            text="{action}"
+                                            state="{= ${action} === 'CREATE' ? 'Success' :
+                                                   ${action} === 'DELETE' ? 'Error'   :
+                                                   ${action} === 'UPDATE' ? 'Warning' : 'None'}"/>
+                                        <Text text="{before_value}" maxLines="3"/>
+                                        <Text text="{after_value}"  maxLines="3"/>
+                                    </cells>
+                                </ColumnListItem>
+                            </items>
+                        </Table>
+                    </IconTabFilter>
+
+                </items>
+            </IconTabBar>
+        </content>
+
+        <footer>
+            <OverflowToolbar>
+                <ToolbarSpacer/>
+                <Button id="btnCancel" text="Cancel" type="Default" press=".onCancel"/>
+                <Button id="btnSave" text="Save" type="Emphasized" press=".onSave"/>
+            </OverflowToolbar>
+        </footer>
+
+    </Page>
+</mvc:View>

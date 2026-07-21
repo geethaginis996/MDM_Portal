@@ -2,3 +2,4 @@ release_code_id,description,master_data_type_master_data_type_id,sla_hours,escal
 MDS,Master Data Steward,BUSINESS PARTNER,24,,,true
 SMG,Sales Manager,BUSINESS PARTNER,48,sales-managers@intellect.com,72,true
 FIN,Finance Controller,BUSINESS PARTNER,48,,,true
+PMG,Purchasing Manager,BUSINESS PARTNER,48,,,true

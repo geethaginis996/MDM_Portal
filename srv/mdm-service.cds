@@ -87,7 +87,11 @@ service MDMPortalService {
         values : redirected to StrategyCharacteristicValues
     };
     entity StrategyCharacteristicValues as projection on portal.StrategyCharacteristicValue;
-    entity ReleaseCodes as projection on portal.ReleaseCode;
+    entity ReleaseCodes as projection on portal.ReleaseCode {
+        *,
+        users  : redirected to ReleaseCodeUsers,
+        scopes : redirected to ReleaseCodeScopes
+    };
     entity ReleaseCodeUsers as projection on portal.ReleaseCodeUser;
     entity ReleaseCodeScopes as projection on portal.ReleaseCodeScope;
     entity ReleaseStrategies as projection on portal.ReleaseStrategy {

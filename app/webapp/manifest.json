@@ -209,6 +209,11 @@
                     "pattern": "releasestrategies/{strategyId}/{appliesTo}",
                     "name": "releaseStrategyDetail",
                     "target": "releaseStrategyDetail"
+                },
+                {
+                    "pattern": "releasecodes/{codeId}",
+                    "name": "releaseCodeDetail",
+                    "target": "releaseCodeDetail"
                 }
             ],
             "targets": {
@@ -310,6 +315,10 @@
                 },
                 "releaseStrategyDetail": {
                     "viewName": "ReleaseStrategyDetail",
+                    "viewLevel": 2
+                },
+                "releaseCodeDetail": {
+                    "viewName": "ReleaseCodeDetail",
                     "viewLevel": 2
                 }
             }

@@ -1,0 +1,5 @@
+release_code_release_code_id,user_id,assignment_type,active
+MDS,geetha.raj@intellect.com,USER,true
+SMG,sales.manager@intellect.com,USER,true
+FIN,finance.controller@intellect.com,USER,true
+PMG,purchasing.manager@intellect.com,USER,true

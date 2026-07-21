@@ -696,9 +696,14 @@ class MDMPortalService extends cds.ApplicationService {
         };
 
         // =====================================================================
-        //  AUDIT HOOKS — FieldMaster, FieldGroup, BPCategory, BPRole
+        //  AUDIT HOOKS — FieldMaster, FieldGroup, BPCategory, BPRole,
+        //  StrategyCharacteristic, ReleaseStrategy
         //  Writes a row to AuditLog on every CREATE, UPDATE, DELETE so that
         //  the Change Log tab on each detail screen shows a full history.
+        //  "key" may be a single field name (existing entities) or an array
+        //  of field names for composite keys (StrategyCharacteristic /
+        //  ReleaseStrategy both key on id + master_data_type) — entity_key
+        //  is then the key values joined with "::".
         // =====================================================================
 
         const AUDIT_ENTITIES = [
@@ -706,43 +711,138 @@ class MDMPortalService extends cds.ApplicationService {
             { entity: 'FieldGroups',   name: 'FieldGroup',   key: 'group_id'         },
             { entity: 'BPCategories',  name: 'BPCategory',   key: 'category_id'      },
             { entity: 'BPRoles',       name: 'BPRole',       key: 'role_id'          },
+            { entity: 'ReleaseCodes',  name: 'ReleaseCode',  key: 'release_code_id'  },
+            { entity: 'StrategyCharacteristics', name: 'StrategyCharacteristic',
+              key: ['characteristic_id', 'master_data_type_master_data_type_id'] },
+            { entity: 'ReleaseStrategies', name: 'ReleaseStrategy',
+              key: ['strategy_id', 'master_data_type_master_data_type_id'] },
         ];
+
+        function auditKeyFields(cfg) {
+            return Array.isArray(cfg.key) ? cfg.key : [cfg.key];
+        }
+        // Builds the single entity_key string from any object holding the
+        // key field(s) — degrades to the exact previous single-key
+        // behavior (just the raw value, no separator) when cfg.key is a
+        // plain string, so existing entities are unaffected.
+        // CAP's after('CREATE', ...) handler can pass `data` as either a
+        // plain object (single insert) or an array of created records
+        // (confirmed via live testing) — normalize to a single object
+        // before doing anything else with it.
+        function auditNormalizeData(data) {
+            if (Array.isArray(data)) { return data[0] || null; }
+            return data || null;
+        }
+        function auditBuildKey(cfg, oSource) {
+            if (!oSource) { return ''; }
+            return auditKeyFields(cfg).map((k) => {
+                const v = oSource[k];
+                return (v !== undefined && v !== null) ? String(v) : '';
+            }).join('::');
+        }
+        function auditBuildWhere(cfg, oSource) {
+            const oWhere = {};
+            auditKeyFields(cfg).forEach((k) => { oWhere[k] = oSource ? oSource[k] : undefined; });
+            return oWhere;
+        }
+        function auditHasAllKeys(cfg, oSource) {
+            return oSource && auditKeyFields(cfg).every((k) => oSource[k] !== undefined && oSource[k] !== null);
+        }
+        // For composite keys, CAP typically provides all key fields as an
+        // object in req.params[0]; for single keys it's often just the raw
+        // scalar. This normalizes both shapes into a lookup object.
+        function auditKeySource(cfg, req, fallbackData) {
+            const oParam0 = req.params && req.params[0];
+            if (oParam0 && typeof oParam0 === 'object' && auditHasAllKeys(cfg, oParam0)) {
+                return oParam0;
+            }
+            if (auditHasAllKeys(cfg, req.data)) { return req.data; }
+            if (auditHasAllKeys(cfg, fallbackData)) { return fallbackData; }
+            // Single-key fallback: req.params[0] as a raw scalar (original behavior)
+            if (!Array.isArray(cfg.key) && oParam0 !== undefined && oParam0 !== null && typeof oParam0 !== 'object') {
+                return { [cfg.key]: oParam0 };
+            }
+            return null;
+        }
 
         for (const cfg of AUDIT_ENTITIES) {
             // AFTER CREATE
             this.after('CREATE', cfg.entity, async (data, req) => {
-                const sKey = data[cfg.key] || '';
-                await this.createAuditLog(
-                    cfg.name, sKey, 'CREATE',
-                    req.user?.id || 'system',
-                    null, data
-                );
+                const oData = auditNormalizeData(data);
+                const sKey  = auditBuildKey(cfg, oData);
+                if (!sKey) return;
+                // The raw event payload can be key-fields-only (confirmed
+                // via live testing) rather than the full created record —
+                // re-read explicitly so the "after" snapshot is complete,
+                // the same way the before-snapshot is read for UPDATE.
+                let oFull = oData;
+                try {
+                    const db = cds.db;
+                    const aFull = await db.read(`mdm.portal.${cfg.name}`).where(auditBuildWhere(cfg, oData));
+                    if (aFull && aFull[0]) { oFull = aFull[0]; }
+                } catch (e) { /* fall back to whatever data we already have */ }
+                try {
+                    await this.createAuditLog(
+                        cfg.name, sKey, 'CREATE',
+                        req.user?.id || 'system',
+                        null, oFull
+                    );
+                } catch (e) {
+                    // Surface failures instead of letting them vanish
+                    // silently — testing showed this specific hook can be
+                    // intermittently unreliable; if this ever fires in
+                    // practice it'll be visible in the server log.
+                    console.error(`[audit] Failed to log CREATE for ${cfg.name} (${sKey}):`, e.message);
+                }
             });
 
             // BEFORE UPDATE — read current values for the before snapshot
             this.before('UPDATE', cfg.entity, async (req) => {
                 const db = cds.db;
-                const sKey = req.data[cfg.key] || req.params?.[0];
-                if (!sKey) return;
-                const before = await db.read(`mdm.portal.${cfg.name}`).where({ [cfg.key]: sKey });
+                const oKeySrc = auditKeySource(cfg, req, req.data);
+                if (!oKeySrc) return;
+                const before = await db.read(`mdm.portal.${cfg.name}`).where(auditBuildWhere(cfg, oKeySrc));
                 req._auditBefore = before?.[0] || null;
+                req._auditKey = auditBuildKey(cfg, oKeySrc);
             });
 
             // AFTER UPDATE
             this.after('UPDATE', cfg.entity, async (data, req) => {
-                const sKey = data?.[cfg.key] || req.data?.[cfg.key] || req.params?.[0];
+                const oData = auditNormalizeData(data) || req.data;
+                const sKey  = req._auditKey || auditBuildKey(cfg, auditKeySource(cfg, req, oData));
                 if (!sKey) return;
+                // Same reasoning as CREATE — re-read the full record so the
+                // "after" snapshot isn't just the (possibly partial) PATCH
+                // body or a key-fields-only event payload.
+                let oFull = oData;
+                try {
+                    const db = cds.db;
+                    const aFull = await db.read(`mdm.portal.${cfg.name}`).where(auditBuildWhere(cfg, oData));
+                    if (aFull && aFull[0]) { oFull = aFull[0]; }
+                } catch (e) { /* fall back to whatever data we already have */ }
                 await this.createAuditLog(
                     cfg.name, sKey, 'UPDATE',
                     req.user?.id || 'system',
                     req._auditBefore || null,
-                    data || req.data
+                    oFull
                 );
+            });
+
+            // BEFORE DELETE — capture the record's final state before it's
+            // gone, so the Change Log can show what was actually deleted
+            // (this hook didn't exist before at all, for any entity).
+            this.before('DELETE', cfg.entity, async (req) => {
+                const db = cds.db;
+                const oKeySrc = auditKeySource(cfg, req, req.data);
+                if (!oKeySrc) return;
+                const before = await db.read(`mdm.portal.${cfg.name}`).where(auditBuildWhere(cfg, oKeySrc));
+                req._auditBefore = before?.[0] || null;
+                req._auditKey = auditBuildKey(cfg, oKeySrc);
             });
 
             // AFTER DELETE
             this.after('DELETE', cfg.entity, async (data, req) => {
-                const sKey = req.data?.[cfg.key] || req.params?.[0];
+                const sKey = req._auditKey || auditBuildKey(cfg, auditKeySource(cfg, req, req.data));
                 await this.createAuditLog(
                     cfg.name, sKey || '', 'DELETE',
                     req.user?.id || 'system',

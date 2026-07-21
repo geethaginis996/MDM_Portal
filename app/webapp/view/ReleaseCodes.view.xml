@@ -2,32 +2,144 @@
 <mvc:View
     xmlns:mvc="sap.ui.core.mvc"
     xmlns="sap.m"
+    xmlns:f="sap.f"
     xmlns:core="sap.ui.core"
+    xmlns:l="sap.ui.layout"
     controllerName="mdm.portal.controller.ReleaseCodes"
     displayBlock="true">
 
-    <Page id="releaseCodesPage" showHeader="false">
-        <content>
-            <VBox class="sapUiMediumMarginBeginEnd sapUiSmallMarginTop">
-                <Bar class="sapMPageHeader">
-                    <contentLeft>
-                        <Breadcrumbs separatorStyle="Slash">
-                            <Link text="Release Strategy" enabled="false"/>
-                            <Link text="Release Codes" enabled="false"/>
-                        </Breadcrumbs>
-                    </contentLeft>
-                </Bar>
-            </VBox>
+    <f:DynamicPage id="releaseCodesPage" fitContent="true"
+        toggleHeaderOnTitleClick="false" headerExpanded="true" preserveHeaderStateOnScroll="false"
+        class="sapUiSizeCondensed sapMDMFieldMasterPage">
 
-            <VBox class="welcome" style="min-height:400px" justifyContent="Center" alignItems="Center">
-                <VBox class="welcome-inner" alignItems="Center">
-                    <core:Icon src="sap-icon://key" size="2.5rem" color="Neutral" class="sapUiSmallMarginBottom"/>
-                    <Title text="Release Codes" level="H2" class="sapUiTinyMarginBottom"/>
-                    <Text text="This module isn't built out yet — it will let you define the approver codes (e.g. Sales Manager, Purchasing Manager) used as steps in a release strategy, along with SLA hours and escalation rules."
-                          textAlign="Center" width="26rem"/>
-                    <Link text="Back to Release Criteria" press=".onBackToCriteria" class="sapUiSmallMarginTop"/>
+        <f:title>
+            <f:DynamicPageTitle>
+                <f:heading>
+                    <VBox>
+                        <Title text="Release Codes" level="H2" wrapping="false"/>
+                    </VBox>
+                </f:heading>
+                <f:snappedHeading>
+                    <Title text="Release Codes" level="H3" wrapping="false"/>
+                </f:snappedHeading>
+                <f:actions>
+                    <OverflowToolbar style="Clear">
+                        <Button id="exportBtn" text="Export" icon="sap-icon://download"
+                                type="Transparent" press=".onExport">
+                            <layoutData><OverflowToolbarLayoutData priority="Low"/></layoutData>
+                        </Button>
+                        <Button id="addBtn" text="Add Release Code" icon="sap-icon://add"
+                                type="Emphasized" press=".onAdd">
+                            <layoutData><OverflowToolbarLayoutData priority="NeverOverflow"/></layoutData>
+                        </Button>
+                    </OverflowToolbar>
+                </f:actions>
+            </f:DynamicPageTitle>
+        </f:title>
+
+        <f:header>
+            <f:DynamicPageHeader pinnable="false" backgroundDesign="Translucent">
+                <VBox>
+                    <l:Grid defaultSpan="XL3 L3 M6 S12" hSpacing="1" vSpacing="0.5"
+                            class="sapUiSmallMarginBeginEnd sapUiSmallMarginTopBottom">
+                        <l:content>
+                            <VBox>
+                                <Label text="Code / Description" labelFor="filterSearch" design="Bold"/>
+                                <Input id="filterSearch" placeholder="Search…" showClearIcon="true"
+                                       width="100%" liveChange=".onFilterLiveChange"/>
+                            </VBox>
+                        </l:content>
+                        <l:content>
+                            <VBox>
+                                <Label text="Master Data Type" labelFor="filterAppliesTo" design="Bold"/>
+                                <Select id="filterAppliesTo" width="100%" change=".onFilterChange" forceSelection="false"
+                                        items="{lookups>/appliesTo}">
+                                    <core:Item key="{lookups>key}" text="{lookups>text}"/>
+                                </Select>
+                            </VBox>
+                        </l:content>
+                        <l:content>
+                            <VBox>
+                                <Label text="Status" labelFor="filterStatus" design="Bold"/>
+                                <Select id="filterStatus" width="100%" change=".onFilterChange" forceSelection="false">
+                                    <core:Item key="" text="All"/>
+                                    <core:Item key="true" text="Active"/>
+                                    <core:Item key="false" text="Inactive"/>
+                                </Select>
+                            </VBox>
+                        </l:content>
+                    </l:Grid>
+                    <Toolbar style="Clear" class="sapUiSmallMarginTop">
+                        <ToolbarSpacer/>
+                        <Button text="Clear" type="Transparent" press=".onClearFilters"/>
+                        <Button text="Go" type="Emphasized" press=".onGo"/>
+                    </Toolbar>
                 </VBox>
+            </f:DynamicPageHeader>
+        </f:header>
+
+        <f:content>
+            <VBox>
+                <Table id="codesTable"
+                    items="{
+                        path: '/ReleaseCodes',
+                        parameters: {
+                            $count: true,
+                            $select: 'release_code_id,description,active,master_data_type_master_data_type_id,sla_hours',
+                            $expand: 'users($select=user_id),scopes($select=scope_id)',
+                            $orderby: 'release_code_id asc'
+                        }
+                    }"
+                    growing="true" growingThreshold="50" growingScrollToLoad="true"
+                    noDataText="No release codes found"
+                    mode="MultiSelect" fixedLayout="true" alternateRowColors="true"
+                    sticky="ColumnHeaders,HeaderToolbar"
+                    selectionChange=".onSelectionChange"
+                    class="sapMDMFormalTable">
+
+                    <headerToolbar>
+                        <OverflowToolbar id="tableToolbar" style="Clear">
+                            <Title id="tableTitle" text="Release Codes" level="H3"/>
+                            <ToolbarSpacer/>
+                            <Button id="bulkDeleteBtn" text="Delete" icon="sap-icon://delete"
+                                    type="Negative" visible="false" press=".onBulkDelete">
+                                <layoutData><OverflowToolbarLayoutData priority="NeverOverflow"/></layoutData>
+                            </Button>
+                            <ToolbarSeparator id="bulkSeparator" visible="false"/>
+                        </OverflowToolbar>
+                    </headerToolbar>
+
+                    <columns>
+                        <Column id="colId"       width="6rem"  vAlign="Middle" importance="High">
+                            <Label text="Code" design="Bold"/></Column>
+                        <Column id="colDesc"     vAlign="Middle" importance="High">
+                            <Label text="Description" design="Bold"/></Column>
+                        <Column id="colMdt"      width="9rem" vAlign="Middle" importance="High">
+                            <Label text="Master Data Type" design="Bold"/></Column>
+                        <Column id="colUsers"    width="7rem"  vAlign="Middle" hAlign="Center" importance="Medium">
+                            <Label text="Users" design="Bold"/></Column>
+                        <Column id="colScope"    width="7rem"  vAlign="Middle" hAlign="Center" importance="Medium">
+                            <Label text="Scope" design="Bold"/></Column>
+                        <Column id="colStatus"   width="6rem"  vAlign="Middle" hAlign="Center" importance="High">
+                            <Label text="Status" design="Bold"/></Column>
+                    </columns>
+
+                    <items>
+                        <ColumnListItem type="Active" press=".onRowPress">
+                            <cells>
+                                <Link text="{release_code_id}" press=".onLinkPress" wrapping="false"/>
+                                <Text text="{description}" wrapping="false"/>
+                                <ObjectIdentifier text="{= ${master_data_type_master_data_type_id} === 'BUSINESS PARTNER' ? 'Business Partner' : (${master_data_type_master_data_type_id} || 'Any') }"/>
+                                <Text text="{path: 'release_code_id', formatter: '.formatUsersCount'}" wrapping="false"/>
+                                <Text text="{path: 'release_code_id', formatter: '.formatScopeCount'}" wrapping="false"/>
+                                <ObjectStatus
+                                    text="{= ${active} ? 'Active' : 'Inactive'}"
+                                    state="{= ${active} ? 'Success' : 'Error'}"/>
+                            </cells>
+                        </ColumnListItem>
+                    </items>
+                </Table>
             </VBox>
-        </content>
-    </Page>
+        </f:content>
+    </f:DynamicPage>
 </mvc:View>

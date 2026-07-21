@@ -170,7 +170,48 @@
                                     </ColumnListItem>
                                 </items>
                             </Table>
+
+                            <Title text="Resulting Approval Flow" level="H4" class="sapUiMediumMarginTop"/>
+                            <MessageStrip type="Information" showIcon="true" class="sapUiTinyMarginTop sapUiSmallMarginBottom"
+                                          text="Based on the Flow setting of each code above. Codes marked Parallel run alongside the previous code; Sequential codes wait for everything before them to finish."/>
+                            <HBox id="approvalFlowContainer" alignItems="Center" wrap="Wrap"
+                                  class="sapUiSmallMarginBottom"/>
                         </VBox>
+                    </IconTabFilter>
+
+                    <!-- TAB 4 - Change Log -->
+                    <IconTabFilter text="Change Log" key="changelog" icon="sap-icon://history">
+                        <VBox class="sapUiSmallMarginBeginEnd sapUiSmallMarginTop sapUiSmallMarginBottom">
+                            <Title text="Record Info" level="H5" class="sapUiTinyMarginBottom"/>
+                            
+                        </VBox>
+                        <Table id="logTable"
+                               noDataText="No changes recorded yet."
+                               alternateRowColors="true"
+                               items="{path: '/AuditLogs', suspended: true}">
+                            <columns>
+                                <Column width="11rem"><Label text="Timestamp" design="Bold"/></Column>
+                                <Column width="9rem"><Label text="User" design="Bold"/></Column>
+                                <Column width="7rem"><Label text="Action" design="Bold"/></Column>
+                                <Column><Label text="Before" design="Bold"/></Column>
+                                <Column><Label text="After" design="Bold"/></Column>
+                            </columns>
+                            <items>
+                                <ColumnListItem>
+                                    <cells>
+                                        <Text text="{acted_at}" wrapping="false"/>
+                                        <Text text="{actor}"    wrapping="false"/>
+                                        <ObjectStatus
+                                            text="{action}"
+                                            state="{= ${action} === 'CREATE' ? 'Success' :
+                                                   ${action} === 'DELETE' ? 'Error'   :
+                                                   ${action} === 'UPDATE' ? 'Warning' : 'None'}"/>
+                                        <Text text="{before_value}" maxLines="3"/>
+                                        <Text text="{after_value}"  maxLines="3"/>
+                                    </cells>
+                                </ColumnListItem>
+                            </items>
+                        </Table>
                     </IconTabFilter>
 
                 </items>

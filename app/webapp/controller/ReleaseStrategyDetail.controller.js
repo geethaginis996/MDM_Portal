@@ -11,11 +11,18 @@ sap.ui.define([
     "sap/m/Label",
     "sap/m/Select",
     "sap/m/Switch",
+    "sap/m/Text",
+    "sap/m/Title",
+    "sap/m/VBox",
+    "sap/m/HBox",
+    "sap/m/Avatar",
+    "sap/ui/core/Icon",
     "sap/ui/core/Item",
     "sap/ui/layout/form/SimpleForm"
 ], function (
     Controller, JSONModel, Filter, FilterOperator,
-    MessageToast, MessageBox, Dialog, Button, Input, Label, Select, Switch, Item, SimpleForm
+    MessageToast, MessageBox, Dialog, Button, Input, Label, Select, Switch,
+    Text, Title, VBox, HBox, Avatar, Icon, Item, SimpleForm
 ) {
     "use strict";
 
@@ -208,8 +215,42 @@ sap.ui.define([
         onTabSelect: function (oEvent) {
             var sKey = oEvent.getParameter("key");
             this._oViewModel.setProperty("/selectedTab", sKey);
-            if (sKey === "values") { this._loadValueCount(); }
-            if (sKey === "steps")  { this._loadStepCount(); }
+            if (sKey === "values")    { this._loadValueCount(); }
+            if (sKey === "steps")     { this._loadStepCount(); }
+            if (sKey === "changelog") { this._loadChangeLog(); }
+        },
+
+        // ── Change Log tab ───────────────────────────────────────────
+        _loadChangeLog: function () {
+            var oCtx = this.getView().getBindingContext();
+            if (!oCtx) { return; }
+            var sId  = oCtx.getProperty("strategy_id");
+            var sMdt = oCtx.getProperty("master_data_type_master_data_type_id");
+            if (!sId) { return; }
+
+            var oVm = this._oViewModel;
+            oVm.setProperty("/clCreatedAt",  this._fmtDate(oCtx.getProperty("createdAt")));
+            oVm.setProperty("/clCreatedBy",  oCtx.getProperty("createdBy")  || "\u2014");
+            oVm.setProperty("/clModifiedAt", this._fmtDate(oCtx.getProperty("modifiedAt")));
+            oVm.setProperty("/clModifiedBy", oCtx.getProperty("modifiedBy") || "\u2014");
+
+            // Matches the backend's composite entity_key format exactly:
+            // id + "::" + master_data_type (see mdm-service.js auditBuildKey).
+            var sEntityKey = sId + "::" + sMdt;
+
+            var oTable   = this.byId("logTable");
+            var oBinding = oTable && oTable.getBinding("items");
+            if (!oBinding) { return; }
+            oBinding.filter([
+                new Filter("entity_name", FilterOperator.EQ, "ReleaseStrategy"),
+                new Filter("entity_key",  FilterOperator.EQ, sEntityKey)
+            ]);
+            oBinding.resume();
+        },
+
+        _fmtDate: function (sVal) {
+            if (!sVal) { return "\u2014"; }
+            try { return new Date(sVal).toLocaleString(); } catch (e) { return sVal; }
         },
 
         // ── Criteria Values tab ──────────────────────────────────────
@@ -584,6 +625,131 @@ sap.ui.define([
                     oMandatoryIcon.setColor(this.formatMandatoryColor(bMandatory));
                 }
             }.bind(this));
+
+            // Same trigger point as the row-formatter refresh, since both
+            // need to happen exactly when the step data changes.
+            this._renderApprovalFlow();
+        },
+
+        // ── Resulting Approval Flow diagram ─────────────────────────
+        // Groups the loaded steps (already sorted/available via
+        // _getLoadedStepRows) into visual "stages": a Sequential step
+        // always starts a new stage; a Parallel step joins the stage of
+        // whatever came immediately before it. Consecutive Parallel steps
+        // therefore end up grouped together in the same stage.
+        _computeApprovalStages: function () {
+            var aRows = this._getLoadedStepRows().slice().sort(function (a, b) {
+                return a.step_number - b.step_number;
+            });
+            var aStages = [];
+            aRows.forEach(function (oRow) {
+                var oCode = {
+                    seq        : oRow.step_number,
+                    code       : oRow.release_code_release_code_id,
+                    description: oRow.release_code ? oRow.release_code.description : ""
+                };
+                if (oRow.parallel && aStages.length > 0) {
+                    aStages[aStages.length - 1].push(oCode);
+                } else {
+                    aStages.push([oCode]);
+                }
+            });
+            return aStages;
+        },
+
+        _renderApprovalFlow: function () {
+            var oContainer = this.byId("approvalFlowContainer");
+            if (!oContainer) { return; }
+            oContainer.removeAllItems();
+
+            var aStages = this._computeApprovalStages();
+            if (!aStages.length) {
+                oContainer.addItem(new Text({
+                    text: "Add release codes above to see the resulting approval flow."
+                }));
+                return;
+            }
+
+            aStages.forEach(function (aCodes, iIndex) {
+                if (iIndex > 0) {
+                    oContainer.addItem(this._buildFlowArrow("Then"));
+                }
+                oContainer.addItem(this._buildStageBox(aCodes));
+            }.bind(this));
+
+            oContainer.addItem(this._buildFlowArrow("All done"));
+            oContainer.addItem(this._buildApprovedBox());
+        },
+
+        _buildFlowArrow: function (sLabel) {
+            return new VBox({
+                alignItems: "Center",
+                justifyContent: "Center",
+                items: [
+                    new Icon({ src: "sap-icon://arrow-right", color: "Neutral", size: "1.2rem" }),
+                    new Text({ text: sLabel }).addStyleClass("sapMDMFlowArrowLabel")
+                ]
+            }).addStyleClass("sapUiSmallMarginBeginEnd");
+        },
+
+        _buildCodeCard: function (oCode) {
+            return new HBox({
+                alignItems: "Center",
+                items: [
+                    new Avatar({
+                        displaySize    : "XS",
+                        initials       : String(oCode.seq).padStart(2, "0"),
+                        backgroundColor: "Accent6"
+                    }).addStyleClass("sapUiTinyMarginEnd"),
+                    new VBox({
+                        items: [
+                            new Text({ text: oCode.code }).addStyleClass("sapMDMFlowCodeName"),
+                            new Text({ text: oCode.description }).addStyleClass("sapMDMFlowArrowLabel")
+                        ]
+                    })
+                ]
+            }).addStyleClass("sapMDMFlowCodeCard");
+        },
+
+        _buildStageBox: function (aCodes) {
+            if (aCodes.length === 1) {
+                var oCode = aCodes[0];
+                return new HBox({
+                    alignItems: "Center",
+                    items: [
+                        new Avatar({
+                            displaySize    : "XS",
+                            initials       : String(oCode.seq).padStart(2, "0"),
+                            backgroundColor: "Accent6"
+                        }).addStyleClass("sapUiTinyMarginEnd"),
+                        new VBox({
+                            items: [
+                                new Text({ text: oCode.code }).addStyleClass("sapMDMFlowCodeName"),
+                                new Text({ text: oCode.description }).addStyleClass("sapMDMFlowArrowLabel")
+                            ]
+                        })
+                    ]
+                }).addStyleClass("sapMDMFlowStageSingle");
+            }
+
+            var aItems = [
+                new Text({ text: "Parallel \u2014 Run Together" }).addStyleClass("sapMDMFlowStageParallelLabel")
+            ];
+            aCodes.forEach(function (oCode) {
+                aItems.push(this._buildCodeCard(oCode));
+            }.bind(this));
+
+            return new VBox({ items: aItems }).addStyleClass("sapMDMFlowStageParallel");
+        },
+
+        _buildApprovedBox: function () {
+            return new HBox({
+                alignItems: "Center",
+                items: [
+                    new Icon({ src: "sap-icon://sys-enter-2", color: "Positive" }).addStyleClass("sapUiTinyMarginEnd"),
+                    new Text({ text: "Approved" }).addStyleClass("sapMDMFlowCodeName")
+                ]
+            }).addStyleClass("sapMDMFlowApproved");
         },
 
         _getLoadedStepRows: function () {
@@ -819,8 +985,33 @@ sap.ui.define([
             if (!sPriority || isNaN(parseInt(sPriority, 10))) { MessageBox.error("Priority must be a number."); return; }
             if (!sValidFrom) { MessageBox.error("Valid From is required."); return; }
 
+            var iPriority = parseInt(sPriority, 10);
             this._oViewModel.setProperty("/busy", true);
 
+            var oModel = this.getOwnerComponent().getModel();
+            oModel.bindList("/ReleaseStrategies", null, null, [
+                new Filter("master_data_type_master_data_type_id", FilterOperator.EQ, sAppliesTo),
+                new Filter("priority", FilterOperator.EQ, iPriority)
+            ], { $select: "strategy_id" }).requestContexts(0, Infinity).then(function (aCtx) {
+                var bDuplicate = aCtx.some(function (c) {
+                    return c.getProperty("strategy_id") !== sId;
+                });
+                if (bDuplicate) {
+                    this._oViewModel.setProperty("/busy", false);
+                    MessageBox.error(
+                        "Priority " + iPriority + " is already used by another strategy with Applies To \"" +
+                        sAppliesTo + "\". Choose a different priority."
+                    );
+                    return;
+                }
+                this._doSaveStrategy(sId, sDesc, sAppliesTo, iPriority, bActive);
+            }.bind(this)).catch(function (e) {
+                this._oViewModel.setProperty("/busy", false);
+                MessageBox.error("Could not validate priority: " + (e.message || "Unknown error"));
+            }.bind(this));
+        },
+
+        _doSaveStrategy: function (sId, sDesc, sAppliesTo, iPriority, bActive) {
             var bIsNew = this._oViewModel.getProperty("/isNew");
             var oCtx   = this.getView().getBindingContext();
 
@@ -828,7 +1019,7 @@ sap.ui.define([
                 if (bIsNew) { oCtx.setProperty("strategy_id", sId); }
                 oCtx.setProperty("description", sDesc);
                 oCtx.setProperty("master_data_type_master_data_type_id", sAppliesTo);
-                oCtx.setProperty("priority", parseInt(sPriority, 10));
+                oCtx.setProperty("priority", iPriority);
                 oCtx.setProperty("active", bActive);
             }
 
@@ -857,6 +1048,13 @@ sap.ui.define([
                 .catch(function (oErr) {
                     this._oViewModel.setProperty("/busy", false);
                     var sMsg = oErr && oErr.message ? oErr.message : "Unknown error";
+                    // Fallback in case the duplicate somehow slipped past the
+                    // pre-check (e.g. a race with another user saving at the
+                    // same instant) — surface the DB constraint clearly
+                    // rather than a raw SQL error.
+                    if (/unique|constraint|duplicate/i.test(sMsg)) {
+                        sMsg = "Priority " + iPriority + " is already used by another strategy with this Applies To.";
+                    }
                     MessageBox.error("Save failed: " + sMsg);
                 }.bind(this));
         },

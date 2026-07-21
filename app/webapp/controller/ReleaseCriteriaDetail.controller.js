@@ -217,8 +217,42 @@ sap.ui.define([
             this._oViewModel.setProperty("/selectedTab", sKey);
             // Data is already loaded eagerly on bind; re-fetch on tab-select too
             // so the tab reflects any change made elsewhere in the same session.
-            if (sKey === "values") { this._loadValues(); }
-            if (sKey === "usage")  { this._loadUsage(); }
+            if (sKey === "values")    { this._loadValues(); }
+            if (sKey === "usage")     { this._loadUsage(); }
+            if (sKey === "changelog") { this._loadChangeLog(); }
+        },
+
+        // ── Change Log tab ───────────────────────────────────────────
+        _loadChangeLog: function () {
+            var oCtx = this.getView().getBindingContext();
+            if (!oCtx) { return; }
+            var sId  = oCtx.getProperty("characteristic_id");
+            var sMdt = oCtx.getProperty("master_data_type_master_data_type_id");
+            if (!sId) { return; }
+
+            var oVm = this._oViewModel;
+            oVm.setProperty("/clCreatedAt",  this._fmtDate(oCtx.getProperty("createdAt")));
+            oVm.setProperty("/clCreatedBy",  oCtx.getProperty("createdBy")  || "\u2014");
+            oVm.setProperty("/clModifiedAt", this._fmtDate(oCtx.getProperty("modifiedAt")));
+            oVm.setProperty("/clModifiedBy", oCtx.getProperty("modifiedBy") || "\u2014");
+
+            // Matches the backend's composite entity_key format exactly:
+            // id + "::" + master_data_type (see mdm-service.js auditBuildKey).
+            var sEntityKey = sId + "::" + sMdt;
+
+            var oTable   = this.byId("logTable");
+            var oBinding = oTable && oTable.getBinding("items");
+            if (!oBinding) { return; }
+            oBinding.filter([
+                new Filter("entity_name", FilterOperator.EQ, "StrategyCharacteristic"),
+                new Filter("entity_key",  FilterOperator.EQ, sEntityKey)
+            ]);
+            oBinding.resume();
+        },
+
+        _fmtDate: function (sVal) {
+            if (!sVal) { return "\u2014"; }
+            try { return new Date(sVal).toLocaleString(); } catch (e) { return sVal; }
         },
 
         // ── Allowed Values tab ───────────────────────────────────────
