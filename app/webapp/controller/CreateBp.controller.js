@@ -2027,9 +2027,23 @@ sap.ui.define([
 
                 if (aInstances && aInstances.length) {
                     // ── Multi-instance: one CRBPRole row per instance ─
+                    // "oFvs" is a frozen snapshot taken when the CR/BP instances were
+                    // first loaded (_loadExistingCR / _loadAndRenderExtStrip) — it is
+                    // never updated as the user types. The "form" model IS live-edited
+                    // (two-way bound to the on-screen inputs), so for whichever instance
+                    // is actually being edited right now, its values must win — otherwise
+                    // every edit to an already-filled field is silently discarded and the
+                    // request keeps saving the original value. Plain CREATE-mode drafts
+                    // only ever have a single instance, which is always "active"; in
+                    // EXTEND mode only the instance picked via the instances dialog
+                    // (roleInstance) is being edited, so untouched sibling instances must
+                    // keep their own snapshot values.
+                    var bIsExtend = this._oRt.getProperty("/mode") === "EXTEND";
                     aInstances.forEach(function (oInst) {
                         var iNo  = oInst.instance_no || 1;
                         var oFvs = oInst.fieldValues || {};
+                        var bActiveInstance = !bIsExtend
+                            || this._oRt.getProperty("/roleInstance/" + sRoleId) === iNo;
 
                         aCRBPRoles.push({
                             role_id    : sRoleId,
@@ -2041,9 +2055,14 @@ sap.ui.define([
                             if (a.role !== sRoleId) { return; }
                             if (a.status === "SUPPRESS") { return; }
                             var mRoleVals = oFormVals[sRoleId] || {};
-                            var sVal = oFvs[a.field_id] !== undefined
-                                ? oFvs[a.field_id]
-                                : mRoleVals[a.field_id];
+                            var sVal;
+                            if (bActiveInstance && mRoleVals[a.field_id] !== undefined) {
+                                sVal = mRoleVals[a.field_id];
+                            } else if (oFvs[a.field_id] !== undefined) {
+                                sVal = oFvs[a.field_id];
+                            } else {
+                                sVal = mRoleVals[a.field_id];
+                            }
                             if (sVal === undefined || sVal === null || String(sVal).trim() === "") { return; }
                             var sKey = sRoleId + "|" + iNo + "|" + a.field_id;
                             if (mSeen[sKey]) { return; }

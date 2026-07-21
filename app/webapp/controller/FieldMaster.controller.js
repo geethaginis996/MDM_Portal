@@ -233,7 +233,6 @@ sap.ui.define([
 _applyFilters: function () {
     var sSearch    = this.byId("filterSearch").getValue();
     var sMDT       = this.byId("filterMasterDataType").getSelectedKey();
-    var sMainGroup = this.byId("filterMainGroup").getSelectedKey();
     var sDispType  = this.byId("filterDisplayType").getSelectedKey();
     var sActive    = this.byId("filterActive").getSelectedKey();
 
@@ -252,11 +251,6 @@ _applyFilters: function () {
     // ✅ navigate through main_group (FieldGroups) to reach master_data_type FK
     if (sMDT) {
         aFilters.push(new Filter("main_group/master_data_type_master_data_type_id", FilterOperator.EQ, sMDT));
-    }
-
-    // ✅ direct FK property on FieldMasters — confirmed in $metadata
-    if (sMainGroup) {
-        aFilters.push(new Filter("main_group_group_id", FilterOperator.EQ, sMainGroup));
     }
 
     // ✅ direct property on FieldMasters
@@ -280,7 +274,6 @@ _applyFilters: function () {
         onClearFilters: function () {
             this.byId("filterSearch").setValue("");
             this.byId("filterMasterDataType").setSelectedKey("");
-            this.byId("filterMainGroup").setSelectedKey("");
             this.byId("filterDisplayType").setSelectedKey("");
             this.byId("filterActive").setSelectedKey("");
             var oBinding = this.byId("fieldTable").getBinding("items");

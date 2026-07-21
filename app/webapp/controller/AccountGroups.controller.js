@@ -66,6 +66,11 @@ sap.ui.define([
             if (oBinding) {
                 this._applyFilters();
                 oBinding.attachEventOnce("dataReceived", this._onDataReceived, this);
+                // filter() is a no-op when the filter values haven't changed since
+                // the last visit, which left stale rows showing after an edit on
+                // the detail page (e.g. toggling Active) until a hard refresh.
+                // Force a fresh read every time this route is (re-)entered.
+                oBinding.refresh();
             } else {
                 this.getView().attachEventOnce("afterRendering", function () {
                     this._applyFilters();
