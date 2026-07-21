@@ -76,6 +76,7 @@
                                                 selectedKey="{data_type}"
                                                 width="100%"
                                                 change=".onFieldChange"
+                                                forceSelection="false"
                                                 items="{path: 'lookups>/dataTypes'}">
                                             <core:Item key="{lookups>key}" text="{lookups>text}"/>
                                         </Select>
@@ -115,6 +116,7 @@
                                                 selectedKey="{display_type}"
                                                 width="100%"
                                                 change=".onFieldChange"
+                                                forceSelection="false"
                                                 items="{path: 'lookups>/displayTypes'}">
                                             <core:Item key="{lookups>key}" text="{lookups>text}"/>
                                         </Select>

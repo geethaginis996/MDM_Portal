@@ -478,7 +478,7 @@ sap.ui.define(
       // ── Save ─────────────────────────────────────────────────────
 
       onSave: function () {
-        var sFieldId = this.byId("inFieldId").getValue().trim();
+        var sFieldId = this.byId("inFieldId").getValue().trim().toUpperCase();
         var sDesc = this.byId("inDescription").getValue().trim();
 
         if (!sFieldId) {
