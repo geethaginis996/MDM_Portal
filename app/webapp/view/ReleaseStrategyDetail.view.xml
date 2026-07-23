@@ -172,8 +172,7 @@
                             </Table>
 
                             <Title text="Resulting Approval Flow" level="H4" class="sapUiMediumMarginTop"/>
-                            <MessageStrip type="Information" showIcon="true" class="sapUiTinyMarginTop sapUiSmallMarginBottom"
-                                          text="Based on the Flow setting of each code above. Codes marked Parallel run alongside the previous code; Sequential codes wait for everything before them to finish."/>
+                            
                             <HBox id="approvalFlowContainer" alignItems="Center" wrap="Wrap"
                                   class="sapUiSmallMarginBottom"/>
                         </VBox>

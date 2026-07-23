@@ -24,6 +24,12 @@
     "requires": {
       "[development]": {
         "db": "sqlite"
+      },
+      "workflow": {
+        "kind": "rest",
+        "credentials": {
+          "destination": "MDM_Workflow_Dest"
+        }
       }
     }
   }

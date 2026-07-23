@@ -32,10 +32,7 @@
                         <Title id="pageTitle" text="" level="H2" wrapping="false"/>
                     </VBox>
                 </HBox>
-                <HBox class="sapUiTinyMarginTop">
-                    <ObjectStatus id="attrStatus" text="" state="None" class="sapUiSmallMarginEnd"/>
-                    <ObjectAttribute id="attrSla" title="SLA" text="" class="sapUiSmallMarginBegin"/>
-                </HBox>
+               
             </VBox>
 
             <HBox class="sapUiTinyMarginTop sapUiMediumMarginBeginEnd">
@@ -59,8 +56,7 @@
                                         <Input id="inId" value="{release_code_id}" placeholder="e.g. MDS"
                                                editable="{view>/isNew}"
                                                maxLength="10" liveChange=".onFieldChange"/>
-                                        <Text text="Short mnemonic code — cannot be changed after saving."
-                                              class="sapUiTinyMarginTop" style="color:var(--sapContent_LabelColor); font-size: 0.8rem;"/>
+                                       
                                     </VBox>
                                     <VBox>
                                         <Label text="Description" required="true" labelFor="inDescription"/>
@@ -75,8 +71,7 @@
                                             <core:Item key="" text="Any"/>
                                             <core:Item key="{master_data_type_id}" text="{description}"/>
                                         </Select>
-                                        <Text text="Determines whether the Scope tab shows BP roles or material views."
-                                              class="sapUiTinyMarginTop" style="color:var(--sapContent_LabelColor); font-size: 0.8rem;"/>
+                                        
                                     </VBox>
                                     <VBox>
                                         <Label text="SLA (hours)" required="true" labelFor="inSla"/>
@@ -99,8 +94,7 @@
                                     </VBox>
                                 </l:content>
                             </l:Grid>
-                            <MessageStrip type="Information" showIcon="true" class="sapUiMediumMarginTop"
-                                          text="Release Strategies reference this code as one approval step. Assign the users who can act as approver, and the scope (BP roles or material views) this code is responsible for."/>
+                            
                         </VBox>
                     </IconTabFilter>
 
@@ -113,8 +107,7 @@
                                 <ToolbarSpacer/>
                                 <Button text="Assign User" icon="sap-icon://add" type="Transparent" press=".onAddUser"/>
                             </Toolbar>
-                            <MessageStrip type="Information" showIcon="true" class="sapUiTinyMarginBottom"
-                                          text="These users can act as approver whenever this release code is reached in any strategy. A user must also have the Approver function in their authorization role."/>
+                            
                             <Table id="usersTable" noDataText="No users assigned yet."
                                    fixedLayout="true" alternateRowColors="true"
                                    items="{path: 'users', sorter: {path: 'user_id'}, parameters: {$count: true, $$updateGroupId: 'releaseCodeUsersUpdate'}}">
@@ -149,8 +142,7 @@
                                 <ToolbarSpacer/>
                                 <Button text="Add" icon="sap-icon://add" type="Transparent" press=".onAddScope"/>
                             </Toolbar>
-                            <MessageStrip type="Information" showIcon="true" class="sapUiTinyMarginBottom"
-                                          text="An approver releasing this code only sees and actions the parts of the request that fall in this scope. Other sections are visible but read-only for them."/>
+                            
                             <Table id="scopeTable" noDataText="No scope defined yet."
                                    fixedLayout="true" alternateRowColors="true"
                                    items="{path: 'scopes', sorter: {path: 'scope_id'}, parameters: {$count: true, $$updateGroupId: 'releaseCodeScopeUpdate'}}">

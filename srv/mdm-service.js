@@ -51,6 +51,11 @@ async function generateNextCrId(db) {
 class MDMPortalService extends cds.ApplicationService {
     async init() {
 
+        // Connects to SAP Build Process Automation using the binding set up
+        // via `cds bind` locally (Destination service instance), and via the
+        // deployed service binding once running on BTP.
+        this.workflow = await cds.connect.to('workflow');
+
         // =====================================================================
         //  CHANGE REQUEST ACTIONS
         // =====================================================================
@@ -172,21 +177,29 @@ class MDMPortalService extends cds.ApplicationService {
                 }
 
                 // Validate required fields
-                if (!cr.scenario_code || !cr.master_data_type_id) {
+                if (!cr.scenario_code || !cr.master_data_type_master_data_type_id) {
                     return req.error(400, 'Scenario Code and Master Data Type are required');
                 }
 
-                // Fetch field values to determine strategy
-                const fieldValues = await db.read('mdm.portal.CRFieldValue', (q) =>
-                    q.where({ cr_id })
-                );
+                // Fetch field values to determine strategy. CRFieldValue.cr
+                // (Association to CRHeader) flattens to cr_cr_id, and its
+                // field association flattens to field_field_id — confirmed
+                // via `cds compile ... --to sql`. Also: db.read(entity, fn)
+                // with a callback calling q.where(...) inside is NOT valid
+                // here and throws a confusing "where not found in the
+                // elements of ..." error — the working form is
+                // db.read(entity).where(...), chained directly (see
+                // ValidateField/GetFieldsByMasterDataType above for the
+                // already-correct usage of this same pattern).
+                const fieldValues = await db.read('mdm.portal.CRFieldValue')
+                    .where({ cr_cr_id: cr_id });
 
                 // Call function to determine strategy
                 const strategyResult = await this.determineReleaseStrategy(
-                    cr.master_data_type_id,
+                    cr.master_data_type_master_data_type_id,
                     cr.scenario_code,
                     fieldValues.map((fv) => ({
-                        characteristic_id: fv.field_id,
+                        characteristic_id: fv.field_field_id,
                         value: fv.new_value,
                     }))
                 );
@@ -195,11 +208,21 @@ class MDMPortalService extends cds.ApplicationService {
                     return req.error(400, 'No matching release strategy found');
                 }
 
-                // Update CR status
-                await db.update('mdm.portal.CRHeader', cr_id).set({
+                // Update CR status. CRHeader.strategy is an association to
+                // ReleaseStrategy, which has a COMPOSITE key (strategy_id +
+                // master_data_type) — there is no plain "strategy_id" column
+                // to set directly. Set both flattened key parts instead,
+                // using the CR's own master_data_type as the strategy's
+                // scope (a strategy is defined per master data type).
+                // NOTE: db.update(entity, scalarValue) only works when the
+                // entity's key is literally named "ID" — CRHeader's key is
+                // "cr_id", so an explicit .where() is required (same gotcha
+                // already flagged in DeleteChangeRequest above).
+                await db.update('mdm.portal.CRHeader').where({ cr_id }).set({
                     status: 'IN_APPROVAL',
                     submitted_at: new Date(),
-                    strategy_id: strategyResult.strategy_id,
+                    strategy_strategy_id: strategyResult.strategy_id,
+                    strategy_master_data_type_master_data_type_id: cr.master_data_type_master_data_type_id,
                 });
 
                 // Create release strategy snapshot
@@ -207,6 +230,13 @@ class MDMPortalService extends cds.ApplicationService {
                     cr_id,
                     strategyResult.strategy_id
                 );
+
+                // Notify SAP Build Process Automation so the first approver
+                // gets a task in their Inbox. This does NOT replace the
+                // CRReleaseStep tracking above — CRReleaseStep/CRHeader.status
+                // remain the source of truth for the Fiori UI. If this call
+                // fails, don't block the CR submission; just log it.
+                await this._triggerApprovalWorkflow(cr_id, strategyResult.strategy_id, req.user.id);
 
                 // Audit log
                 await this.createAuditLog('CR_HEADER', cr_id, 'SUBMIT', req.user.id);
@@ -230,20 +260,26 @@ class MDMPortalService extends cds.ApplicationService {
             const db = cds.db;
 
             try {
-                // Fetch CR Release Strategy
-                const crReleaseStrat = await db.read(
-                    'mdm.portal.CRReleaseStrategy',
-                    cr_id
-                );
+                // CRReleaseStrategy's only key is "cr" (Association to
+                // CRHeader), which flattens to cr_cr_id — confirmed via
+                // `cds compile db/data-model.cds --to sql --dialect sqlite`.
+                const crReleaseStrat = await SELECT.one.from('mdm.portal.CRReleaseStrategy')
+                    .where({ cr_cr_id: cr_id });
 
                 if (!crReleaseStrat) {
                     return req.error(404, `No release strategy for CR ${cr_id}`);
                 }
 
-                // Fetch the step
-                const step = await db.read('mdm.portal.CRReleaseStep', (q) =>
-                    q.where({ cr_id, step_number })
-                );
+                // CRReleaseStep.cr (Association to CRReleaseStrategy, whose
+                // own key "cr" is itself an association to CRHeader.cr_id)
+                // flattens two levels deep to cr_cr_cr_id — NOT "cr_id".
+                // Note: if this step has multiple parallel approvers
+                // (differentiated by sequence_within_step), this action's
+                // signature has no way to target one specifically — it acts
+                // on the first match. That's a pre-existing design gap, not
+                // introduced by this fix.
+                const step = await SELECT.one.from('mdm.portal.CRReleaseStep')
+                    .where({ cr_cr_cr_id: cr_id, step_number });
 
                 if (!step) {
                     return req.error(404, `Step ${step_number} not found`);
@@ -254,28 +290,37 @@ class MDMPortalService extends cds.ApplicationService {
                     return req.error(400, `Invalid action: ${action}`);
                 }
 
-                // Update step
-                await db.update('mdm.portal.CRReleaseStep').set({
-                    status:
-                        action === 'APPROVE'
-                            ? 'APPROVED'
-                            : action === 'REJECT'
-                                ? 'REJECTED'
-                                : 'SENT_BACK',
-                    acted_by: req.user.id,
-                    acted_at: new Date(),
-                    comment,
-                });
+                // Update step — previously this UPDATE had NO WHERE clause
+                // at all, which would have updated every row in
+                // CRReleaseStep on every single approve/reject click. Scope
+                // it to exactly the row just read above.
+                await db.update('mdm.portal.CRReleaseStep')
+                    .where({
+                        cr_cr_cr_id: cr_id,
+                        step_number,
+                        sequence_within_step: step.sequence_within_step
+                    })
+                    .set({
+                        status:
+                            action === 'APPROVE'
+                                ? 'APPROVED'
+                                : action === 'REJECT'
+                                    ? 'REJECTED'
+                                    : 'SENT_BACK',
+                        acted_by: req.user.id,
+                        acted_at: new Date(),
+                        comment,
+                    });
 
                 // Record decision
                 await db.run(
                     INSERT.into('mdm.portal.CRApprovalDecision').entries([
                         {
                             decision_id: uuid(),
-                            cr_id,
+                            cr_cr_id: cr_id,
                             step_number,
-                            sequence_within_step: 1,
-                            release_code_id: step.release_code_id,
+                            sequence_within_step: step.sequence_within_step,
+                            release_code_release_code_id: step.release_code_release_code_id,
                             action,
                             acted_by: req.user.id,
                             acted_at: new Date(),
@@ -284,28 +329,30 @@ class MDMPortalService extends cds.ApplicationService {
                     ])
                 );
 
-                // Update CR status based on action
+                // Update CR status based on action. db.update(entity, scalarValue)
+                // only works when the key is literally named "ID" — CRHeader's
+                // key is "cr_id", so use an explicit .where() here too.
                 if (action === 'REJECT') {
-                    await db.update('mdm.portal.CRHeader', cr_id).set({
+                    await db.update('mdm.portal.CRHeader').where({ cr_id }).set({
                         status: 'REJECTED',
                     });
                 } else if (action === 'SEND_BACK') {
-                    await db.update('mdm.portal.CRHeader', cr_id).set({
+                    await db.update('mdm.portal.CRHeader').where({ cr_id }).set({
                         status: 'SENT_BACK',
                     });
                 } else if (action === 'APPROVE') {
-                    // Check if all steps are approved
-                    const remainingSteps = await db.read(
-                        'mdm.portal.CRReleaseStep',
-                        (q) =>
-                            q.where({
-                                cr_id,
-                                status: { '!=': 'APPROVED' },
-                            })
-                    );
+                    // Check if all steps are approved. db.read(entity, fn)
+                    // with a callback isn't valid here (same issue fixed
+                    // above in the fieldValues read) — chain .where() on
+                    // the return value instead.
+                    const remainingSteps = await db.read('mdm.portal.CRReleaseStep')
+                        .where({
+                            cr_cr_cr_id: cr_id,
+                            status: { '!=': 'APPROVED' },
+                        });
 
                     if (remainingSteps.length === 0) {
-                        await db.update('mdm.portal.CRHeader', cr_id).set({
+                        await db.update('mdm.portal.CRHeader').where({ cr_id }).set({
                             status: 'APPROVED',
                         });
                     }
@@ -358,8 +405,10 @@ class MDMPortalService extends cds.ApplicationService {
                     return req.error(500, 'Failed to post to SAP');
                 }
 
-                // Update CR
-                await db.update('mdm.portal.CRHeader', cr_id).set({
+                // Update CR — CRHeader's key is "cr_id", not the default
+                // "ID" that db.update(entity, scalarValue) assumes, so an
+                // explicit .where() is required.
+                await db.update('mdm.portal.CRHeader').where({ cr_id }).set({
                     status: 'POSTED',
                     posted_object_no: postedObjectNo,
                     posted_at: new Date(),
@@ -378,7 +427,8 @@ class MDMPortalService extends cds.ApplicationService {
 
                 // Update CR status to POSTING_FAILED
                 await db
-                    .update('mdm.portal.CRHeader', cr_id)
+                    .update('mdm.portal.CRHeader')
+                    .where({ cr_id })
                     .set({ status: 'POSTING_FAILED' });
 
                 return req.error(500, `Failed to post CR: ${error.message}`);
@@ -615,12 +665,32 @@ class MDMPortalService extends cds.ApplicationService {
             scenarioCode,
             values
         ) {
-            // TODO: Implement logic to find matching strategy
-            // based on master data type, scenario, and field values
+            // TODO: Full implementation should match `values` against each
+            // active strategy's StrategyCharacteristicValue rows (per the
+            // Release Strategy Configuration table design — OR within a
+            // characteristic, AND across characteristics) and pick the one
+            // strategy whose criteria the CR satisfies. Until that matching
+            // logic exists, fall back to the lowest-priority ACTIVE strategy
+            // for the given master data type (the seed data's "Fallback"
+            // entries use a high priority number for exactly this reason) —
+            // this at least returns a real, existing strategy_id instead of
+            // a hardcoded one ("STRAT-001") that doesn't exist in the data.
+            const db = cds.db;
+            const strategy = await SELECT.one.from('mdm.portal.ReleaseStrategy')
+                .where({ master_data_type_master_data_type_id: masterDataTypeId, active: true })
+                .orderBy('priority');
+
+            if (!strategy) {
+                return null;
+            }
+
+            const steps = await SELECT.from('mdm.portal.ReleaseStrategyStep')
+                .where({ strategy_strategy_id: strategy.strategy_id });
+
             return {
-                strategy_id: 'STRAT-001',
-                steps_count: 2,
-                estimated_duration_hours: 24,
+                strategy_id: strategy.strategy_id,
+                steps_count: steps.length,
+                estimated_duration_hours: null // not computed yet — would need to sum each step's release code SLA
             };
         };
 
@@ -630,12 +700,23 @@ class MDMPortalService extends cds.ApplicationService {
 
             if (!strategy) return;
 
-            // Create CRReleaseStrategy record
+            const sMdt = strategy.master_data_type_master_data_type_id;
+
+            // Column names below are the ACTUAL flattened foreign keys
+            // generated from the CDS associations (confirmed via
+            // `cds compile db/data-model.cds --to sql --dialect sqlite`) —
+            // NOT the plain "cr_id" / "strategy_id" used here previously,
+            // which don't exist as real columns:
+            //   CRReleaseStrategy.cr        (Association to CRHeader)        -> cr_cr_id
+            //   CRReleaseStrategy.strategy  (Association to ReleaseStrategy,
+            //                                 composite key) -> strategy_strategy_id
+            //                                 + strategy_master_data_type_master_data_type_id
             await db.run(
                 INSERT.into('mdm.portal.CRReleaseStrategy').entries([
                     {
-                        cr_id: crId,
-                        strategy_id: strategyId,
+                        cr_cr_id: crId,
+                        strategy_strategy_id: strategyId,
+                        strategy_master_data_type_master_data_type_id: sMdt,
                         determined_at: new Date(),
                         overall_status: 'IN_PROGRESS',
                         current_step: 1,
@@ -643,19 +724,30 @@ class MDMPortalService extends cds.ApplicationService {
                 ])
             );
 
-            // Create steps
-            const steps = await db.read('mdm.portal.ReleaseStrategyStep', (q) =>
-                q.where({ strategy_id: strategyId })
-            );
+            // ReleaseStrategyStep.strategy is the same composite association,
+            // so both key parts are needed in the filter too. db.read(entity, fn)
+            // with a callback isn't valid here (same issue fixed in
+            // submitChangeRequest/approveReleaseStep) — chain .where() on
+            // the return value instead.
+            const steps = await db.read('mdm.portal.ReleaseStrategyStep')
+                .where({
+                    strategy_strategy_id: strategyId,
+                    strategy_master_data_type_master_data_type_id: sMdt
+                });
 
             for (const step of steps) {
+                // CRReleaseStep.cr (Association to CRReleaseStrategy, whose
+                // own key "cr" is itself an association to CRHeader.cr_id)
+                // flattens two levels deep to cr_cr_cr_id. The step's own
+                // release_code association flattens to
+                // release_code_release_code_id, not "release_code_id".
                 await db.run(
                     INSERT.into('mdm.portal.CRReleaseStep').entries([
                         {
-                            cr_id: crId,
+                            cr_cr_cr_id: crId,
                             step_number: step.step_number,
                             sequence_within_step: 1,
-                            release_code_id: step.release_code_id,
+                            release_code_release_code_id: step.release_code_release_code_id,
                             status: 'PENDING',
                         },
                     ])
@@ -668,6 +760,92 @@ class MDMPortalService extends cds.ApplicationService {
             // - Call RFC or REST API
             // - Handle errors
             return `BP-${Date.now()}`;
+        };
+
+        // Looks up the real approver for a CR's first release step, via
+        // ReleaseCodeUser (the users/groups actively assigned to that
+        // step's release code). Falls back to fallbackId if no step or no
+        // active approver exists yet — this covers SaveBPChangeRequest's
+        // submit path, which doesn't create CRReleaseStep rows (it never
+        // calls determineReleaseStrategy/createReleaseStrategySnapshot —
+        // a separate, already-flagged gap), so it always falls back today.
+        // If a release code has multiple active users assigned, this just
+        // takes the first one — a real design might notify all of them,
+        // or define a single "primary" approver concept instead.
+        this._lookupApproverForCr = async function (crId, fallbackId) {
+            try {
+                const step = await SELECT.one.from('mdm.portal.CRReleaseStep')
+                    .where({ cr_cr_cr_id: crId })
+                    .orderBy('step_number');
+
+                if (!step || !step.release_code_release_code_id) {
+                    return fallbackId;
+                }
+
+                const approver = await SELECT.one.from('mdm.portal.ReleaseCodeUser')
+                    .where({
+                        release_code_release_code_id: step.release_code_release_code_id,
+                        active: true
+                    });
+
+                return approver ? approver.user_id : fallbackId;
+            } catch (e) {
+                console.error(`[workflow] Approver lookup failed for CR ${crId}, falling back to requester:`, e.message);
+                return fallbackId;
+            }
+        };
+
+        // Starts a workflow instance in SAP Build Process Automation so the
+        // first approver gets a task in their Inbox. Never throws — a
+        // failure here (e.g. the workflow definition isn't published yet,
+        // or the destination/credentials are wrong) must never block the
+        // CR submission itself, since CRReleaseStep/CRHeader.status remain
+        // the actual source of truth for this app's own approval UI.
+        // strategyId may be null (e.g. when called from a path that hasn't
+        // determined a release strategy) — BPA just receives it as null.
+        //
+        // The definitionId below is BPA's own generated ID for the
+        // "CR_Approval" process (confirmed via the workflow-definitions
+        // API) — NOT a name you choose yourself. It's tied to this specific
+        // BTP tenant/project (us10.mdm-portal-nd2mtjke.mdmportalapproval),
+        // so it WILL need updating if this project is ever redeployed to a
+        // different subaccount, or if the process is released as a new
+        // major version under a different project ID.
+        this._triggerApprovalWorkflow = async function (crId, strategyId, requesterId) {
+            try {
+                const sApproverEmail = await this._lookupApproverForCr(crId, requesterId);
+
+                await this.workflow.send({
+                    method: 'POST',
+                    path: '/public/workflow/rest/v1/workflow-instances',
+                    data: {
+                        definitionId: 'us10.mdm-portal-nd2mtjke.mdmportalapproval.cR_Approval',
+                        // Field names/casing here MUST match the workflow's
+                        // own Context type exactly (confirmed from the
+                        // Trigger node's Outputs tab in BPA Studio):
+                        // cr_id, Strategy_id (capital S), approverEmail.
+                        // There is no "requester" field in this workflow's
+                        // schema at all.
+                        context: {
+                            cr_id: crId,
+                            Strategy_id: strategyId,
+                            approverEmail: sApproverEmail
+                        }
+                    }
+                });
+                console.log(`[workflow] Started BPA workflow instance for CR ${crId} (approver: ${sApproverEmail})`);
+            } catch (workflowError) {
+                // Logged with as much detail as the error object exposes —
+                // a 404 (workflow definition not published yet) looks very
+                // different from a 401 (bad destination credentials), and
+                // only the status/body distinguishes them.
+                console.error(
+                    `[workflow] Failed to start BPA workflow for ${crId}:`,
+                    workflowError.message,
+                    workflowError.response?.status,
+                    workflowError.response?.data
+                );
+            }
         };
 
         this.createAuditLog = async function (
@@ -1008,6 +1186,16 @@ class MDMPortalService extends cds.ApplicationService {
                             prereq_indicator: fv.prereq_indicator === true
                         }))
                     );
+                }
+
+                // Notify SAP Build Process Automation on submit — same
+                // helper used by submitChangeRequest. Note: unlike that
+                // action, this handler never calls determineReleaseStrategy,
+                // so no strategy_id exists yet at this point; BPA receives
+                // null here. If Create BP's "Save & Submit" should also run
+                // release-strategy determination, that's a separate change.
+                if (submit) {
+                    await this._triggerApprovalWorkflow(sCrId, null, actor);
                 }
 
                 // ── Audit log ─────────────────────────────────────────────
