@@ -111,6 +111,14 @@ sap.ui.define([
                             var oSelDataType = this.byId("selDataType");
                             if (oSelDataType) { oSelDataType.setSelectedKey(oData.data_type); }
 
+                            // sap.m.Switch's "state" doesn't reliably push
+                            // changes back into an OData V4 context through
+                            // direct binding — sync it imperatively instead
+                            // (same pattern as ReleaseCodeDetail), and read
+                            // it back the same way in onSave.
+                            var oSwActive = this.byId("swActive");
+                            if (oSwActive) { oSwActive.setState(oData.active !== false); }
+
                             // Load tab badge data eagerly, right when the record loads
                             // — not lazily on tab-select — so both tab counts are
                             // correct immediately, regardless of which tab is active.
@@ -154,6 +162,7 @@ sap.ui.define([
                 this.byId("selAppliesTo").setSelectedKey("");
                 this.byId("selField").setSelectedKey("");
                 this.byId("selDataType").setSelectedKey("STRING");
+                this.byId("swActive").setState(true);
                 this._oViewModel.setProperty("/busy", false);
             }.bind(this));
         },
@@ -586,6 +595,7 @@ sap.ui.define([
             var sAppliesTo  = this.byId("selAppliesTo").getSelectedKey();
             var sField      = this.byId("selField").getSelectedKey();
             var sDataType   = this.byId("selDataType").getSelectedKey();
+            var bActive     = this.byId("swActive").getState();
 
             if (!sId) {
                 MessageBox.error("Criteria ID could not be generated. Please cancel and try again.");
@@ -606,6 +616,10 @@ sap.ui.define([
                 oCtx.setProperty("master_data_type_master_data_type_id", sAppliesTo);
                 oCtx.setProperty("field_field_id", sField);
                 oCtx.setProperty("data_type", sDataType);
+                // swActive isn't directly bound (see dataReceived above) —
+                // its value has to be pushed into the context explicitly,
+                // or this property never gets included in submitBatch below.
+                oCtx.setProperty("active", bActive);
             }
 
             var oModel = this.getOwnerComponent().getModel();

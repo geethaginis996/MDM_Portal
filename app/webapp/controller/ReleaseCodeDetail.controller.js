@@ -483,39 +483,25 @@ sap.ui.define([
                 MessageToast.show("Save the release code first before adding scope.");
                 return;
             }
-            this._openScopeDialog();
+            this._openScopeDialog(null);
         },
 
         // scope_type + scope_id together are the row's full key (beyond
-        // release_code) — there's nothing left to edit in place once a row
-        // exists, so a row press here is informational rather than opening
-        // an edit form. Remove and re-add covers changing a scope entry.
-        onScopeRowPress: function () {
-            MessageToast.show("To change a scope entry, remove it and add a new one.");
+        // release_code), so OData can't PATCH them directly — but the user
+        // shouldn't have to know or care about that. Row press opens the
+        // same dialog pre-filled with the current values; if the user
+        // changes either one, onSave (below) does a delete-old +
+        // create-new under the hood as a single, seamless-looking edit.
+        onScopeRowPress: function (oEvent) {
+            this._openScopeDialog(oEvent.getSource().getBindingContext());
         },
 
-        _openScopeDialog: function () {
+        _openScopeDialog: function (oExistingCtx) {
+            var bEdit = !!oExistingCtx;
+
             if (!this._oScopeDialog) {
-                var oModel = this.getOwnerComponent().getModel();
-
-                var oBpRoleSelect = new Select({
-                    width: "100%",
-                    forceSelection: false
-                });
-                oBpRoleSelect.bindItems({
-                    path: "/BPRoles",
-                    sorter: { path: "role_id" },
-                    template: new Item({ key: "{role_id}", text: "{role_id} \u2014 {description}" })
-                });
-                oBpRoleSelect.setModel(oModel);
-
+                var oBpRoleSelect = new Select({ width: "100%", forceSelection: false });
                 var oFieldGroupSelect = new Select({ width: "100%", forceSelection: false, visible: false });
-                oFieldGroupSelect.bindItems({
-                    path: "/FieldGroups",
-                    sorter: { path: "group_id" },
-                    template: new Item({ key: "{group_id}", text: "{group_id} \u2014 {description}" })
-                });
-                oFieldGroupSelect.setModel(oModel);
 
                 // No Material View master entity exists in this project yet
                 // (ScopeType keeps the option open for a future master data
@@ -558,21 +544,43 @@ sap.ui.define([
                             var sId   = sType === "BP_ROLE"      ? oBpRoleSelect.getSelectedKey()
                                       : sType === "FIELD_GROUP"  ? oFieldGroupSelect.getSelectedKey()
                                       : oMaterialViewInput.getValue().trim();
+                            var oCtxBeingEdited = this._oScopeDialog._oEditingCtx;
 
                             if (!sId) {
                                 MessageBox.error("Please select or enter a Scope ID.");
                                 return;
                             }
 
-                            var bDuplicate = this._getLoadedScopeRows().some(function (o) {
-                                return o.scope_type === sType && o.scope_id === sId;
-                            });
-                            if (bDuplicate) {
-                                MessageBox.error("This " + this.formatScopeTypeText(sType) + " is already in scope.");
-                                return;
+                            var bUnchanged = oCtxBeingEdited &&
+                                oCtxBeingEdited.getProperty("scope_type") === sType &&
+                                oCtxBeingEdited.getProperty("scope_id") === sId;
+
+                            if (!bUnchanged) {
+                                var bDuplicate = this._getLoadedScopeRows().some(function (o) {
+                                    if (oCtxBeingEdited &&
+                                        o.scope_type === oCtxBeingEdited.getProperty("scope_type") &&
+                                        o.scope_id === oCtxBeingEdited.getProperty("scope_id")) {
+                                        return false; // exclude the row currently being edited from the check
+                                    }
+                                    return o.scope_type === sType && o.scope_id === sId;
+                                });
+                                if (bDuplicate) {
+                                    MessageBox.error("This " + this.formatScopeTypeText(sType) + " is already in scope.");
+                                    return;
+                                }
                             }
 
-                            this._createScope(sType, sId);
+                            if (oCtxBeingEdited) {
+                                if (bUnchanged) {
+                                    // Nothing actually changed — just close, no request needed.
+                                    this._oScopeDialog.close();
+                                    return;
+                                }
+                                this._updateScope(oCtxBeingEdited, sType, sId);
+                            } else {
+                                this._createScope(sType, sId);
+                            }
+
                             this._oScopeDialog.close();
                         }.bind(this)
                     }),
@@ -588,13 +596,70 @@ sap.ui.define([
                 this.getView().addDependent(this._oScopeDialog);
             }
 
-            this._oScopeDialog._oTypeSelect.setSelectedKey("BP_ROLE");
-            this._oScopeDialog._oBpRoleSelect.setVisible(true);
-            this._oScopeDialog._oBpRoleSelect.setSelectedKey("");
-            this._oScopeDialog._oFieldGroupSelect.setVisible(false);
-            this._oScopeDialog._oFieldGroupSelect.setSelectedKey("");
-            this._oScopeDialog._oMaterialViewInput.setVisible(false);
-            this._oScopeDialog._oMaterialViewInput.setValue("");
+            this._oScopeDialog._oEditingCtx = oExistingCtx;
+
+            var oModel = this.getOwnerComponent().getModel();
+            var oBpRoleSelect     = this._oScopeDialog._oBpRoleSelect;
+            var oFieldGroupSelect = this._oScopeDialog._oFieldGroupSelect;
+            var oMaterialViewInput = this._oScopeDialog._oMaterialViewInput;
+            var oTypeSelect        = this._oScopeDialog._oTypeSelect;
+
+            var sExistingType = bEdit ? oExistingCtx.getProperty("scope_type") : "BP_ROLE";
+            var sExistingId   = bEdit ? oExistingCtx.getProperty("scope_id")   : "";
+
+            // Populate both option lists fresh every time the dialog opens
+            // (manual requestContexts population, not bindItems — a
+            // standalone Select built purely in JS and attached late via
+            // addDependent doesn't reliably resolve a declarative bindItems
+            // binding; this is the same manual pattern already proven to
+            // work elsewhere in this codebase, e.g. ReleaseCodes.controller.js's
+            // lookups model and ReleaseStrategyDetail's criteria dialog).
+            oModel.bindList("/BPRoles", null, [], [], { $select: "role_id,description" })
+                .requestContexts(0, Infinity).then(function (aCtx) {
+                    oBpRoleSelect.destroyItems();
+                    aCtx.sort(function (a, b) {
+                        return a.getProperty("role_id").localeCompare(b.getProperty("role_id"));
+                    }).forEach(function (c) {
+                        oBpRoleSelect.addItem(new Item({
+                            key : c.getProperty("role_id"),
+                            text: c.getProperty("role_id") + " \u2014 " + c.getProperty("description")
+                        }));
+                    });
+                    oBpRoleSelect.setSelectedKey(sExistingType === "BP_ROLE" ? sExistingId : "");
+                }).catch(function (e) {
+                    console.error("[ReleaseCodeDetail] Failed to load BP Roles for scope dialog:", e.message);
+                });
+
+            oModel.bindList("/FieldGroups", null, [], [], { $select: "group_id,description" })
+                .requestContexts(0, Infinity).then(function (aCtx) {
+                    oFieldGroupSelect.destroyItems();
+                    aCtx.sort(function (a, b) {
+                        return a.getProperty("group_id").localeCompare(b.getProperty("group_id"));
+                    }).forEach(function (c) {
+                        oFieldGroupSelect.addItem(new Item({
+                            key : c.getProperty("group_id"),
+                            text: c.getProperty("group_id") + " \u2014 " + c.getProperty("description")
+                        }));
+                    });
+                    oFieldGroupSelect.setSelectedKey(sExistingType === "FIELD_GROUP" ? sExistingId : "");
+                }).catch(function (e) {
+                    console.error("[ReleaseCodeDetail] Failed to load Field Groups for scope dialog:", e.message);
+                });
+
+            oTypeSelect.setSelectedKey(sExistingType);
+            oBpRoleSelect.setVisible(sExistingType === "BP_ROLE");
+            oFieldGroupSelect.setVisible(sExistingType === "FIELD_GROUP");
+            oMaterialViewInput.setVisible(sExistingType === "MATERIAL_VIEW");
+            oMaterialViewInput.setValue(sExistingType === "MATERIAL_VIEW" ? sExistingId : "");
+
+            if (bEdit) {
+                this._oScopeDialog.setTitle("Edit Scope");
+                this._oScopeDialog.getBeginButton().setText("Save");
+            } else {
+                this._oScopeDialog.setTitle("Add to Scope");
+                this._oScopeDialog.getBeginButton().setText("Add");
+            }
+
             this._oScopeDialog.open();
         },
 
@@ -621,6 +686,37 @@ sap.ui.define([
                 .catch(function (e) {
                     MessageBox.error("Could not add to scope: " + (e.message || "Unknown error"));
                 });
+        },
+
+        // "Editing" a scope row that changed its type/id is really a
+        // delete-of-the-old-row + create-of-a-new-one, since scope_type +
+        // scope_id together are the row's key beyond release_code and
+        // OData can't PATCH key properties on an existing entity. Both
+        // operations go through the same update group / batch so they
+        // land together rather than as two separate visible round trips.
+        _updateScope: function (oOldCtx, sNewType, sNewId) {
+            var oTable = this.byId("scopeTable");
+            if (!oTable) { return; }
+            var oListBinding = oTable.getBinding("items");
+            if (!oListBinding) { return; }
+
+            var oModel = this.getOwnerComponent().getModel();
+
+            oOldCtx.delete("$auto")
+                .then(function () {
+                    oListBinding.create({
+                        scope_type: sNewType,
+                        scope_id  : sNewId
+                    });
+                    return oModel.submitBatch("releaseCodeScopeUpdate");
+                })
+                .then(function () {
+                    MessageToast.show("Scope updated.");
+                    this._loadScopeCount();
+                }.bind(this))
+                .catch(function (e) {
+                    MessageBox.error("Could not update scope: " + (e.message || "Unknown error"));
+                }.bind(this));
         },
 
         onDeleteScope: function (oEvent) {

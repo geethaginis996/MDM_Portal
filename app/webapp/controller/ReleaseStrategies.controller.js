@@ -114,6 +114,29 @@ sap.ui.define([
                     if (oCodesBinding) { oCodesBinding.checkUpdate(true); }
                 }
             });
+
+            // The Status column (index 5) is a different case from the two
+            // above — it's bound directly to "active" itself, a property
+            // that genuinely changes after an edit, not a stable dummy key
+            // with an external cache. That combination has a confirmed,
+            // deep binding inconsistency (same root cause found and fixed
+            // in ReleaseCriteria.controller.js): checkUpdate(true) does NOT
+            // reliably force it to re-sync, even though the row's own
+            // context data (getObject()) is genuinely correct. Bypass the
+            // binding entirely — set text/state directly from confirmed-
+            // correct context data instead of trusting the expression
+            // binding's reactivity.
+            oTable.getItems().forEach(function (oItem) {
+                var oCtx = oItem.getBindingContext();
+                if (!oCtx) { return; }
+                var oData = oCtx.getObject();
+                if (!oData) { return; }
+                var oStatusCell = oItem.getCells()[5];
+                if (oStatusCell) {
+                    oStatusCell.setText(oData.active ? "Active" : "Inactive");
+                    oStatusCell.setState(oData.active ? "Success" : "Error");
+                }
+            });
         },
 
         // ── Filters ──────────────────────────────────────────────────

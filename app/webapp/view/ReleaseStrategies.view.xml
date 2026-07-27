@@ -133,9 +133,7 @@
                                 <ObjectIdentifier text="{= ${master_data_type_master_data_type_id} === 'BUSINESS PARTNER' ? 'Business Partner' : ${master_data_type_master_data_type_id} }"/>
                                 <Text text="{path: 'strategy_id', formatter: '.formatCriteriaCombination'}" wrapping="false"/>
                                 <ObjectStatus text="{path: 'strategy_id', formatter: '.formatReleaseCodesCount'}" state="None"/>
-                                <ObjectStatus
-                                    text="{= ${active} ? 'Active' : 'Inactive'}"
-                                    state="{= ${active} ? 'Success' : 'Error'}"/>
+                                <ObjectStatus text="" state="None"/>
                             </cells>
                         </ColumnListItem>
                     </items>

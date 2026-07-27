@@ -59,7 +59,8 @@ sap.ui.define([
         },
 
         _onDataReceived: function () {
-            var oBinding = this.byId("criteriaTable").getBinding("items");
+            var oTable = this.byId("criteriaTable");
+            var oBinding = oTable.getBinding("items");
             if (!oBinding) { return; }
             var oHeaderCtx = oBinding.getHeaderContext && oBinding.getHeaderContext();
             if (oHeaderCtx) {
@@ -68,6 +69,29 @@ sap.ui.define([
                     if (oTitle) { oTitle.setText("Release Criteria (" + (iTotal || 0) + ")"); }
                 }.bind(this));
             }
+
+            // The Status column's expression binding (text/state derived
+            // from "active") has a confirmed, deep inconsistency: the
+            // row's context data is genuinely fresh (getObject() correctly
+            // returns the current value), and the compiled formatter
+            // function itself is provably correct when called directly —
+            // but the underlying property binding still feeds it a stale
+            // cached value, and checkUpdate(true) does not fix this. Rather
+            // than continue fighting that binding mechanism, bypass it
+            // entirely: read the confirmed-correct data straight from each
+            // row's context and set the cell's text/state directly.
+            oTable.getItems().forEach(function (oItem) {
+                var oCtx = oItem.getBindingContext();
+                if (!oCtx) { return; }
+                var oData = oCtx.getObject();
+                if (!oData) { return; }
+                var aCells = oItem.getCells();
+                var oStatusCell = aCells[5]; // ObjectStatus is the 6th cell — see the view's column order
+                if (oStatusCell) {
+                    oStatusCell.setText(oData.active ? "Active" : "Inactive");
+                    oStatusCell.setState(oData.active ? "Success" : "Error");
+                }
+            });
         },
 
         // ── Filters ──────────────────────────────────────────────────

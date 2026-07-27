@@ -6,6 +6,8 @@ sap.ui.define([
     "sap/m/MessageToast",
     "sap/m/MessageBox",
     "sap/m/Dialog",
+    "sap/m/SelectDialog",
+    "sap/m/StandardListItem",
     "sap/m/Button",
     "sap/m/Input",
     "sap/m/Label",
@@ -21,7 +23,7 @@ sap.ui.define([
     "sap/ui/layout/form/SimpleForm"
 ], function (
     Controller, JSONModel, Filter, FilterOperator,
-    MessageToast, MessageBox, Dialog, Button, Input, Label, Select, Switch,
+    MessageToast, MessageBox, Dialog, SelectDialog, StandardListItem, Button, Input, Label, Select, Switch,
     Text, Title, VBox, HBox, Avatar, Icon, Item, SimpleForm
 ) {
     "use strict";
@@ -294,7 +296,23 @@ sap.ui.define([
             var bEdit = !!oExistingCtx;
 
             if (!this._oValueDialog) {
-                var oCriteriaSelect = new Select({ forceSelection: false });
+                var oCriteriaInput = new Input({
+                    placeholder: "Select criteria…",
+                    showValueHelp: true,
+                    valueHelpRequest: function () { this._openCriteriaHelp(); }.bind(this),
+                    // editable: false hides the value-help icon entirely in
+                    // sap.m.Input (switches to a plain display-only render)
+                    // — the field must stay editable for the icon to work.
+                    // Selection should still only happen via the dialog, so
+                    // revert any manually-typed text back to whatever the
+                    // last real selection was, discarding free typing
+                    // without blocking the icon.
+                    change: function () {
+                        var sKey = oCriteriaInput.data("key");
+                        oCriteriaInput.setValue(oCriteriaInput.data("displayText") || "");
+                        if (!sKey) { oCriteriaInput.setValue(""); }
+                    }
+                });
                 var oOperatorSelect = new Select({
                     selectedKey: "EQ",
                     items: [
@@ -328,7 +346,7 @@ sap.ui.define([
                         editable: true,
                         layout  : "ResponsiveGridLayout",
                         content : [
-                            new Label({ text: "Criteria", required: true }), oCriteriaSelect,
+                            new Label({ text: "Criteria", required: true }), oCriteriaInput,
                             new Label({ text: "Operator", required: true }), oOperatorSelect,
                             oValueLabel, oValueInput,
                             oToLabel, oToInput
@@ -338,7 +356,7 @@ sap.ui.define([
                         text: "Add",
                         type: "Emphasized",
                         press: function () {
-                            var sCriteriaId = oCriteriaSelect.getSelectedKey();
+                            var sCriteriaId = oCriteriaInput.data("key");
                             var sOperator   = oOperatorSelect.getSelectedKey();
                             var sFrom       = oValueInput.getValue().trim();
                             var sTo         = oToInput.getValue().trim();
@@ -390,7 +408,7 @@ sap.ui.define([
                     }),
                     afterClose: fnReset
                 });
-                this._oValueDialog._oCriteriaSelect = oCriteriaSelect;
+                this._oValueDialog._oCriteriaInput   = oCriteriaInput;
                 this._oValueDialog._oOperatorSelect = oOperatorSelect;
                 this._oValueDialog._oValueLabel     = oValueLabel;
                 this._oValueDialog._oValueInput     = oValueInput;
@@ -399,7 +417,7 @@ sap.ui.define([
                 this.getView().addDependent(this._oValueDialog);
             }
 
-            var oCriteriaSelect = this._oValueDialog._oCriteriaSelect;
+            var oCriteriaInput  = this._oValueDialog._oCriteriaInput;
             var oOperatorSelect = this._oValueDialog._oOperatorSelect;
             var oValueLabel     = this._oValueDialog._oValueLabel;
             var oValueInput     = this._oValueDialog._oValueInput;
@@ -408,10 +426,10 @@ sap.ui.define([
 
             this._oValueDialog._oEditingCtx = oExistingCtx;
 
-            // Populate the Criteria dropdown from StrategyCharacteristics
-            // matching this strategy's own Applies To, excluding criteria
-            // already used elsewhere in this strategy (unless it's the one
-            // currently being edited).
+            // Build the candidate list for the Criteria search-help dialog
+            // from StrategyCharacteristics matching this strategy's own
+            // Applies To, excluding criteria already used elsewhere in this
+            // strategy (unless it's the one currently being edited).
             var oCtx = this.getView().getBindingContext();
             var sMdt = oCtx ? oCtx.getProperty("master_data_type_master_data_type_id") : null;
             var iEditingCounter = oExistingCtx ? oExistingCtx.getProperty("counter") : null;
@@ -424,25 +442,30 @@ sap.ui.define([
                 new Filter("master_data_type_master_data_type_id", FilterOperator.EQ, sMdt)
             ] : null, { $select: "characteristic_id,description" })
                 .requestContexts(0, Infinity).then(function (aCtx) {
-                    oCriteriaSelect.destroyItems();
+                    var sExistingCid = oExistingCtx && oExistingCtx.getProperty("characteristic_characteristic_id");
+                    var aCandidates = [];
                     aCtx.forEach(function (c) {
                         var sCid = c.getProperty("characteristic_id");
-                        if (aUsedIds.indexOf(sCid) !== -1 && sCid !== (oExistingCtx && oExistingCtx.getProperty("characteristic_characteristic_id"))) {
+                        if (aUsedIds.indexOf(sCid) !== -1 && sCid !== sExistingCid) {
                             return; // already used by another row in this strategy
                         }
-                        oCriteriaSelect.addItem(new Item({
-                            key : sCid,
-                            text: sCid + " \u2014 " + c.getProperty("description")
-                        }));
+                        aCandidates.push({
+                            characteristic_id: sCid,
+                            description: c.getProperty("description")
+                        });
                     });
+                    this._oCriteriaCandidates = aCandidates;
 
                     if (bEdit) {
+                        var oCriteriaRow = aCandidates.filter(function (o) { return o.characteristic_id === sExistingCid; })[0];
                         var sOperator = oExistingCtx.getProperty("operator");
                         var bRange    = sOperator === "BETWEEN";
                         this._oValueDialog.setTitle("Edit Criteria Value");
                         this._oValueDialog.getBeginButton().setText("Save");
-                        oCriteriaSelect.setSelectedKey(oExistingCtx.getProperty("characteristic_characteristic_id"));
-                        oCriteriaSelect.setEnabled(false); // criteria itself isn't editable, only its condition
+                        oCriteriaInput.setValue(oCriteriaRow ? (oCriteriaRow.characteristic_id + " \u2014 " + oCriteriaRow.description) : sExistingCid);
+                        oCriteriaInput.data("key", sExistingCid);
+                        oCriteriaInput.data("displayText", oCriteriaRow ? (oCriteriaRow.characteristic_id + " \u2014 " + oCriteriaRow.description) : sExistingCid);
+                        oCriteriaInput.setEnabled(false); // criteria itself isn't editable, only its condition
                         oOperatorSelect.setSelectedKey(sOperator);
                         oValueLabel.setText(bRange ? "From" : "Value");
                         oToLabel.setVisible(bRange);
@@ -452,8 +475,10 @@ sap.ui.define([
                     } else {
                         this._oValueDialog.setTitle("Add Criteria Value");
                         this._oValueDialog.getBeginButton().setText("Add");
-                        oCriteriaSelect.setSelectedKey("");
-                        oCriteriaSelect.setEnabled(true);
+                        oCriteriaInput.setValue("");
+                        oCriteriaInput.data("key", null);
+                        oCriteriaInput.data("displayText", null);
+                        oCriteriaInput.setEnabled(true);
                         oOperatorSelect.setSelectedKey("EQ");
                         oValueLabel.setText("Value");
                         oToLabel.setVisible(false);
@@ -464,6 +489,60 @@ sap.ui.define([
 
                     this._oValueDialog.open();
                 }.bind(this));
+        },
+
+        // Opens the search-help dialog for picking a Criteria, replacing
+        // what used to be a plain dropdown — same idea as a standard Fiori
+        // value-help: search bar + list + OK/Cancel, rather than scrolling
+        // a native select, which scales better as the number of criteria
+        // grows. Candidates come from this._oCriteriaCandidates, already
+        // filtered (by Applies To + excluding criteria already used
+        // elsewhere in this strategy) in _openValueDialog just before this
+        // can be opened.
+        _openCriteriaHelp: function () {
+            if (!this._oCriteriaHelpDialog) {
+                this._oCriteriaHelpModel = new JSONModel({ items: [] });
+
+                this._oCriteriaHelpDialog = new SelectDialog({
+                    title: "Select Criteria",
+                    noDataText: "No matching criteria found",
+                    confirm: function (oEvent) {
+                        var oSelectedItem = oEvent.getParameter("selectedItem");
+                        if (!oSelectedItem) { return; }
+                        var oData = oSelectedItem.getBindingContext("criteriaHelp").getObject();
+                        var oCriteriaInput = this._oValueDialog._oCriteriaInput;
+                        oCriteriaInput.setValue(oData.characteristic_id + " \u2014 " + oData.description);
+                        oCriteriaInput.data("key", oData.characteristic_id);
+                        oCriteriaInput.data("displayText", oData.characteristic_id + " \u2014 " + oData.description);
+                    }.bind(this),
+                    search: function (oEvent) {
+                        var sQuery = oEvent.getParameter("value") || "";
+                        var oListBinding = this._oCriteriaHelpDialog.getBinding("items");
+                        if (!oListBinding) { return; }
+                        oListBinding.filter(sQuery ? [
+                            new Filter({
+                                filters: [
+                                    new Filter("characteristic_id", FilterOperator.Contains, sQuery),
+                                    new Filter("description", FilterOperator.Contains, sQuery)
+                                ],
+                                and: false
+                            })
+                        ] : []);
+                    }.bind(this)
+                });
+                this._oCriteriaHelpDialog.setModel(this._oCriteriaHelpModel, "criteriaHelp");
+                this._oCriteriaHelpDialog.bindAggregation("items", {
+                    path: "criteriaHelp>/items",
+                    template: new StandardListItem({
+                        title: "{criteriaHelp>characteristic_id}",
+                        description: "{criteriaHelp>description}"
+                    })
+                });
+                this.getView().addDependent(this._oCriteriaHelpDialog);
+            }
+
+            this._oCriteriaHelpModel.setProperty("/items", this._oCriteriaCandidates || []);
+            this._oCriteriaHelpDialog.open();
         },
 
         _createCriteriaValue: function (sCriteriaId, sOperator, sFrom, sTo) {

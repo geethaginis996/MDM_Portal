@@ -84,6 +84,7 @@
                 <Table id="criteriaTable"
                     items="{
                         path: '/StrategyCharacteristics',
+                        key: 'characteristic_id',
                         parameters: {
                             $count: true,
                             $select: 'characteristic_id,description,data_type,active,master_data_type_master_data_type_id,field_field_id',
@@ -132,9 +133,7 @@
                                 <ObjectIdentifier text="{= ${master_data_type_master_data_type_id} === 'BUSINESS PARTNER' ? 'Business Partner' : ${master_data_type_master_data_type_id} }"/>
                                 <Text text="{field_field_id}" wrapping="false"/>
                                 <Text text="{data_type}" wrapping="false"/>
-                                <ObjectStatus
-                                    text="{= ${active} ? 'Active' : 'Inactive'}"
-                                    state="{= ${active} ? 'Success' : 'Error'}"/>
+                                <ObjectStatus text="" state="None"/>
                             </cells>
                         </ColumnListItem>
                     </items>

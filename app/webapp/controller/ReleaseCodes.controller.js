@@ -113,6 +113,27 @@ sap.ui.define([
                     if (oScopeBinding) { oScopeBinding.checkUpdate(true); }
                 }
             });
+
+            // The Status column (index 5) is bound directly to "active"
+            // itself, a property that genuinely changes after an edit —
+            // unlike the two cache-lookup formatters above, which are bound
+            // to a stable dummy key (release_code_id) with external cache
+            // state. That combination has a confirmed, deep binding
+            // inconsistency (root cause found in ReleaseCriteria.controller.js):
+            // checkUpdate(true) does NOT reliably force it to re-sync, even
+            // though the row's own context data (getObject()) is genuinely
+            // correct. Bypass the binding entirely instead.
+            oTable.getItems().forEach(function (oItem) {
+                var oCtx = oItem.getBindingContext();
+                if (!oCtx) { return; }
+                var oData = oCtx.getObject();
+                if (!oData) { return; }
+                var oStatusCell = oItem.getCells()[5];
+                if (oStatusCell) {
+                    oStatusCell.setText(oData.active ? "Active" : "Inactive");
+                    oStatusCell.setState(oData.active ? "Success" : "Error");
+                }
+            });
         },
 
         // ── Formatters ───────────────────────────────────────────────

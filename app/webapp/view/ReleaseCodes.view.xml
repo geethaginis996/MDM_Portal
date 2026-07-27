@@ -132,9 +132,7 @@
                                 <ObjectIdentifier text="{= ${master_data_type_master_data_type_id} === 'BUSINESS PARTNER' ? 'Business Partner' : (${master_data_type_master_data_type_id} || 'Any') }"/>
                                 <Text text="{path: 'release_code_id', formatter: '.formatUsersCount'}" wrapping="false"/>
                                 <Text text="{path: 'release_code_id', formatter: '.formatScopeCount'}" wrapping="false"/>
-                                <ObjectStatus
-                                    text="{= ${active} ? 'Active' : 'Inactive'}"
-                                    state="{= ${active} ? 'Success' : 'Error'}"/>
+                                <ObjectStatus text="" state="None"/>
                             </cells>
                         </ColumnListItem>
                     </items>
