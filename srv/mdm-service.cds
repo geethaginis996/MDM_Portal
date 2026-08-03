@@ -326,6 +326,13 @@ service MDMPortalService {
         };
     };
 
+    // Current logged-in user's ID — used by the frontend (My Approvals inbox)
+    // to resolve "my" pending approvals via ReleaseCodeUser without hardcoding
+    // a user. Read-only, no side effects.
+    function getCurrentUser() returns {
+        user_id: String;
+    };
+
     // Get release strategy for a CR
     function determineReleaseStrategy(
         master_data_type_id: String,

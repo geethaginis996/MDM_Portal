@@ -161,6 +161,10 @@ class MDMPortalService extends cds.ApplicationService {
             return req.error(400, `Cannot remove a request with status ${status}`);
         });
 
+        this.on('getCurrentUser', async (req) => {
+            return { user_id: (req.user && req.user.id) || 'anonymous' };
+        });
+
         this.on('submitChangeRequest', async (req) => {
             const { cr_id } = req.data;
             const db = cds.db;

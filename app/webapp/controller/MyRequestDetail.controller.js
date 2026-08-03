@@ -685,9 +685,48 @@ sap.ui.define([
                 actions : [MessageBox.Action.YES, MessageBox.Action.NO],
                 onClose : function (sAction) {
                     if (sAction === MessageBox.Action.YES) {
-                        MessageToast.show("Submit action — coming in next sprint");
+                        this._submitCR(sCrId);
                     }
+                }.bind(this)
+            });
+        },
+
+        _submitCR: function (sCrId) {
+            var oVm    = this._oViewModel;
+            var oModel = this.getOwnerComponent().getModel();
+            var sUrl   = oModel.getServiceUrl().replace(/\/$/, "") + "/submitChangeRequest";
+
+            oVm.setProperty("/busy", true);
+
+            fetch(sUrl, {
+                method : "POST",
+                headers: { "Content-Type": "application/json", "Accept": "application/json" },
+                body   : JSON.stringify({ cr_id: sCrId })
+            })
+            .then(function (r) {
+                if (!r.ok) {
+                    return r.json().then(function (e) {
+                        throw new Error((e.error && e.error.message) || "HTTP " + r.status);
+                    });
                 }
+                return r.json();
+            })
+            .then(function (oData) {
+                // submitChangeRequest returns { success, message, strategy_id }
+                var oResult = (oData && oData.value) ? oData.value : oData;
+                if (oResult && oResult.success === false) {
+                    throw new Error(oResult.message || "Submit failed");
+                }
+                MessageToast.show((oResult && oResult.message) ||
+                    (sCrId + " submitted for approval."));
+                // Reload so status, release strategy and approval progress
+                // reflect what submitChangeRequest just wrote (IN_APPROVAL,
+                // strategy snapshot, first stage triggered).
+                this._loadCR(sCrId);
+            }.bind(this))
+            .catch(function (oErr) {
+                oVm.setProperty("/busy", false);
+                MessageBox.error("Could not submit request: " + oErr.message);
             });
         },
 

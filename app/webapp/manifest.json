@@ -186,6 +186,16 @@
                     "target": "myRequestDetail"
                 },
                 {
+                    "name": "myApprovals",
+                    "pattern": "myapprovals",
+                    "target": "myApprovals"
+                },
+                {
+                    "name": "approvalDetail",
+                    "pattern": "myapprovals/{crId}/{stepNumber}",
+                    "target": "approvalDetail"
+                },
+                {
                     "pattern": "releasecriteria",
                     "name": "releaseCriteria",
                     "target": "releaseCriteria"
@@ -273,13 +283,13 @@
                     "viewName": "MyRequestDetail",
                     "viewLevel": 2
                 },
-                "myRequests_old": {
-                    "viewName": "FieldMaster",
+                "myApprovals": {
+                    "viewName": "MyApprovals",
                     "viewLevel": 1
                 },
-                "approvalInbox": {
-                    "viewName": "FieldMaster",
-                    "viewLevel": 1
+                "approvalDetail": {
+                    "viewName": "ApprovalDetail",
+                    "viewLevel": 2
                 },
                 "valueTableDetail": {
                     "viewName": "ValueTableDetail",

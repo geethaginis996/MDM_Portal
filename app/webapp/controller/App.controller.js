@@ -3,8 +3,9 @@ sap.ui.define([
     "sap/ui/model/json/JSONModel",
     "sap/ui/model/Filter",
     "sap/ui/model/FilterOperator",
-    "sap/m/MessageToast"
-], function (Controller, JSONModel, Filter, FilterOperator, MessageToast) {
+    "sap/m/MessageToast",
+    "mdm/portal/util/ApprovalHelper"
+], function (Controller, JSONModel, Filter, FilterOperator, MessageToast, ApprovalHelper) {
     "use strict";
 
     // Maps route key → breadcrumb text shown in ShellBar secondTitle
@@ -32,6 +33,7 @@ sap.ui.define([
         myRequests    : "BP Maintenance \u203a My Requests",
         myRequestDetail: "BP Maintenance \u203a My Requests",
         myApprovals   : "BP Maintenance \u203a My Approvals",
+        approvalDetail: "BP Maintenance \u203a My Approvals",
         authRoles: "Authorizations \u203a Authorization Roles",
         users: "Authorizations \u203a Users",
         help: "Help",
@@ -124,33 +126,24 @@ sap.ui.define([
             }
         },
 
-        // ── Pending approval count (OData v4 safe) ─────────────────────
+        // ── Pending approval count (ShellBar notification badge) ───────
+        // Uses the same ApprovalHelper.getMyPendingApprovals logic as the
+        // My Approvals inbox, so the badge count and the inbox list always
+        // agree on what's actionable right now.
         _loadPendingApprovalCount: function () {
-            // The approval runtime (CRReleaseStep / approval inbox) isn't built
-            // yet, and there is no /ApprovalItems entity in the service. Binding
-            // to it threw "no metadata for path /ApprovalItems/status" on every
-            // page. Until the approval module exists, report zero.
-            this.getView().getModel("ui").setProperty("/pendingApprovals", 0);
-        },
+            var oModel  = this.getOwnerComponent().getModel();
+            var oUiModel = this.getView().getModel("ui");
 
-        _loadPendingApprovalCount_DISABLED: function () {
-            var oModel = this.getOwnerComponent().getModel();
-
-            var oBinding = oModel.bindList("/ApprovalItems", null, null, null, {
-                $count: true
-            });
-            oBinding.filter(new Filter("status", FilterOperator.EQ, "PENDING"));
-
-            oBinding.requestContexts(0, 1)
-                .then(function () {
-                    return oBinding.getHeaderContext().requestProperty("$count");
+            ApprovalHelper.getCurrentUserId(oModel)
+                .then(function (sUserId) {
+                    return ApprovalHelper.getMyPendingApprovals(oModel, sUserId);
                 })
-                .then(function (iCount) {
-                    this.getView().getModel("ui")
-                        .setProperty("/pendingApprovals", iCount || 0);
-                }.bind(this))
+                .then(function (aRows) {
+                    oUiModel.setProperty("/pendingApprovals", aRows.length);
+                })
                 .catch(function (oErr) {
                     console.warn("Could not load pending approvals", oErr);
+                    oUiModel.setProperty("/pendingApprovals", 0);
                 });
         },
 

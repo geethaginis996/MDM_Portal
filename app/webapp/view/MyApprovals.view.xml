@@ -1,0 +1,121 @@
+<mvc:View
+    controllerName="mdm.portal.controller.MyApprovals"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:f="sap.f"
+    xmlns:core="sap.ui.core"
+    displayBlock="true">
+
+    <f:DynamicPage id="myApprovalsPage" fitContent="true">
+        <f:title>
+            <f:DynamicPageTitle>
+                <f:heading>
+                    <VBox>
+                        <Title text="My Approvals"/>
+                        <Breadcrumbs currentLocationText="My Approvals"
+                                     separatorStyle="Slash" class="sapUiTinyMarginTop">
+                            <links>
+                                <Link text="Home" press=".onNavHome"/>
+                            </links>
+                        </Breadcrumbs>
+                        <Text text="Change requests waiting for your release. Click any row to review and action."
+                              class="sapUiTinyMarginTop mdmSubtitleText"/>
+                    </VBox>
+                </f:heading>
+                <f:actions>
+                    <Button icon="sap-icon://refresh" tooltip="Refresh" press=".onRefresh"/>
+                </f:actions>
+            </f:DynamicPageTitle>
+        </f:title>
+
+        <f:content>
+            <VBox class="sapUiSmallMarginBeginEnd sapUiSmallMarginTop">
+
+                <!-- Stat filter chips: Pending / Overdue / Due Today / Completed (30d) -->
+                <SegmentedButton id="statFilterBar" class="sapUiSmallMarginBottom"
+                                  selectedKey="pending" select=".onStatFilterChange">
+                    <items>
+                        <SegmentedButtonItem key="pending"   text="{= 'Pending (' + (${view>/statPending} || 0) + ')'}"/>
+                        <SegmentedButtonItem key="overdue"   text="{= 'Overdue (' + (${view>/statOverdue} || 0) + ')'}"/>
+                        <SegmentedButtonItem key="dueToday"  text="{= 'Due Today (' + (${view>/statDueToday} || 0) + ')'}"/>
+                        <SegmentedButtonItem key="completed" text="{= 'Completed 30d (' + (${view>/statCompleted} || 0) + ')'}"/>
+                    </items>
+                </SegmentedButton>
+
+                <!-- Filter bar -->
+                <HBox alignItems="End" class="sapUiSmallMarginBottom" wrap="Wrap">
+                    <VBox class="sapUiTinyMarginEnd">
+                        <Label text="Request Type" labelFor="selApType"/>
+                        <Select id="selApType" width="12rem"
+                                forceSelection="false" change=".onFilterChange">
+                            <core:Item key="" text="All Request Types"/>
+                            <core:Item key="CREATE" text="Create"/>
+                            <core:Item key="EXTEND" text="Extend"/>
+                            <core:Item key="CHANGE" text="Change"/>
+                        </Select>
+                    </VBox>
+                    <VBox>
+                        <Label text="Search"/>
+                        <SearchField id="apSearch" width="20rem" search=".onSearch"
+                                     placeholder="Search by request ID, subject, or requester..."/>
+                    </VBox>
+                </HBox>
+
+                <!-- Approvals table -->
+                <Table id="apTable"
+                       noDataText="{view>/noDataText}"
+                       alternateRowColors="true"
+                       growing="true"
+                       growingThreshold="20"
+                       fixedLayout="false"
+                       busy="{view>/busy}"
+                       items="{view>/rows}">
+                    <columns>
+                        <Column width="10rem"><Label text="Request ID" design="Bold"/></Column>
+                        <Column width="6rem" ><Label text="Type"       design="Bold"/></Column>
+                        <Column><Label text="Subject"    design="Bold"/></Column>
+                        <Column width="8rem" ><Label text="Strategy"   design="Bold"/></Column>
+                        <Column width="8rem" ><Label text="My Code"    design="Bold"/></Column>
+                        <Column width="9rem"
+                                minScreenWidth="Tablet"
+                                demandPopin="true"><Label text="Submitted" design="Bold"/></Column>
+                        <Column width="9rem"
+                                minScreenWidth="Tablet"
+                                demandPopin="true"><Label text="Due"       design="Bold"/></Column>
+                        <Column width="9rem"
+                                minScreenWidth="Desktop"
+                                demandPopin="true"><Label text="Submitted By" design="Bold"/></Column>
+                    </columns>
+                    <items>
+                        <ColumnListItem type="Active" press=".onRowPress">
+                            <cells>
+                                <Link text="{view>cr_id}" press=".onRowPress" wrapping="false"/>
+                                <ObjectStatus
+                                    text="{view>request_type}"
+                                    state="{= ${view>request_type} === 'CREATE' ? 'Success' :
+                                           ${view>request_type} === 'EXTEND' ? 'Warning' : 'None'}"/>
+                                <Text text="{view>subject}" wrapping="false"/>
+                                <Text text="{view>strategy_id}" wrapping="false"/>
+                                <ObjectStatus text="{view>release_code_id}" state="Information"/>
+                                <Text text="{
+                                    path: 'view>submitted_at',
+                                    type: 'sap.ui.model.odata.type.DateTimeOffset',
+                                    formatOptions: { style: 'short', UTC: false }
+                                }" wrapping="false"/>
+                                <ObjectStatus
+                                    text="{
+                                        path: 'view>due_at',
+                                        type: 'sap.ui.model.odata.type.DateTimeOffset',
+                                        formatOptions: { style: 'short', UTC: false }
+                                    }"
+                                    state="{= ${view>isOverdue} ? 'Error' : ${view>isDueToday} ? 'Warning' : 'None'}"/>
+                                <Text text="{view>requester}" wrapping="false"/>
+                            </cells>
+                        </ColumnListItem>
+                    </items>
+                </Table>
+            </VBox>
+        </f:content>
+    </f:DynamicPage>
+
+</mvc:View>

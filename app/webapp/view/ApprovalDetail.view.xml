@@ -1,0 +1,75 @@
+<mvc:View
+    controllerName="mdm.portal.controller.ApprovalDetail"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core">
+
+    <Page id="approvalDetailPage" busy="{view>/busy}" busyIndicatorDelay="0"
+          showNavButton="true" navButtonPress=".onNavBack">
+
+        <customHeader>
+            <Bar>
+                <contentLeft>
+                    <Button icon="sap-icon://nav-back" type="Transparent" press=".onNavBack"/>
+                    <VBox>
+                        <Title id="pageTitle" text="{view>/crId}" level="H4"/>
+                        <Text text="{view>/subtitle}" class="mdmSubtitleText"/>
+                    </VBox>
+                </contentLeft>
+            </Bar>
+        </customHeader>
+
+        <content>
+            <VBox class="sapUiMediumMarginBeginEnd sapUiSmallMarginTop sapUiSmallMarginBottom">
+
+                <MessageStrip text="{view>/infoBannerText}"
+                               type="Information"
+                               showIcon="true"
+                               class="sapUiSmallMarginBottom"
+                               visible="{view>/infoBannerVisible}"/>
+
+                <!-- ── Release Progress strip ──────────────────────────── -->
+                <Label text="RELEASE PROGRESS" class="sapUiTinyMarginBottom mdmRoleBarLabel"/>
+                <ScrollContainer horizontal="true" vertical="false" width="100%"
+                                 class="sapUiSmallMarginBottom">
+                    <HBox id="releaseProgressBox" class="sapUiSmallMarginBottom"/>
+                </ScrollContainer>
+
+                <!-- ── Scope banner ─────────────────────────────────────── -->
+                <Panel id="scopeBannerPanel" class="sapUiSmallMarginBottom"
+                       backgroundDesign="Solid">
+                    <content>
+                        <HBox alignItems="Center" class="sapUiSmallMargin">
+                            <core:Icon src="sap-icon://target-group" size="1.5rem"
+                                       class="sapUiSmallMarginEnd" color="Default"/>
+                            <VBox>
+                                <Text id="scopeTitle" text="{view>/scopeTitle}" class="mdmScopeTitle"/>
+                                <Text id="scopeSubtitle" text="{view>/scopeSubtitle}"/>
+                            </VBox>
+                        </HBox>
+                    </content>
+                </Panel>
+
+                <!-- ── Tabs: General / per-role / Attachments / History ─── -->
+                <IconTabBar id="approvalTabs" expanded="true"
+                            class="sapUiResponsiveContentPadding"/>
+
+            </VBox>
+        </content>
+
+        <footer>
+            <OverflowToolbar>
+                <ToolbarSpacer/>
+                <Button id="btnSendBack" text="Send Back" icon="sap-icon://redo"
+                        visible="{view>/actionable}" press=".onSendBack"/>
+                <Button id="btnReject"   text="Reject"    icon="sap-icon://decline"
+                        type="Reject"
+                        visible="{view>/actionable}" press=".onReject"/>
+                <Button id="btnApprove"  text="Approve"   icon="sap-icon://accept"
+                        type="Accept"
+                        visible="{view>/actionable}" press=".onApprove"/>
+            </OverflowToolbar>
+        </footer>
+    </Page>
+
+</mvc:View>
